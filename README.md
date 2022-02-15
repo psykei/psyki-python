@@ -1,2 +1,2 @@
-# psyki-python
+# PSyKI-python
 PSyKI: a (Python) platform for symbolic knowledge injection
