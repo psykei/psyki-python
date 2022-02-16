@@ -1,0 +1,63 @@
+grammar Prolog;
+
+formula
+    : Predication '(' arguments ')' ':-' clause
+    ;
+
+clause
+    : literal # ClauseLiteral
+    | '(' left=clause op=Connective right=clause ')' # ClauseExpression
+    ;
+
+Connective
+    : '∧'
+    | '∨'
+    | '→'
+    | '↔'
+    | '='
+    | '<'
+    | '≤'
+    | '>'
+    | '≥'
+    ;
+
+literal
+    : predicate
+    | '¬' predicate
+    ;
+
+predicate
+    : '⊤' # PredicateTrue
+    | '⊥' # PredicateFalse
+    | term # PredicateTerm
+    | Predication # PredicateUnary
+    | Predication '(' arguments ')' #PredicateArgs
+    ;
+
+arguments
+    : term
+    | term ',' arguments
+    ;
+
+term
+    : var=Variable # TermVar
+    | Functor '(' arguments ')' # TermStruct
+    | constant # TermConst
+    ;
+
+constant
+    : Functor # ConstFunctor
+    | num=Number # ConstNumber
+    | boolean # ConstBool
+    ;
+
+boolean
+    : '⊤'
+    | '⊥'
+    ;
+
+Functor: [_]([a-z]|[0-9])*;
+Predication: [a-z]([a-z]|[0-9])*;
+Variable : [A-Z]([a-z]|[A-Z]|[0-9])*;
+Number : [+-]?([0-9]*[.])?[0-9]+;
+WS : [ \t]+ -> skip ;
