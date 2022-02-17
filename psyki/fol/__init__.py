@@ -1,9 +1,7 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Set, List, TypeVar
 from tuprolog.core import Var, Term
-
-from resources.dist.resources.FOLVisitor import FOLVisitor
 
 T = TypeVar('T')
 
