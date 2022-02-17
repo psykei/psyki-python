@@ -46,8 +46,7 @@ jobs:
         run: |
           wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
           export CLASSPATH="./antlr-4.9.2-complete.jar:$CLASSPATH"
-          alias antlr4='java -jar ./antlr-4.9.2-complete.jar'
-          antlr4 -Dlanguage=Python3 resources/Prolog.g4 -visitor -o resources/dist
+          java -jar ./antlr-4.9.2-complete.jar -Dlanguage=Python3 resources/Prolog.g4 -visitor -o resources/dist
 
       - name: Test
         run: python -m unittest
