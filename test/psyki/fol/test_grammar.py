@@ -1,32 +1,13 @@
 import unittest
-
 import numpy as np
 from antlr4 import CommonTokenStream, InputStream
 from psyki.ski import Fuzzifier
-from resources.dist.resources.FOLLexer import FOLLexer
-from resources.dist.resources.FOLParser import FOLParser
-from resources.dist.resources.FOLVisitor import FOLVisitor
 from resources.dist.resources.PrologLexer import PrologLexer
 from resources.dist.resources.PrologParser import PrologParser
 from test.resources.rules import get_rules
 
 
 class TestGrammar(unittest.TestCase):
-
-    def test_fol_parser(self):
-        # formula = InputStream('(PL > 2.28) ∧ (PW ≤ 1.64) → versicolor)')
-        formula = InputStream('iris(PL, PW, SL, SW, _versicolor) → (PL > 2.28) ∧ (PW ≤ 1.64)')
-        # formula = InputStream('∀X ∀Y parent(X, Y) → child(Y, X)')
-        # lexer
-        lexer = FOLLexer(formula)
-        stream = CommonTokenStream(lexer)
-        # parser
-        parser = FOLParser(stream)
-        tree = parser.formula()
-        # evaluator
-        visitor = FOLVisitor()
-        output = visitor.visit(tree)
-        print(output)
 
     def test_fuzzifier(self):
         string = list(get_rules('iris'))[2]

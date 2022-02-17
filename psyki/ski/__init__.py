@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Any, Iterable
-from antlr4 import CommonTokenStream, InputStream
+from typing import Any, Callable, Iterable
 from tensorflow import maximum, minimum, stack, Tensor, reduce_max, SparseTensor, cast, tile, reshape, shape
-from tensorflow.keras.layers import Concatenate, Lambda
+from tensorflow.keras.layers import Concatenate, Lambda, Dense
 from tensorflow.keras import Model
 from tensorflow.keras.backend import to_dense
-from psyki.utils import eta
-from resources.dist.resources.PrologLexer import PrologLexer
+from tensorflow.python.ops.array_ops import gather
+from tensorflow.keras.layers import Minimum, Maximum
+from tensorflow.python.ops.init_ops import Zeros, constant_initializer
+from psyki.utils import eta, eta_one_abs
 from resources.dist.resources.PrologParser import PrologParser
 from resources.dist.resources.PrologVisitor import PrologVisitor
 
@@ -54,6 +55,48 @@ class Fuzzifier(PrologVisitor):
         return lambda x: x[:, self.feature_mapping[var]]
 
 
+class SubNetworkBuilder(PrologVisitor):
+
+    def __init__(self, predictor_input: Tensor, feature_mapping: dict[str, int]):
+        self.predictor_input = predictor_input
+        self.feature_mapping = feature_mapping
+
+    # Visit a parse tree produced by folParser#ClauseExpression.
+    def visitClauseExpression(self, ctx: PrologParser.ClauseExpressionContext):
+        previous_layer = [self.visit(ctx.left), self.visit(ctx.right)]
+        operation = {
+            '∧': Minimum()(previous_layer),
+            '∨': Maximum()(previous_layer),
+            '→': None,
+            '↔': None,
+            '=': Dense(1, kernel_initializer=constant_initializer([1, -1]),
+                       activation=eta_one_abs, trainable=False)(Concatenate(axis=1)(previous_layer)),
+            '<': Dense(1, kernel_initializer=constant_initializer([-1, 1]),
+                       activation=eta, trainable=False)(Concatenate(axis=1)(previous_layer)),
+            '≤': Maximum()([Dense(1, kernel_initializer=constant_initializer([-1, 1]),
+                                  activation=eta, trainable=False)(Concatenate(axis=1)(previous_layer)),
+                            Dense(1, kernel_initializer=constant_initializer([1, -1]),
+                                  activation=eta_one_abs, trainable=False)(Concatenate(axis=1)(previous_layer))]),
+            '>': Dense(1, kernel_initializer=constant_initializer([1, -1]),
+                       activation=eta, trainable=False)(Concatenate(axis=1)(previous_layer)),
+            '≥': Maximum()([Dense(1, kernel_initializer=constant_initializer([1, -1]),
+                                  activation=eta, trainable=False)(Concatenate(axis=1)(previous_layer)),
+                            Dense(1, kernel_initializer=constant_initializer([1, -1]),
+                                  activation=eta_one_abs, trainable=False)(Concatenate(axis=1)(previous_layer))])
+        }
+        return operation.get(ctx.op.text)
+
+    # Visit a parse tree produced by PrologParser#ConstNumber.
+    def visitConstNumber(self, ctx: PrologParser.ConstNumberContext):
+        return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(float(ctx.num.text)),
+                     trainable=False, activation='linear')(self.predictor_input)
+
+    # Visit a parse tree produced by folParser#TermVar.
+    def visitTermVar(self, ctx: PrologParser.TermVarContext):
+        var = ctx.var.text
+        return Lambda(lambda x: gather(x, [self.feature_mapping[var]], axis=1))(self.predictor_input)
+
+
 class Injector(ABC):
     """
     An injector is a class that allows a sub-symbolic predictor to exploit prior symbolic knowledge.
@@ -62,7 +105,7 @@ class Injector(ABC):
     predictor: Any  # Any class that has methods fit and predict
 
     @abstractmethod
-    def inject(self, rules: Iterable[str]) -> None:
+    def inject(self, rules: dict[str, PrologParser]) -> None:
         pass
 
 
@@ -71,16 +114,15 @@ class ConstrainingInjector(Injector):
 
     def __init__(self, predictor: Model, class_mapping: dict[str, int],
                  feature_mapping: dict[str, int], gamma: float = 1.):
-        self.predictor = predictor
-        self.class_mapping = class_mapping
-        self.feature_mapping = feature_mapping
-        self.gamma = gamma
-        self._fuzzy_functions = None
+        self.predictor: Model = predictor
+        self.class_mapping: dict[str, int] = class_mapping
+        self.feature_mapping: dict[str, int] = feature_mapping
+        self.gamma: float = gamma
+        self._fuzzy_functions: Iterable[Callable] = ()
 
-    def inject(self, rules: Iterable[str]) -> None:
+    def inject(self, rules: dict[str, PrologParser]) -> None:
         visitor = Fuzzifier(self.class_mapping, self.feature_mapping)
-        trees = [PrologParser(CommonTokenStream(PrologLexer(InputStream(rule)))).formula() for rule in rules]
-        self._fuzzy_functions = [visitor.visit(tree) for tree in trees]
+        self._fuzzy_functions = [visitor.visit(tree.formula()) for tree in rules.values()]
         predictor_output = self.predictor.layers[-1].output
         x = Concatenate(axis=1)([self.predictor.input, predictor_output])
         x = Lambda(self._cost, self.predictor.output.shape)(x)
@@ -97,3 +139,20 @@ class ConstrainingInjector(Injector):
         Remove the constraining obtained by the injected rules.
         """
         self.predictor = Model(self.predictor.input, self.predictor.layers[-3].output)
+
+
+# TODO: find a better name. This class targets NN with structuring using one-hot encoding.
+class StructuringInjector(Injector):
+
+    def __init__(self, predictor: Model, feature_mapping: dict[str, int]):
+        self.predictor: Model = predictor
+        self.feature_mapping: dict[str, int] = feature_mapping
+
+    def inject(self, rules: dict[str, PrologParser]) -> None:
+        visitor = SubNetworkBuilder(self.predictor.input, self.feature_mapping)
+        predictor_output: Tensor = self.predictor.layers[-2].output
+        modules = [visitor.visit(tree.formula()) for tree in rules.values()]
+        neurons: int = self.predictor.layers[-1].output.shape[1]
+        activation: Callable = self.predictor.layers[-1].activation
+        new_predictor = Dense(neurons, activation=activation)(Concatenate(axis=1)([predictor_output] + modules))
+        self.predictor = Model(self.predictor.input, new_predictor)
