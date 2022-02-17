@@ -31,12 +31,6 @@ jobs:
           distribution: 'zulu'
           java-version: '11'
 
-      - name: Setup antlr
-        run: |
-          wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
-          export CLASSPATH="./antlr-4.9.2-complete.jar:$CLASSPATH"
-          alias antlr4='java -jar ./antlr-4.9.2-complete.jar'
-
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
@@ -49,7 +43,11 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Generate Prolog parser
-        run: antlr4 -Dlanguage=Python3 resources/Prolog.g4 -visitor -o resources/dist
+        run: |
+          wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
+          export CLASSPATH="./antlr-4.9.2-complete.jar:$CLASSPATH"
+          alias antlr4='java -jar ./antlr-4.9.2-complete.jar'
+          antlr4 -Dlanguage=Python3 resources/Prolog.g4 -visitor -o resources/dist
 
       - name: Test
         run: python -m unittest
