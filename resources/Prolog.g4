@@ -1,7 +1,7 @@
 grammar Prolog;
 
 formula
-    : Predication '(' arguments ')' ':-' clause
+    : Predication '(' args=arguments ')' ':-' right=clause
     ;
 
 clause
@@ -46,7 +46,7 @@ term
     ;
 
 constant
-    : Functor # ConstFunctor
+    : fun=Functor # ConstFunctor
     | num=Number # ConstNumber
     | boolean # ConstBool
     ;
@@ -60,4 +60,4 @@ Functor: [_]([a-z]|[0-9])*;
 Predication: [a-z]([a-z]|[0-9])*;
 Variable : [A-Z]([a-z]|[A-Z]|[0-9])*;
 Number : [+-]?([0-9]*[.])?[0-9]+;
-WS : [ \t]+ -> skip ;
+WS : [ \t\n]+ -> skip ;
