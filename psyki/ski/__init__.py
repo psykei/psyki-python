@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable
-from tensorflow import maximum, minimum, stack, Tensor, reduce_max, SparseTensor, cast, tile, reshape, shape
-from tensorflow.keras.layers import Concatenate, Lambda, Dense
+from tensorflow import maximum, minimum, stack, Tensor, reduce_max, SparseTensor, cast, tile, reshape, shape, constant
+from tensorflow.keras.layers import Concatenate, Lambda, Dense, Dot
 from tensorflow.keras import Model
 from tensorflow.keras.backend import to_dense
 from tensorflow.python.ops.array_ops import gather
 from tensorflow.keras.layers import Minimum, Maximum
-from tensorflow.python.ops.init_ops import Zeros, constant_initializer
+from tensorflow.python.ops.init_ops import Zeros, constant_initializer, Ones
 from psyki.utils import eta, eta_one_abs
 from resources.dist.resources.PrologParser import PrologParser
 from resources.dist.resources.PrologVisitor import PrologVisitor
@@ -19,14 +19,7 @@ class Fuzzifier(PrologVisitor):
         self.class_mapping = {string: cast(to_dense(SparseTensor([[0, index]], [1.], (1, len(class_mapping)))), float)
                               for string, index in class_mapping.items()}
 
-    # Visit a parse tree produced by folParser#formula.
-    def visitFormula(self, ctx: PrologParser.FormulaContext):
-        l = lambda y: eta(reduce_max(abs(tile(self.visit(ctx.args), (shape(y)[0], 1)) - y), axis=1))
-        r = self.visit(ctx.right)
-        return lambda x, y: eta(l(y) - r(x))
-
-    # Visit a parse tree produced by folParser#ClauseExpression.
-    def visitClauseExpression(self, ctx: PrologParser.ClauseExpressionContext):
+    def clause_expression(self, ctx: PrologParser.ClauseExpressionContext or PrologParser.ClauseExpressionNoParContext):
         l, r = self.visit(ctx.left), self.visit(ctx.right)
         operation = {
             '∧': lambda x: eta(maximum(l(x), r(x))),
@@ -34,12 +27,29 @@ class Fuzzifier(PrologVisitor):
             '→': lambda x: eta(l(x) - r(x)),
             '↔': lambda x: eta(abs(l(x) - r(x))),
             '=': lambda x: eta(abs(l(x) - r(x))),
-            '<': lambda x: eta(1. - eta(1. - eta(l(x) - r(x)))),
-            '≤': lambda x: eta(1. - eta(maximum(eta(1. - eta(l(x) - r(x))), eta(1. - eta(abs(l(x) - r(x))))))),
-            '>': lambda x: eta(maximum(eta(1. - eta(l(x) - r(x))), eta(1. - eta(abs(l(x) - r(x)))))),
-            '≥': lambda x: eta(1. - eta(l(x) - r(x)))
+            '<': lambda x: eta(constant(1.) - eta(constant(1.) - eta(l(x) - r(x)))),
+            '≤': lambda x: eta(constant(1.) - eta(maximum(eta(constant(1.) - eta(l(x) - r(x))),
+                                                          eta(constant(1.) - eta(abs(l(x) - r(x))))))),
+            '>': lambda x: eta(maximum(eta(constant(1) - eta(l(x) - r(x))), eta(constant(1) - eta(abs(l(x) - r(x)))))),
+            '≥': lambda x: eta(constant(1.) - eta(l(x) - r(x))),
+            '+': lambda x: l(x) + r(x),
+            '*': lambda x: l(x) * r(x)
         }
         return operation.get(ctx.op.text)
+
+    # Visit a parse tree produced by folParser#formula.
+    def visitFormula(self, ctx: PrologParser.FormulaContext):
+        l = lambda y: eta(reduce_max(abs(tile(self.visit(ctx.args), (shape(y)[0], 1)) - y), axis=1))
+        r = self.visit(ctx.right)
+        return lambda x, y: eta(l(y) - r(x))
+
+    # Visit a parse tree produced by PrologParser#ClauseExpressionNoPar.
+    def visitClauseExpressionNoPar(self, ctx: PrologParser.ClauseExpressionNoParContext):
+        return self.clause_expression(ctx)
+
+    # Visit a parse tree produced by folParser#ClauseExpression.
+    def visitClauseExpression(self, ctx: PrologParser.ClauseExpressionContext):
+        return self.clause_expression(ctx)
 
     # Visit a parse tree produced by PrologParser#ConstFunctor.
     def visitConstFunctor(self, ctx: PrologParser.ConstFunctorContext):
@@ -52,7 +62,8 @@ class Fuzzifier(PrologVisitor):
     # Visit a parse tree produced by folParser#TermVar.
     def visitTermVar(self, ctx: PrologParser.TermVarContext):
         var = ctx.var.text
-        return lambda x: x[:, self.feature_mapping[var]]
+        return lambda x: x[:, self.feature_mapping[var]] \
+            if var in self.feature_mapping.keys() else self.visitChildren(ctx)
 
 
 class SubNetworkBuilder(PrologVisitor):
@@ -61,8 +72,7 @@ class SubNetworkBuilder(PrologVisitor):
         self.predictor_input = predictor_input
         self.feature_mapping = feature_mapping
 
-    # Visit a parse tree produced by folParser#ClauseExpression.
-    def visitClauseExpression(self, ctx: PrologParser.ClauseExpressionContext):
+    def clause_expression(self, ctx: PrologParser.ClauseExpressionContext or PrologParser.ClauseExpressionNoParContext):
         previous_layer = [self.visit(ctx.left), self.visit(ctx.right)]
         operation = {
             '∧': Minimum()(previous_layer),
@@ -82,9 +92,20 @@ class SubNetworkBuilder(PrologVisitor):
             '≥': Maximum()([Dense(1, kernel_initializer=constant_initializer([1, -1]),
                                   activation=eta, trainable=False)(Concatenate(axis=1)(previous_layer)),
                             Dense(1, kernel_initializer=constant_initializer([1, -1]),
-                                  activation=eta_one_abs, trainable=False)(Concatenate(axis=1)(previous_layer))])
+                                  activation=eta_one_abs, trainable=False)(Concatenate(axis=1)(previous_layer))]),
+            '+': Dense(1, kernel_initializer=Ones, activation='linear', trainable=False)
+            (Concatenate(axis=1)(previous_layer)),
+            '*': Dot(axes=1)(previous_layer)
         }
         return operation.get(ctx.op.text)
+
+    # Visit a parse tree produced by PrologParser#ClauseExpressionNoPar.
+    def visitClauseExpressionNoPar(self, ctx: PrologParser.ClauseExpressionNoParContext):
+        return self.clause_expression(ctx)
+
+    # Visit a parse tree produced by folParser#ClauseExpression.
+    def visitClauseExpression(self, ctx: PrologParser.ClauseExpressionContext):
+        return self.clause_expression(ctx)
 
     # Visit a parse tree produced by PrologParser#ConstNumber.
     def visitConstNumber(self, ctx: PrologParser.ConstNumberContext):

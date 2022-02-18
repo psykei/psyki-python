@@ -10,13 +10,23 @@ from test.resources.rules import get_rules
 class TestGrammar(unittest.TestCase):
 
     def test_fuzzifier(self):
-        string = list(get_rules('iris'))[2]
+        string = list(get_rules('poker'))[5]
         formula = InputStream(string)
         lexer = PrologLexer(formula)
         stream = CommonTokenStream(lexer)
         parser = PrologParser(stream)
         tree = parser.formula()
-        visitor = Fuzzifier({'_setosa': 0, '_virginica': 1, '_versicolor': 2}, {'PL': 0, 'PW': 1, 'SL': 2, 'SW': 3})
-        output = visitor.visit(tree)(np.array([[3., 1.63, 1.1, 0.9], [2.5, 1.63, 1.1, 0.9]]),
-                                     np.array([[0.2, 0.1, 0.7], [0.2, 0.1, 0.5]]))
+        visitor = Fuzzifier({'_nothing': 0,
+                             '_pair': 1,
+                             '_two': 2,
+                             '_three': 3,
+                             '_straight': 4,
+                             '_flush': 5,
+                             '_full': 6,
+                             '_four': 7,
+                             '_straightflush': 8,
+                             '_royalflush': 9},
+                            {'S1': 0, 'R1': 1, 'S2': 2, 'R2': 3, 'S3': 4, 'R3': 5, 'S4': 6, 'R4': 7, 'S5': 8, 'R5': 9})
+        output = visitor.visit(tree)(np.array([[4, 4, 4, 13, 4, 7, 4, 11, 4, 1], [4, 4, 4, 13, 4, 7, 4, 11, 4, 1]]),
+                                     np.array([[0, 0, 0, 0.1, 0.3, 0.6, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0.3, 0, 1, 0, 0]]))
         print(output)
