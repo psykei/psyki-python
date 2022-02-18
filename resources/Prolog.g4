@@ -6,24 +6,21 @@ formula
 
 clause
     : literal # ClauseLiteral
-    | '(' left=clause op=Connective right=clause ')' # ClauseExpression
-    ;
-
-Connective
-    : '∧'
-    | '∨'
-    | '→'
-    | '↔'
-    | '='
-    | '<'
-    | '≤'
-    | '>'
-    | '≥'
+    | '(' left=clause op='*' right=clause ')' # ClauseExpression
+    | '(' left=clause op='+' right=clause ')' # ClauseExpression
+    | '(' left=clause op=('=' | '<' | '≤' | '>' | '≥') right=clause ')' # ClauseExpression
+    | '(' left=clause op=('∧' | '∨') right=clause ')' # ClauseExpression
+    | '(' left=clause op=('→' | '↔') right=clause ')' # ClauseExpression
+    | left=clause op='*' right=clause # ClauseExpressionNoPar
+    | left=clause op='+' right=clause # ClauseExpressionNoPar
+    | left=clause op=('=' | '<' | '≤' | '>' | '≥') right=clause # ClauseExpressionNoPar
+    | left=clause op=('∧' | '∨') right=clause # ClauseExpressionNoPar
+    | left=clause op=('→' | '↔') right=clause # ClauseExpressionNoPar
     ;
 
 literal
     : predicate
-    | '¬' predicate
+    | '¬' '(' predicate ')'
     ;
 
 predicate
@@ -59,5 +56,5 @@ boolean
 Functor: [_]([a-z]|[0-9])*;
 Predication: [a-z]([a-z]|[0-9])*;
 Variable : [A-Z]([a-z]|[A-Z]|[0-9])*;
-Number : [+-]?([0-9]*[.])?[0-9]+;
+Number : [-]?([0-9]*[.])?[0-9]+;
 WS : [ \t\n]+ -> skip ;

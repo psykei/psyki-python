@@ -2,6 +2,7 @@ VERSION
 
 .idea/
 .vscode/
+.DS_Store
 
 *~
 *.jar
