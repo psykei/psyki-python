@@ -30,7 +30,8 @@ class Fuzzifier(PrologVisitor):
             '<': lambda x: eta(constant(1.) - eta(constant(1.) - eta(l(x) - r(x)))),
             '≤': lambda x: eta(constant(1.) - eta(maximum(eta(constant(1.) - eta(l(x) - r(x))),
                                                           eta(constant(1.) - eta(abs(l(x) - r(x))))))),
-            '>': lambda x: eta(maximum(eta(constant(1) - eta(l(x) - r(x))), eta(constant(1) - eta(abs(l(x) - r(x)))))),
+            '>': lambda x: eta(maximum(eta(constant(1.) - eta(l(x) - r(x))),
+                                       eta(constant(1.) - eta(abs(l(x) - r(x)))))),
             '≥': lambda x: eta(constant(1.) - eta(l(x) - r(x))),
             '+': lambda x: l(x) + r(x),
             '*': lambda x: l(x) * r(x)
