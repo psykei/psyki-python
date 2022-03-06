@@ -1,51 +1,55 @@
-grammar Prolog;
+grammar Datalog;
 
 formula
-    : Predication '(' args=arguments ')' ':-' right=clause
+    : lhs=def_clause '←' rhs=clause
+    ;
+
+def_clause
+    : pred=Predication '(' args=arguments ')' #DefPredicateArgs
     ;
 
 clause
-    : literal # ClauseLiteral
-    | '(' left=clause op='*' right=clause ')' # ClauseExpression
+    : '(' left=clause op='*' right=clause ')' # ClauseExpression
     | '(' left=clause op='+' right=clause ')' # ClauseExpression
-    | '(' left=clause op=('=' | '<' | '≤' | '>' | '≥') right=clause ')' # ClauseExpression
+    | '(' left=clause op=('=' | '<' | '≤' | '>' | '≥' | 'm') right=clause ')' # ClauseExpression
     | '(' left=clause op=('∧' | '∨') right=clause ')' # ClauseExpression
     | '(' left=clause op=('→' | '↔') right=clause ')' # ClauseExpression
     | left=clause op='*' right=clause # ClauseExpressionNoPar
     | left=clause op='+' right=clause # ClauseExpressionNoPar
-    | left=clause op=('=' | '<' | '≤' | '>' | '≥') right=clause # ClauseExpressionNoPar
+    | left=clause op=('=' | '<' | '≤' | '>' | '≥' | 'm') right=clause # ClauseExpressionNoPar
     | left=clause op=('∧' | '∨') right=clause # ClauseExpressionNoPar
     | left=clause op=('→' | '↔') right=clause # ClauseExpressionNoPar
+    | literal # ClauseLiteral
     ;
 
 literal
-    : predicate
-    | '¬' '(' predicate ')'
+    : predicate #LiteralPred
+    | '¬' '(' pred=clause ')' #LiteralNeg
+    | '¬' pred=clause #LiteralNeg
     ;
 
 predicate
     : '⊤' # PredicateTrue
     | '⊥' # PredicateFalse
     | term # PredicateTerm
-    | Predication # PredicateUnary
-    | Predication '(' arguments ')' #PredicateArgs
+    | pred=Predication # PredicateUnary
+    | pred=Predication '(' args=arguments ')' #PredicateArgs
     ;
 
 arguments
-    : term
-    | term ',' arguments
+    : last=term #LastTerm
+    | term ',' args=arguments #MoreArgs
     ;
 
 term
     : var=Variable # TermVar
-    | Functor '(' arguments ')' # TermStruct
     | constant # TermConst
     ;
 
 constant
-    : fun=Functor # ConstFunctor
-    | num=Number # ConstNumber
+    : num=Number # ConstNumber
     | boolean # ConstBool
+    | name=Predication # ConstName
     ;
 
 boolean
@@ -53,8 +57,7 @@ boolean
     | '⊥'
     ;
 
-Functor: [_]([a-z]|[0-9])*;
-Predication: [a-z]([a-z]|[0-9])*;
+Predication: [a-z]([a-z]|[0-9]|[_])*;
 Variable : [A-Z]([a-z]|[A-Z]|[0-9])*;
 Number : [-]?([0-9]*[.])?[0-9]+;
 WS : [ \t\n]+ -> skip ;

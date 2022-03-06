@@ -1,3 +1,4 @@
+from __future__ import annotations
 from tensorflow import minimum, maximum, abs
 from tensorflow.python.types.core import Tensor
 
