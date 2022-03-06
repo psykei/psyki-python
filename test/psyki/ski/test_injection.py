@@ -6,7 +6,7 @@ from sklearn.datasets import load_iris
 from tensorflow.keras import Input, Model
 from tensorflow.keras.layers import Dense
 from tensorflow.python.framework.random_seed import set_random_seed
-from psyki.ski import ConstrainingInjector, StructuringInjector
+from psyki.ski.logic.datalog import ConstrainingInjector, StructuringInjector
 from resources.dist.resources.PrologLexer import PrologLexer
 from resources.dist.resources.PrologParser import PrologParser
 from test.resources.rules import get_rules

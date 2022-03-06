@@ -1,10 +1,64 @@
-poker(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,_nothing) :- ¬(S1=S2 ∧ S2=S3 ∧ S3=S4 ∧ S4=S5) ∧ ¬(R1 = R2 ∨ R1 = R3 ∨ R1 = R4 ∨ R1 = R5 ∨ R2 = R3 ∨ R2 = R4 ∨ R2 = R5 ∨ R3 = R4 ∨ R3 = R5 ∨ R4 = R5) ∧ ¬(((R1+R2+R3+R4+R5=5*R1+10 ∧ (R1≤R1 ∧ R1≤R2 ∧ R1≤R3 ∧ R1≤R4 ∧ R1≤R5)) ∨ (R1+R2+R3+R4+R5=5*R2+10 ∧ (R2≤R1 ∧ R2≤R2 ∧ R2≤R3 ∧ R2≤R4 ∧ R2≤R5)) ∨ (R1+R2+R3+R4+R5=5*R3+10 ∧ (R3≤R1 ∧ R3≤R2 ∧ R3≤R3 ∧ R3≤R4 ∧ R3≤R5)) ∨ (R1+R2+R3+R4+R5=5*R4+10 ∧ (R4≤R1 ∧ R4≤R2 ∧ R4≤R3 ∧ R4≤R4 ∧ R4≤R5)) ∨ (R1+R2+R3+R4+R5=5*R5+10 ∧ (R5≤R1 ∧ R5≤R2 ∧ R5≤R3 ∧ R5≤R4 ∧ R5≤R5))) ∨ ((R1=1 ∨ R2=1 ∨ R3=1 ∨ R4=1 ∨ R5=1) ∧ ((R1+R2+R3+R4=46) ∨ (R1+R2+R3+R5=46) ∨ (R1+R2+R4+R5=46) ∨ (R1+R3+R4+R5=46) ∨ (R2+R3+R4+R5=46))))
-poker(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,_pair) :- R1 = R2 ∨ R1 = R3 ∨ R1 = R4 ∨ R1 = R5 ∨ R2 = R3 ∨ R2 = R4 ∨ R2 = R5 ∨ R3 = R4 ∨ R3 = R5 ∨ R4 = R5
-poker(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,_two) :- ((R1 = R2 ∧ R3 = R4) ∨ (R1 = R3 ∧ R2 = R4) ∨ (R1 = R4 ∧ R2 = R3)) ∨ ((R1 = R2 ∧ R3 = R5) ∨ (R1 = R3 ∧ R2 = R5) ∨ (R1 = R5 ∧ R2 = R3)) ∨ ((R1 = R2 ∧ R4 = R5) ∨ (R1 = R4 ∧ R2 = R5) ∨ (R1 = R5 ∧ R2 = R4)) ∨ ((R1 = R3 ∧ R4 = R5) ∨ (R1 = R4 ∧ R3 = R5) ∨ (R1 = R5 ∧ R3 = R4)) ∨ ((R2 = R3 ∧ R4 = R5) ∨ (R2 = R4 ∧ R3 = R5) ∨ (R2 = R5 ∧ R3 = R4))
-poker(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,_three) :- (R1 = R2 ∧ R1 = R3) ∨ (R1 = R2 ∧ R1 = R4) ∨ (R1 = R2 ∧ R1 = R5) ∨ (R1 = R3 ∧ R1 = R4) ∨ (R1 = R3 ∧ R1 = R5) ∨ (R1 = R4 ∧ R1 = R5) ∨ (R2 = R3 ∧ R2 = R4) ∨ (R2 = R3 ∧ R2 = R5) ∨ (R2 = R4 ∧ R2 = R5) ∨ (R3 = R4 ∧ R3 = R5)
-poker(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,_straight) :- ((R1+R2+R3+R4+R5=5*R1+10 ∧ (R1≤R1 ∧ R1≤R2 ∧ R1≤R3 ∧ R1≤R4 ∧ R1≤R5)) ∨ (R1+R2+R3+R4+R5=5*R2+10 ∧ (R2≤R1 ∧ R2≤R2 ∧ R2≤R3 ∧ R2≤R4 ∧ R2≤R5)) ∨ (R1+R2+R3+R4+R5=5*R3+10 ∧ (R3≤R1 ∧ R3≤R2 ∧ R3≤R3 ∧ R3≤R4 ∧ R3≤R5)) ∨ (R1+R2+R3+R4+R5=5*R4+10 ∧ (R4≤R1 ∧ R4≤R2 ∧ R4≤R3 ∧ R4≤R4 ∧ R4≤R5)) ∨ (R1+R2+R3+R4+R5=5*R5+10 ∧ (R5≤R1 ∧ R5≤R2 ∧ R5≤R3 ∧ R5≤R4 ∧ R5≤R5))) ∨ ((R1=1 ∨ R2=1 ∨ R3=1 ∨ R4=1 ∨ R5=1) ∧ ((R1+R2+R3+R4=46) ∨ (R1+R2+R3+R5=46) ∨ (R1+R2+R4+R5=46) ∨ (R1+R3+R4+R5=46) ∨ (R2+R3+R4+R5=46))) ∧ ¬(R1 = R2 ∨ R1 = R3 ∨ R1 = R4 ∨ R1 = R5 ∨ R2 = R3 ∨ R2 = R4 ∨ R2 = R5 ∨ R3 = R4 ∨ R3 = R5 ∨ R4 = R5)
-poker(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,_flush) :- S1=S2 ∧ S2=S3 ∧ S3=S4 ∧ S4=S5
-poker(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,_full) :- (((R1 = R2 ∧ R3 = R4) ∨ (R1 = R3 ∧ R2 = R4) ∨ (R1 = R4 ∧ R2 = R3)) ∨ ((R1 = R2 ∧ R3 = R5) ∨ (R1 = R3 ∧ R2 = R5) ∨ (R1 = R5 ∧ R2 = R3)) ∨ ((R1 = R2 ∧ R4 = R5) ∨ (R1 = R4 ∧ R2 = R5) ∨ (R1 = R5 ∧ R2 = R4)) ∨ ((R1 = R3 ∧ R4 = R5) ∨ (R1 = R4 ∧ R3 = R5) ∨ (R1 = R5 ∧ R3 = R4)) ∨ ((R2 = R3 ∧ R4 = R5) ∨ (R2 = R4 ∧ R3 = R5) ∨ (R2 = R5 ∧ R3 = R4))) ∧ ((R1 = R2 ∧ R1 = R3) ∨ (R1 = R2 ∧ R1 = R4) ∨ (R1 = R2 ∧ R1 = R5) ∨ (R1 = R3 ∧ R1 = R4) ∨ (R1 = R3 ∧ R1 = R5) ∨ (R1 = R4 ∧ R1 = R5) ∨ (R2 = R3 ∧ R2 = R4) ∨ (R2 = R3 ∧ R2 = R5) ∨ (R2 = R4 ∧ R2 = R5) ∨ (R3 = R4 ∧ R3 = R5)) ∧ ¬((R1=R2 ∧ R1=R3 ∧ R1=R4) ∨ (R1=R2 ∧ R1=R3 ∧ R1=R5) ∨ (R1=R2 ∧ R1=R4 ∧ R1=R5) ∨ (R1=R3 ∧ R1=R4 ∧ R1=R5) ∨ (R2=R3 ∧ R2=R4 ∧ R2=R5))
-poker(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,_four) :- (R1=R2 ∧ R1=R3 ∧ R1=R4) ∨ (R1=R2 ∧ R1=R3 ∧ R1=R5) ∨ (R1=R2 ∧ R1=R4 ∧ R1=R5) ∨ (R1=R3 ∧ R1=R4 ∧ R1=R5) ∨ (R2=R3 ∧ R2=R4 ∧ R2=R5) <- X |= poker
-poker(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,_straightflush) :- ((R1+R2+R3+R4+R5=5*R1+10 ∧ (R1≤R1 ∧ R1≤R2 ∧ R1≤R3 ∧ R1≤R4 ∧ R1≤R5)) ∨ (R1+R2+R3+R4+R5=5*R2+10 ∧ (R2≤R1 ∧ R2≤R2 ∧ R2≤R3 ∧ R2≤R4 ∧ R2≤R5)) ∨ (R1+R2+R3+R4+R5=5*R3+10 ∧ (R3≤R1 ∧ R3≤R2 ∧ R3≤R3 ∧ R3≤R4 ∧ R3≤R5)) ∨ (R1+R2+R3+R4+R5=5*R4+10 ∧ (R4≤R1 ∧ R4≤R2 ∧ R4≤R3 ∧ R4≤R4 ∧ R4≤R5)) ∨ (R1+R2+R3+R4+R5=5*R5+10 ∧ (R5≤R1 ∧ R5≤R2 ∧ R5≤R3 ∧ R5≤R4 ∧ R5≤R5))) ∨ ((R1=1 ∨ R2=1 ∨ R3=1 ∨ R4=1 ∨ R5=1) ∧ ((R1+R2+R3+R4=46) ∨ (R1+R2+R3+R5=46) ∨ (R1+R2+R4+R5=46) ∨ (R1+R3+R4+R5=46) ∨ (R2+R3+R4+R5=46))) ∧ ¬(R1 = R2 ∨ R1 = R3 ∨ R1 = R4 ∨ R1 = R5 ∨ R2 = R3 ∨ R2 = R4 ∨ R2 = R5 ∨ R3 = R4 ∨ R3 = R5 ∨ R4 = R5) ∧ (S1=S2 ∧ S2=S3 ∧ S3=S4 ∧ S4=S5)
-poker(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,_royalflush) :- ((R1=1 ∨ R2=1 ∨ R3=1 ∨ R4=1 ∨ R5=1) ∧ ((R1+R2+R3+R4=46) ∨ (R1+R2+R3+R5=46) ∨ (R1+R2+R4+R5=46) ∨ (R1+R3+R4+R5=46) ∨ (R2+R3+R4+R5=46))) ∧ ¬(R1 = R2 ∨ R1 = R3 ∨ R1 = R4 ∨ R1 = R5 ∨ R2 = R3 ∨ R2 = R4 ∨ R2 = R5 ∨ R3 = R4 ∨ R3 = R5 ∨ R4 = R5) ∧ (S1=S2 ∧ S2=S3 ∧ S3=S4 ∧ S4=S5)
+pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R2
+pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R3
+pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R4
+pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R5
+pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R3
+pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R4
+pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R5
+pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R3 = R4
+pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R3 = R5
+pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R4 = R5
+
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R2 ∧ R3 = R4
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R3 ∧ R2 = R4
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R4 ∧ R2 = R3
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R2 ∧ R3 = R5
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R3 ∧ R2 = R5
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R5 ∧ R2 = R3
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R2 ∧ R4 = R5
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R4 ∧ R2 = R5
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R5 ∧ R2 = R4
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R3 ∧ R4 = R5
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R4 ∧ R3 = R5
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R5 ∧ R3 = R4
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R3 ∧ R4 = R5
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R4 ∧ R3 = R5
+two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R5 ∧ R3 = R4
+
+three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R2 ∧ R1 = R3
+three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R2 ∧ R1 = R4
+three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R2 ∧ R1 = R5
+three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R3 ∧ R1 = R4
+three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R3 ∧ R1 = R5
+three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R4 ∧ R1 = R5
+three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R3 ∧ R2 = R4
+three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R3 ∧ R2 = R5
+three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R4 ∧ R2 = R5
+three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R3 = R4 ∧ R3 = R5
+
+min(R1,R2,R3,R4,R5) ← (R1 m R2 m R3 m R4 m R5)
+
+straight(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← ((R1 + R2 + R3 + R4 + R5) = ((5 * min(R1,R2,R3,R4,R5)) + 10)) ∧ ¬pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+
+royal(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← (min(R1,R2,R3,R4,R5) = 1) ∧ ((R1 + R2 + R3 + R4 + R5) = 47) ∧ ¬pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+
+flush(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← S1 = S2 ∧ S1 = S3 ∧ S1 = S4 ∧ S1 = S5
+
+four(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R2 ∧ R1 = R3 ∧ R1 = R4
+four(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R2 ∧ R1 = R3 ∧ R1 = R5
+four(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R2 ∧ R1 = R4 ∧ R1 = R5
+four(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R1 = R3 ∧ R1 = R4 ∧ R1 = R5
+four(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R3 ∧ R2 = R4 ∧ R2 = R5
+
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,pair) ← pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,two) ← two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,three) ← three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,straight) ← straight(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,straight) ← royal(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,flush) ← flush(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,full) ← three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ∧ two(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ∧ ¬four(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,four) ← four(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,straight_flush) ← straight(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ∧ flush(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,straight_flush) ← royal(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ∧ flush(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,royal_flush) ← royal(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ∧ flush(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)
+class(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5,nothing) ← ¬pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ∧ ¬flush(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ∧ ¬straight(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ∧ ¬royal(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5)

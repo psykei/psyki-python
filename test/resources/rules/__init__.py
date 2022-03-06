@@ -1,5 +1,7 @@
+import csv
 from pathlib import Path
-from typing import TextIO, Iterable
+from typing import TextIO
+from test.resources import rules
 
 PATH = Path(__file__).parents[0]
 
@@ -12,6 +14,10 @@ def open_rule(filename: str) -> TextIO:
     return open(get_rule_path(filename))
 
 
-def get_rules(filename: str) -> Iterable[str]:
-    with open_rule(filename) as file:
-        return file.readlines()
+def get_rules(name: str) -> list[str]:
+    result = []
+    with open(str(rules.PATH / name) + '.txt', mode="r") as file:
+        reader = csv.reader(file, delimiter=';')
+        for item in reader:
+            result += item
+    return result
