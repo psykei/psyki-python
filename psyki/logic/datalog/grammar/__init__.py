@@ -44,6 +44,12 @@ class Predicate(Clause, ABC):
     pass
 
 
+class Unary(Predicate):
+
+    def __init__(self, name: str):
+        self.name: str = name
+
+
 class Nary(Predicate):
 
     def __init__(self, name: str, arg: Argument):
@@ -59,7 +65,7 @@ class Constant(Term, ABC):
     pass
 
 
-class Unary(Constant):
+class Predication(Constant):
 
     def __init__(self, name: str):
         self.name: str = name
