@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, List
 
 
 class Injector(ABC):
@@ -21,7 +21,7 @@ class Fuzzifier(ABC):
     """
 
     @abstractmethod
-    def visit(self, visitable: Formula) -> Any:
+    def visit(self, rules: List[Formula]) -> Any:
         pass
 
 
