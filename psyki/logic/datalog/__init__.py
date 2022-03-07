@@ -1,10 +1,11 @@
 from __future__ import annotations
 from abc import ABC
-from typing import Any
+from typing import Any, Callable, List
 from tensorflow import maximum, minimum, constant, SparseTensor, cast, reshape, reduce_max, tile
 from tensorflow.python.keras.backend import to_dense
 from tensorflow.python.ops.array_ops import shape
-from psyki.logic.datalog.grammar import DatalogFormula, Expression, Variable, Number, Unary
+from psyki.logic.datalog.grammar import DatalogFormula, Expression, Variable, Number, Unary, Predication, \
+    DefinitionClause, Argument, Nary, Negation
 from psyki.ski import Fuzzifier, Formula
 from psyki.utils import eta
 
@@ -20,25 +21,53 @@ class Lukasiewicz(ConstrainingFuzzifier):
         self.feature_mapping = feature_mapping
         self.class_mapping = {string: cast(to_dense(SparseTensor([[0, index]], [1.], (1, len(class_mapping)))), float)
                               for string, index in class_mapping.items()}
-
-        self.visit_mapping: dict = {
+        self.classes: dict[str, Callable] = {}
+        self._predicates: dict[str, Callable] = {}
+        self.__rhs: dict[str, Callable] = {}
+        self.visit_mapping: dict[Formula.__class__, Callable] = {
             DatalogFormula: self._visit_formula,
             Expression: self._visit_expression,
+            Negation: self._visit_negation,
             Variable: self._visit_variable,
             Number: self._visit_number,
-            Unary: self._visit_functor
+            Unary: self._visit_unary,
+            Nary: self._visit_nary
         }
 
-    def visit(self, visitable: Formula) -> Any:
+    def visit(self, rules: List[Formula]) -> Any:
+        for rule in rules:
+            self._visit(rule)
+        return self.classes
+
+    def _visit(self, visitable: Formula) -> Any:
         return self.visit_mapping.get(visitable.__class__)(visitable)
 
     def _visit_formula(self, node: DatalogFormula):
-        l = lambda y: eta(reduce_max(abs(tile(self.visit(node.lhs), (shape(y)[0], 1)) - y), axis=1))
-        r = self.visit(node.rhs)
-        return lambda x, y: eta(l(y) - r(x))
+        self._visit_definition_clause(node.lhs, self._visit(node.rhs))
+
+    def _visit_definition_clause(self, node: DefinitionClause, r: Callable):
+        definition_name = node.predication
+        predication_name = self._get_predication_name(node.arg)
+
+        if predication_name is not None:
+            class_tensor = reshape(self.class_mapping[predication_name], (1, len(self.class_mapping)))
+            l = lambda y: eta(reduce_max(abs(tile(class_tensor, (shape(y)[0], 1)) - y), axis=1))
+            if predication_name not in self.classes.keys():
+                self.classes[predication_name] = lambda x, y: eta(l(y) - r(x))
+                self.__rhs[predication_name] = lambda x: r(x)
+            else:
+                incomplete_function = self.__rhs[predication_name]
+                self.classes[predication_name] = lambda x, y: eta(l(y) - minimum(incomplete_function(x), r(x)))
+                self.__rhs[predication_name] = lambda x: minimum(incomplete_function(x), r(x))
+        else:
+            if definition_name not in self._predicates.keys():
+                self._predicates[definition_name] = lambda x: r(x)
+            else:
+                incomplete_function = self._predicates[definition_name]
+                self._predicates[definition_name] = lambda x: eta(minimum(incomplete_function(x), r(x)))
 
     def _visit_expression(self, node: Expression):
-        l, r = self.visit(node.lhs), self.visit(node.rhs)
+        l, r = self._visit(node.lhs), self._visit(node.rhs)
         operation = {
             '∧': lambda x: eta(maximum(l(x), r(x))),
             '∨': lambda x: eta(minimum(l(x), r(x))),
@@ -50,6 +79,7 @@ class Lukasiewicz(ConstrainingFuzzifier):
             '≤': lambda x: eta(constant(1.) - eta(constant(1.) - maximum(constant(0.), l(x) - r(x)))),
             '>': lambda x: eta(constant(1.) - maximum(constant(0.), l(x) - r(x))),
             '≥': lambda x: eta(minimum(eta(constant(1.) - maximum(l(x) - r(x))), eta(abs(l(x) - r(x))))),
+            'm': lambda x: minimum(l(x), r(x)),
             '+': lambda x: l(x) + r(x),
             '*': lambda x: l(x) * r(x)
         }
@@ -61,5 +91,19 @@ class Lukasiewicz(ConstrainingFuzzifier):
     def _visit_number(self, node: Number):
         return lambda _: node.value
 
-    def _visit_functor(self, node: Unary):
-        return reshape(self.class_mapping[node.value], (1, len(self.class_mapping)))
+    def _visit_unary(self, node: Unary):
+        return self._predicates[node.name]
+
+    def _visit_nary(self, node: Nary):
+        return self._predicates[node.name]
+
+    def _visit_negation(self, node: Negation):
+        return lambda x: eta(constant(1.) - self._visit(node.predicate)(x))
+
+    def _get_predication_name(self, node: Argument):
+        if node.arg is not None:
+            return self._get_predication_name(node.arg)
+        elif isinstance(node.term, Predication):
+            return node.term.name
+        else:
+            return None
