@@ -19,11 +19,11 @@ clause
     | left=clause op=('=' | '<' | '≤' | '>' | '≥' | 'm') right=clause # ClauseExpressionNoPar
     | left=clause op=('∧' | '∨') right=clause # ClauseExpressionNoPar
     | left=clause op=('→' | '↔') right=clause # ClauseExpressionNoPar
-    | literal # ClauseLiteral
+    | lit=literal # ClauseLiteral
     ;
 
 literal
-    : predicate #LiteralPred
+    : pred=predicate #LiteralPred
     | '¬' '(' pred=clause ')' #LiteralNeg
     | '¬' pred=clause #LiteralNeg
     ;
@@ -31,19 +31,19 @@ literal
 predicate
     : '⊤' # PredicateTrue
     | '⊥' # PredicateFalse
-    | term # PredicateTerm
+    | name=term # PredicateTerm
     | pred=Predication # PredicateUnary
     | pred=Predication '(' args=arguments ')' #PredicateArgs
     ;
 
 arguments
-    : last=term #LastTerm
-    | term ',' args=arguments #MoreArgs
+    : name=term #LastTerm
+    | name=term ',' args=arguments #MoreArgs
     ;
 
 term
     : var=Variable # TermVar
-    | constant # TermConst
+    | name=constant # TermConst
     ;
 
 constant
