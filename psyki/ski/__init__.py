@@ -11,7 +11,7 @@ class Injector(ABC):
     predictor: Any  # Any class that has methods fit and predict
 
     @abstractmethod
-    def inject(self, rules: dict[str, Formula]) -> None:
+    def inject(self, rules: List[Formula]) -> None:
         pass
 
 
@@ -30,3 +30,5 @@ class Formula(ABC):
     Visitable data structure that represents symbolic knowledge formula.
     """
     pass
+
+
