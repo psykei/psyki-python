@@ -4,7 +4,7 @@ from typing import Any, Callable, List
 from tensorflow import maximum, minimum, constant, SparseTensor, cast, reshape, reduce_max, tile, Tensor, gather
 from tensorflow.keras.backend import to_dense
 from tensorflow.keras.layers import Minimum, Maximum, Dense, Dot, Concatenate
-from tensorflow.python.keras.layers import Lambda
+from tensorflow.keras.layers import Lambda
 from tensorflow.python.ops.array_ops import shape
 from tensorflow.python.ops.init_ops import constant_initializer, Ones, Zeros
 from psyki.logic.datalog.grammar import DatalogFormula, Expression, Variable, Number, Unary, Predication, \

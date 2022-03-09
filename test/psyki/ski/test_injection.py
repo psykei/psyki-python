@@ -26,6 +26,7 @@ rules = get_rules('iris')
 formulae = [adapter.get_formula(DatalogParser(CommonTokenStream(DatalogLexer(InputStream(rule)))).formula()) for
             rule in rules]
 
+
 class TestInjection(unittest.TestCase):
 
     def test_lambda_layer_on_iris(self):
