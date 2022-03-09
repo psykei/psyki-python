@@ -2,8 +2,7 @@ import unittest
 import numpy as np
 from antlr4 import CommonTokenStream, InputStream
 from numpy import tile, argmax
-from numpy.testing import assert_equal
-from tensorflow import constant, float32, reshape, cast, stack
+from tensorflow import constant, float32, reshape, cast, stack, assert_equal
 from tensorflow.python.ops.array_ops import gather_nd
 from psyki.logic.datalog import Lukasiewicz
 from psyki.logic.datalog.grammar.adapters import Antlr4
