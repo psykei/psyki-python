@@ -9,7 +9,8 @@ def_clause
     ;
 
 clause
-    : '(' left=clause op='*' right=clause ')' # ClauseExpression
+    : lit=literal # ClauseLiteral
+    | '(' left=clause op='*' right=clause ')' # ClauseExpression
     | '(' left=clause op='+' right=clause ')' # ClauseExpression
     | '(' left=clause op=('=' | '<' | '≤' | '>' | '≥' | 'm') right=clause ')' # ClauseExpression
     | '(' left=clause op=('∧' | '∨') right=clause ')' # ClauseExpression
@@ -19,7 +20,6 @@ clause
     | left=clause op=('=' | '<' | '≤' | '>' | '≥' | 'm') right=clause # ClauseExpressionNoPar
     | left=clause op=('∧' | '∨') right=clause # ClauseExpressionNoPar
     | left=clause op=('→' | '↔') right=clause # ClauseExpressionNoPar
-    | lit=literal # ClauseLiteral
     ;
 
 literal

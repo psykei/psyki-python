@@ -30,5 +30,3 @@ class Formula(ABC):
     Visitable data structure that represents symbolic knowledge formula.
     """
     pass
-
-
