@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 from antlr4 import CommonTokenStream, InputStream
-from numpy import tile, argmax
-from tensorflow import constant, float32, reshape, cast, stack, assert_equal
+from tensorflow.python.ops.numpy_ops import argmax
+from tensorflow import constant, float32, reshape, cast, stack, assert_equal, tile
 from tensorflow.python.ops.array_ops import gather_nd
 from psyki.logic.datalog import Lukasiewicz
 from psyki.logic.datalog.grammar.adapters import Antlr4
@@ -155,8 +155,7 @@ class TestLukasiewicz(unittest.TestCase):
         train_x = poker_training[:, :-1]
         train_y = poker_training[:, -1]
         train_y = np.eye(10)[train_y.astype(int)]
-        zeros = reshape(constant([0.], dtype=float32), [1, ])
         x, y = cast(train_x, dtype=float32), cast(train_y, dtype=float32)
         result = stack([reshape(function(x, y), [x.shape[0], 1]) for function in functions], axis=1)
         indices = stack([range(0, len(poker_training)), argmax(train_y, axis=1)], axis=1)
-        assert_equal(gather_nd(result, indices), tile(zeros, [train_x.shape[0], 1]))
+        assert_equal(gather_nd(result, indices), 0.)
