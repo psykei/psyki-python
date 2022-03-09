@@ -42,7 +42,6 @@ jobs:
       - name: Restore Python dependencies
         run: |
           pip install -r requirements.txt
-          conda install cudatoolkit
 
       - name: Generate Datalog parser
         run: |

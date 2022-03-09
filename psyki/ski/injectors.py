@@ -3,7 +3,7 @@ from typing import Iterable, Callable, List
 from tensorflow import Tensor, stack
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Lambda
-from tensorflow.python.keras.layers import Dense
+from tensorflow.keras.layers import Dense
 from tensorflow.python.keras.saving.save import load_model
 from psyki.logic.datalog import Lukasiewicz, SubNetworkBuilder
 from psyki.ski import Injector, Formula
