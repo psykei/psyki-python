@@ -42,11 +42,11 @@ jobs:
       - name: Restore Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Generate Prolog parser
+      - name: Generate Datalog parser
         run: |
           wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
           export CLASSPATH="./antlr-4.9.2-complete.jar:$CLASSPATH"
-          java -jar ./antlr-4.9.2-complete.jar -Dlanguage=Python3 resources/Prolog.g4 -visitor -o resources/dist
+          java -jar ./antlr-4.9.2-complete.jar -Dlanguage=Python3 resources/Datalog.g4 -visitor -o resources/dist
 
       - name: Test
         run: python -m unittest
