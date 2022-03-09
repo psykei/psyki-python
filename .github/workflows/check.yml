@@ -48,5 +48,10 @@ jobs:
           export CLASSPATH="./antlr-4.9.2-complete.jar:$CLASSPATH"
           java -jar ./antlr-4.9.2-complete.jar -Dlanguage=Python3 resources/Prolog.g4 -visitor -o resources/dist
 
+      - name: Download dataset for test
+        run: |
+          wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data -O test/resources/data/poker/test.csv
+          wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data -O test/resources/data/poker/train.csv
+
       - name: Test
         run: python -m unittest

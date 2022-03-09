@@ -3,6 +3,9 @@ VERSION
 .idea/
 .vscode/
 .DS_Store
+test/resources/data/poker/
+!test/resources/data/poker/__init__.py
+*.data
 
 *~
 *.jar

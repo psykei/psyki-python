@@ -3,9 +3,11 @@ from typing import Iterable, Callable, List
 from tensorflow import Tensor, stack
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Lambda
+from tensorflow.python.keras.layers import Dense
 from tensorflow.python.keras.saving.save import load_model
-from psyki.logic.datalog import Lukasiewicz
+from psyki.logic.datalog import Lukasiewicz, SubNetworkBuilder
 from psyki.ski import Injector, Formula
+from psyki.utils import eta, eta_one_abs, eta_abs_one
 
 
 class LambdaLayer(Injector):
@@ -42,3 +44,25 @@ class LambdaLayer(Injector):
 
     def load(self, file):
         return load_model(file, custom_objects={'_cost': self._cost})
+
+
+class NetworkComposer(Injector):
+
+    def __init__(self, predictor: Model, feature_mapping: dict[str, int]):
+        self.predictor: Model = predictor
+        self.feature_mapping: dict[str, int] = feature_mapping
+        self._fuzzy_functions: Iterable[Callable] = ()
+
+    def inject(self, rules: List[Formula]) -> None:
+        predictor_input: Tensor = self.predictor.input
+        predictor_output: Tensor = self.predictor.layers[-2].output
+        activation: Callable = self.predictor.layers[-1].activation
+        output_neurons: int = self.predictor.layers[-1].output.shape[1]
+        fuzzifier = SubNetworkBuilder(predictor_input, self.feature_mapping)
+        modules = fuzzifier.visit(rules)
+        new_predictor = Dense(output_neurons, activation=activation)(Concatenate(axis=1)([predictor_output] + modules))
+        self.predictor = Model(predictor_input, new_predictor)
+
+    @staticmethod
+    def load(file: str):
+        return load_model(file, custom_objects={'eta': eta, 'eta_one_abs': eta_one_abs, 'eta_abs_one': eta_abs_one})
