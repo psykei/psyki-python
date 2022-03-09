@@ -7,6 +7,32 @@ from tensorflow.keras.layers import Dense
 from test.resources.data import get_dataset
 from sklearn.metrics import f1_score
 
+POKER_FEATURE_MAPPING = {
+        'S1': 0,
+        'R1': 1,
+        'S2': 2,
+        'R2': 3,
+        'S3': 4,
+        'R3': 5,
+        'S4': 6,
+        'R4': 7,
+        'S5': 8,
+        'R5': 9
+    }
+
+POKER_CLASS_MAPPING = {
+        'nothing': 0,
+        'pair': 1,
+        'two': 2,
+        'three': 3,
+        'straight': 4,
+        'flush': 5,
+        'full': 6,
+        'four': 7,
+        'straight_flush': 8,
+        'royal_flush': 9
+    }
+
 
 def get_mlp(input_layer: Tensor, output: int, layers: int, neurons: int, activation_function, last_activation_function):
     """

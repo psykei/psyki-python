@@ -17,9 +17,6 @@ class Antlr4(Adapter):
     def __init__(self):
         pass
 
-    """def _visit(self, node: Formula):
-        self.mapping.get(node.__class__)(node)"""
-
     def get_formula(self, ast: DatalogParser.FormulaContext) -> DatalogFormula:
         return DatalogFormula(self._get_definition_clause(ast.lhs), self._get_clause(ast.rhs), '←')
 
