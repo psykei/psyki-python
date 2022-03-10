@@ -35,14 +35,14 @@ class TestInjection(unittest.TestCase):
         predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)
         injector = LambdaLayer(predictor, class_mapping, variable_mapping)
-        injector.inject(formulae)
+        model = injector.inject(formulae)
 
-        injector.predictor.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        injector.predictor.fit(train_x, train_y, batch_size=4, epochs=30)
+        model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        model.fit(train_x, train_y, batch_size=4, epochs=30)
 
-        injector.remove()
-        injector.predictor.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        accuracy = injector.predictor.evaluate(test_x, test_y)[1]
+        model = injector.remove()
+        model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        accuracy = model.evaluate(test_x, test_y)[1]
         self.assertTrue(accuracy > 0.973)
 
     def test_network_composer_on_iris(self):
@@ -51,12 +51,11 @@ class TestInjection(unittest.TestCase):
         predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)
         injector = NetworkComposer(predictor, variable_mapping)
-        injector.inject(formulae)
+        model = injector.inject(formulae)
 
-        injector.predictor.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        injector.predictor.fit(train_x, train_y, batch_size=4, epochs=30)
+        model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        model.fit(train_x, train_y, batch_size=4, epochs=30)
 
-        injector.predictor.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        accuracy = injector.predictor.evaluate(test_x, test_y)[1]
-        self.assertTrue(accuracy > 0.896)
+        accuracy = model.evaluate(test_x, test_y)[1]
+        self.assertTrue(accuracy > 0.986)
 

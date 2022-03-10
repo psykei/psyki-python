@@ -11,7 +11,7 @@ class Injector(ABC):
     predictor: Any  # Any class that has methods fit and predict
 
     @abstractmethod
-    def inject(self, rules: List[Formula]) -> None:
+    def inject(self, rules: List[Formula]) -> Any:
         pass
 
 
