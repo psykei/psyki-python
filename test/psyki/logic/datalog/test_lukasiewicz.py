@@ -6,8 +6,8 @@ from tensorflow import constant, float32, reshape, cast, stack, assert_equal, ti
 from tensorflow.python.ops.array_ops import gather_nd
 from psyki.logic.datalog import Lukasiewicz
 from psyki.logic.datalog.grammar.adapters import Antlr4
-from psyki.resources.dist.psyki.resources.DatalogLexer import DatalogLexer
-from psyki.resources.dist.psyki.resources.DatalogParser import DatalogParser
+from psyki.resources.dist.DatalogLexer import DatalogLexer
+from psyki.resources.dist.DatalogParser import DatalogParser
 from test.resources.data import get_dataset
 from test.resources.rules import get_rules
 from test.utils import POKER_CLASS_MAPPING, POKER_FEATURE_MAPPING

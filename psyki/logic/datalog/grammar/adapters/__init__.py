@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 from psyki.logic.datalog.grammar import DatalogFormula, Expression, DefinitionClause, Argument, Negation, Unary, Nary, \
     Variable, Number, Predication
-from psyki.resources.dist.psyki.resources.DatalogParser import DatalogParser
+from psyki.resources.dist.DatalogParser import DatalogParser
 
 
 class Adapter(ABC):
