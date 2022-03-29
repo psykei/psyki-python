@@ -1,9 +1,12 @@
+import re
 from setuptools import setup, find_packages
 import pathlib
 import subprocess
 import distutils.cmd
+from psyki.resources import PATH
 
 # current directory
+
 here = pathlib.Path(__file__).parent.resolve()
 
 version_file = here / 'VERSION'
@@ -59,6 +62,28 @@ class GetVersionCommand(distutils.cmd.Command):
         print(version)
 
 
+class GenerateAntlr4Parser(distutils.cmd.Command):
+    """A custom command to generate an Antlr4 parser class for a given grammar."""
+
+    description = 'generate the Antlr4 parser for a given grammar'
+    user_options = [('file=', 'f', 'grammar file name')]
+
+    def initialize_options(self):
+        self.file = str(PATH / 'Datalog.g4')
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        from os import system, popen
+        antlr4_version = re.split(r'=', popen('cat requirements.txt | grep antlr4').read())[1][:-1]
+        system('wget https://www.antlr.org/download/antlr-' + antlr4_version + '-complete.jar')
+        system('export CLASSPATH="./antlr-' + antlr4_version + '-complete.jar:$CLASSPATH"')
+        # system('java -jar ./antlr-4.9.2-complete.jar -Dlanguage=Python3 psyki/resources/Datalog.g4 -visitor -o psyki/resources/dist')
+        system('java -jar ./antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + self.file + ' -visitor -o psyki/resources/dist')
+        system('rm ./antlr-' + antlr4_version + '-complete.jar')
+
+
 setup(
     name='psyki',  # Required
     version=version,
@@ -104,5 +129,6 @@ setup(
     },
     cmdclass={
         'get_project_version': GetVersionCommand,
+        'generate_antlr4_parser': GenerateAntlr4Parser,
     },
 )

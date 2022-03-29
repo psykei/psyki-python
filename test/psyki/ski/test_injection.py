@@ -6,9 +6,9 @@ from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras import Input, Model
 from tensorflow.python.framework.random_seed import set_random_seed
 from psyki.logic.datalog.grammar.adapters import Antlr4
-from psyki.resources.dist.psyki.resources.DatalogParser import DatalogParser
+from psyki.resources.dist.DatalogParser import DatalogParser
 from psyki.ski.injectors import LambdaLayer, NetworkComposer
-from psyki.resources.dist.psyki.resources.DatalogLexer import DatalogLexer
+from psyki.resources.dist.DatalogLexer import DatalogLexer
 from test.resources.rules import get_rules
 from test.utils import get_mlp
 
