@@ -35,7 +35,7 @@ jobs:
         run: echo ::set-output name=version::$(python setup.py get_project_version | tail -n 1)
 
       - name: Create Docker Image
-        run: docker build . -t pikalab/psyke:${{ steps.get-version.outputs.version }}
+        run: docker build . -t pikalab/psyki:${{ steps.get-version.outputs.version }}
 
       - name: Push Image on Docker Hub
-        run: docker push pikalab/psyke:${{ steps.get-version.outputs.version }}
+        run: docker push pikalab/psyki:${{ steps.get-version.outputs.version }}
