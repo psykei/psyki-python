@@ -1,9 +1,7 @@
-import re
 from setuptools import setup, find_packages
 import pathlib
 import subprocess
 import distutils.cmd
-from psyki.resources import PATH
 
 # current directory
 
@@ -69,12 +67,14 @@ class GenerateAntlr4Parser(distutils.cmd.Command):
     user_options = [('file=', 'f', 'grammar file name')]
 
     def initialize_options(self):
+        from psyki.resources import PATH
         self.file = str(PATH / 'Datalog.g4')
 
     def finalize_options(self):
         pass
 
     def run(self):
+        import re
         from os import system, popen
         antlr4_version = re.split(r'=', popen('cat requirements.txt | grep antlr4').read())[1][:-1]
         system('wget https://www.antlr.org/download/antlr-' + antlr4_version + '-complete.jar')
