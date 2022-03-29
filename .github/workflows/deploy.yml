@@ -1,0 +1,76 @@
+name: deploy
+on:
+  workflow_run:
+    workflows:
+      - check
+    types:
+      - completed
+    branches:
+      - master
+      - main
+      - develop
+env:
+  PROJECT_NAME: psyki-python
+  WORKFLOW: deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    name: Deploy on PyPI and create release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # all history
+
+      - name: Get All Tags
+        run: git fetch --tags -f
+
+      - name: Get Python Version
+        id: get-python-version
+        run: echo ::set-output name=version::$(cat .python-version)
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ steps.get-python-version.outputs.version }}
+
+      - name: Restore Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Change default logging level
+        run: sed -i -e 's/DEBUG/WARN/g' psyke/__init__.py
+
+      - name: Pack
+        run: python -m build
+
+      - name: Archive Dist Artifacts
+        if: failure() || success()
+        uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: './dist'
+
+      - name: Upload
+        run: python -m twine upload dist/*
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERANAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+
+      - name: Get Version
+        id: get-version
+        run: echo ::set-output name=version::$(python setup.py get_project_version | tail -n 1)
+
+      - name: Release Assets
+        id: upload-release-assets
+        run: |
+          set -x
+          ASSETS=()
+          for A in dist/*; do
+            ASSETS+=("-a" "$A")
+            echo "Releasing $A"
+          done
+          RELEASE_TAG='${{ steps.get-version.outputs.version }}'
+          hub release create "${ASSETS[@]}" -m "$RELEASE_TAG" "$RELEASE_TAG"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
