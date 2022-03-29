@@ -62,7 +62,7 @@ class GetVersionCommand(distutils.cmd.Command):
 setup(
     name='psyki',  # Required
     version=version,
-    description='Python-based implementation of PSyKE, i.e. a Platform for Symbolic Knowledge Extraction',
+    description='Python-based implementation of PSyKI, i.e. a Platform for Symbolic Knowledge Injection',
     license='Apache 2.0 License',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -80,7 +80,7 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Prolog'
     ],
-    keywords='knowledge extraction, symbolic ai, ske, extractor, rules, prolog',  # Optional
+    keywords='symbolic knowledge injection, ski, symbolic ai',  # Optional
     # package_dir={'': 'src'},  # Optional
     packages=find_packages(),  # Required
     include_package_data=True,

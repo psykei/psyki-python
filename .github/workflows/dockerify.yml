@@ -19,7 +19,7 @@ jobs:
     name: Dockerify with Jupyter support
     steps:
       - name: Docker Login
-        run: docker login -u ${{ secrets.DOCKERHUB_USERANAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: Checkout code
         uses: actions/checkout@v2
