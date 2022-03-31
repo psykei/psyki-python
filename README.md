@@ -27,6 +27,11 @@ Currently, implemented injectors are:
 
 ## Users
 
+PSyKI is deployed as a library on Pypi, and it can therefore be installed as Python pachage by running:
+```text
+pip install psyki
+```
+
 ### Requirements
 
 - python 3.9+
