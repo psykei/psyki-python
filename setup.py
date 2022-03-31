@@ -25,7 +25,7 @@ def format_git_describe_version(version):
 
 def get_version_from_git():
     try:
-        process = subprocess.run(["git", "describe"], cwd=str(here), check=True, capture_output=True)
+        process = subprocess.run(["git", "describe", "--tags"], cwd=str(here), check=True, capture_output=True)
         version = process.stdout.decode('utf-8').strip()
         version = format_git_describe_version(version)
         with version_file.open('w') as f:
