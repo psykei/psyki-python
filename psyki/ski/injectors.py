@@ -1,13 +1,15 @@
 from __future__ import annotations
 from typing import Iterable, Callable, List, Any
-from tensorflow import Tensor, stack
+from pandas import DataFrame
+from tensorflow import Tensor, stack, zeros
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Lambda
 from tensorflow.keras.layers import Dense
-from tensorflow.keras.models import clone_model
+from tensorflow.python.keras import Input
 from tensorflow.python.keras.saving.save import load_model
+from psyki.logic.prolog.grammar import PrologFormula
 from psyki.logic.datalog import Lukasiewicz, SubNetworkBuilder
-from psyki.ski import Injector, Formula
+from psyki.ski import Injector, Formula, Fuzzifier
 from psyki.utils import eta, eta_one_abs, eta_abs_one
 
 
@@ -70,3 +72,52 @@ class NetworkComposer(Injector):
     @staticmethod
     def load(file: str):
         return load_model(file, custom_objects={'eta': eta, 'eta_one_abs': eta_one_abs, 'eta_abs_one': eta_abs_one})
+
+
+class DataEnricher(Injector):
+
+    class EnrichedPredictor(Model):
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(args, kwargs)
+            self.engine = None
+            self.queries = None
+            self.mapping = None
+
+        def initialise(self, engine: Fuzzifier, queries: List[Formula], mapping=None):
+            self.engine = engine
+            self.queries = queries
+            self.mapping = mapping
+
+        def get_config(self):
+            pass
+
+        def call(self, inputs, training=None, mask=None):
+            # TODO: for the moment input is bounded to 2 dimensions
+            new_inputs = zeros(shape=(inputs.shape[0], inputs.shape[1] + len(self.queries)))
+            for i, sample in enumerate(inputs):
+                results = self.engine.visit(self._merge(sample))
+                for j, result in enumerate(results):
+                    if isinstance(result, str):
+                        results[j] = self.mapping[result]
+                new_inputs[i] = results
+            return new_inputs
+
+        def _merge(self, sample):
+            # replace variable X with the constant equivalent to the value of sample
+            textual_sample = '[' + ','.join(element for element in sample) + ']'
+            return [PrologFormula(query.string.replace('X', textual_sample)) for query in self.queries]
+
+    def __init__(self, predictor: Model, dataset: DataFrame, fuzzifier: Fuzzifier, mapping=None):
+        self.predictor: Model = predictor
+        self.dataset: DataFrame = dataset
+        self.fuzzifier = fuzzifier
+        self.mapping = mapping
+
+    def inject(self, rules: List[Formula]) -> Any:
+        input_length = self.predictor.input.shape[1] + len(rules)
+        new_input = Input(input_length)
+        new_predictor = self.EnrichedPredictor(new_input, self.predictor.layers[-1])
+        new_predictor.initialise(self.fuzzifier, rules, self.mapping)
+        delattr(new_predictor, 'initialise')
+        return new_predictor
