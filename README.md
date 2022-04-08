@@ -1,5 +1,12 @@
 # PSyKI
 
+Some quick links:
+<!-- * [Home Page](https://apice.unibo.it/xwiki/bin/view/PSyKI/) -->
+* [GitHub Repository](https://github.com/psykei/psyki-python)
+* [PyPi Repository](https://pypi.org/project/psyki/)
+* [Issues](https://github.com/psykei/psyki-python/issues)
+
+
 ## Intro
 
 PSyKI (Platform for Symbolic Knowledge Injection) is a library for Symbolic Knowledge Injection (SKI) into sub-symbolic predictors.
