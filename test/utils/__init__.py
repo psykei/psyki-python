@@ -1,5 +1,5 @@
 from typing import List
-from numpy import argmax, array
+from numpy import argmax
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from tensorflow import Tensor

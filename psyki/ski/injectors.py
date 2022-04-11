@@ -74,7 +74,14 @@ class NetworkComposer(Injector):
 
 
 class DataEnricher(Injector):
+
     class EnrichedPredictor(Model):
+
+        def __init__(self, *args, **kwargs):
+            super(DataEnricher.EnrichedPredictor, self).__init__(*args, **kwargs)
+            self.engine = None
+            self.queries = None
+            self.initialised = False
 
         def call(self, inputs, training=None, mask=None):
             x = self.layers[0](inputs)
@@ -86,8 +93,12 @@ class DataEnricher(Injector):
             pass
 
         def initialise(self, engine: Fuzzifier, queries: List[Formula]):
-            self.engine = engine
-            self.queries = queries
+            if not self.initialised:
+                self.engine = engine
+                self.queries = queries
+                self.initialised = True
+            else:
+                raise Exception("Cannot initialise model more than one time")
 
         def fit(self,
                 x=None,
@@ -170,14 +181,14 @@ class DataEnricher(Injector):
     def inject(self, rules: List[Formula]) -> Any:
         input_length = self.predictor.input.shape[1] + len(rules)
         new_input = Input((input_length,))
-        # new_output = self.predictor.layers[1:]
+
+        # TODO: for now one can inject directly at input layer level, in future let user free to specify the layer.
         self.predictor.layers[1].build(new_input.shape)
         x = self.predictor.layers[1](new_input)
         for layer in self.predictor.layers[2:]:
             x = layer(x)
         new_output = x
+
         new_predictor = self.EnrichedPredictor(new_input, new_output)
-        # new_predictor = Model(new_input, new_output)
         new_predictor.initialise(self.fuzzifier, rules)
-        # delattr(new_predictor, 'initialise')
         return new_predictor
