@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Iterable, Callable, List, Any
 from numpy import ones
 from pandas import DataFrame
-from tensorflow import Tensor, stack
+from tensorflow import Tensor, stack, gather
 from tensorflow.keras import Model, Input
 from tensorflow.keras.layers import Concatenate, Lambda, Dense
 from tensorflow.python.keras.saving.save import load_model
@@ -81,21 +81,20 @@ class DataEnricher(Injector):
             super(DataEnricher.EnrichedPredictor, self).__init__(*args, **kwargs)
             self.engine = None
             self.queries = None
+            self.injection_layer = 0
             self.initialised = False
 
         def call(self, inputs, training=None, mask=None):
-            x = self.layers[0](inputs)
-            for layer in self.layers[1:]:
-                x = layer(x)
-            return x
+            return self._link_network(inputs)
 
         def get_config(self):
             pass
 
-        def initialise(self, engine: Fuzzifier, queries: List[Formula]):
+        def initialise(self, engine: Fuzzifier, queries: List[Formula], injection_layer=1):
             if not self.initialised:
                 self.engine = engine
                 self.queries = queries
+                self.injection_layer = injection_layer
                 self.initialised = True
             else:
                 raise Exception("Cannot initialise model more than one time")
@@ -153,7 +152,7 @@ class DataEnricher(Injector):
                      **kwargs):
             x = self._enrich(x)
             return super().evaluate(x, y, batch_size, verbose, sample_weight, steps, callbacks, max_queue_size, workers,
-                                    use_multiprocessing, return_dict)
+                                    use_multiprocessing, return_dict, **kwargs)
 
         def _enrich(self, inputs):
             # TODO: for the moment input is bounded to 2 dimensions
@@ -173,22 +172,70 @@ class DataEnricher(Injector):
             textual_sample = '[' + ','.join(str(element) for element in sample) + ']'
             return [PrologFormula(query.string.replace('X', textual_sample)) for query in self.queries]
 
-    def __init__(self, predictor: Model, dataset: DataFrame, fuzzifier: Fuzzifier):
+        def _link_network(self, inputs):
+            x = self.layers[0](inputs)
+            if self.injection_layer == 0:
+                for layer in self.layers[1:]:
+                    x = layer(x)
+                return x
+            else:
+                # First gather layer
+                x = self.layers[1](x, indices=list(range(0, x.shape[1] - len(self.queries))), axis=1)
+
+                for layer in self.layers[2:self.injection_layer + 2]:
+                    x = layer(x)
+
+                # Second gather layer
+                xi = self.layers[self.injection_layer + 2](inputs,
+                                                           indices=list(range(inputs.shape[1] - len(self.queries),
+                                                                              inputs.shape[1])), axis=1)
+
+                # Concatenate layer
+                x = self.layers[self.injection_layer + 3]([x, xi])
+
+                for layer in self.layers[self.injection_layer + 4:]:
+                    x = layer(x)
+                return x
+
+    def __init__(self, predictor: Model, dataset: DataFrame, fuzzifier: Fuzzifier, injection_layer=0):
         self.predictor: Model = predictor
         self.dataset: DataFrame = dataset
         self.fuzzifier = fuzzifier
+        self.injection_layer = injection_layer
 
     def inject(self, rules: List[Formula]) -> Any:
         input_length = self.predictor.input.shape[1] + len(rules)
         new_input = Input((input_length,))
-
-        # TODO: for now one can inject directly at input layer level, in future let user free to specify the layer.
-        self.predictor.layers[1].build(new_input.shape)
-        x = self.predictor.layers[1](new_input)
-        for layer in self.predictor.layers[2:]:
-            x = layer(x)
-        new_output = x
-
+        new_output = DataEnricher.link_network(new_input, self.predictor.layers, self.injection_layer, len(rules))
         new_predictor = self.EnrichedPredictor(new_input, new_output)
-        new_predictor.initialise(self.fuzzifier, rules)
+        new_predictor.initialise(self.fuzzifier, rules, self.injection_layer)
         return new_predictor
+
+    @staticmethod
+    def link_network(input_layer, layers, injection_layer, queries_len):
+        if injection_layer == 0:
+            layers[1].build(input_layer.shape)
+            x = layers[1](input_layer)
+            for layer in layers[2:]:
+                x = layer(x)
+            new_output = x
+        else:
+            input_length = input_layer.shape[1] - queries_len
+            x = layers[1](gather(params=input_layer, indices=list(range(0, input_length)), axis=1))
+
+            for layer in layers[2:injection_layer + 1]:
+                x = layer(x)
+
+            output_shape = x.shape
+            new_shape = (output_shape[0], output_shape[1] + queries_len)
+            layer_after_injection = layers[injection_layer + 1]
+            layers[injection_layer + 1].build(new_shape)
+            skip_features = gather(params=input_layer,
+                                   indices=list(range(input_length, input_length + queries_len)),
+                                   axis=1)
+            x = layer_after_injection(Concatenate(axis=1)([x, skip_features]))
+
+            for layer in layers[injection_layer + 2:]:
+                x = layer(x)
+            new_output = x
+        return new_output

@@ -14,6 +14,7 @@ from test.resources.rules.prolog import PATH
 from test.resources.rules import get_rules
 from test.utils import get_mlp
 
+
 adapter = Antlr4()
 x, y = load_iris(return_X_y=True, as_frame=True)
 encoder = OneHotEncoder(sparse=False)
@@ -64,6 +65,7 @@ class TestInjection(unittest.TestCase):
 
     def test_data_enricher(self):
         set_random_seed(0)
+        injection_layer = 0
         input_layer = Input((4,))
         predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)
@@ -72,7 +74,7 @@ class TestInjection(unittest.TestCase):
         q_path = str(PATH / 'iris-q')
 
         fuzzifier = EnricherFuzzifier(kb_path + '.txt', class_mapping)
-        injector = DataEnricher(predictor, train_x, fuzzifier)
+        injector = DataEnricher(predictor, train_x, fuzzifier, injection_layer)
         queries = [PrologFormula(rule) for rule in get_rules(q_path)]
         new_predictor = injector.inject(queries)
 

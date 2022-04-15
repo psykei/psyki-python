@@ -79,7 +79,6 @@ class GenerateAntlr4Parser(distutils.cmd.Command):
         antlr4_version = re.split(r'=', popen('cat requirements.txt | grep antlr4').read())[1][:-1]
         system('wget https://www.antlr.org/download/antlr-' + antlr4_version + '-complete.jar')
         system('export CLASSPATH="./antlr-' + antlr4_version + '-complete.jar:$CLASSPATH"')
-        # system('java -jar ./antlr-4.9.2-complete.jar -Dlanguage=Python3 psyki/resources/Datalog.g4 -visitor -o psyki/resources/dist')
         system('java -jar ./antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + self.file + ' -visitor -o psyki/resources/dist')
         system('rm ./antlr-' + antlr4_version + '-complete.jar')
 
