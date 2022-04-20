@@ -31,8 +31,7 @@ class TestInjection(unittest.TestCase):
 
     def test_lambda_layer_on_iris(self):
         set_random_seed(0)
-        formulae = [adapter.get_formula(DatalogParser(CommonTokenStream(DatalogLexer(InputStream(rule)))).formula()) for
-                    rule in get_rules('iris')]
+        formulae = [adapter.get_formula_from_string(rule) for rule in get_rules('iris')]
         input_layer = Input((4,))
         predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)
@@ -49,8 +48,7 @@ class TestInjection(unittest.TestCase):
 
     def test_network_composer_on_iris(self):
         set_random_seed(0)
-        formulae = [adapter.get_formula(DatalogParser(CommonTokenStream(DatalogLexer(InputStream(rule)))).formula()) for
-                    rule in get_rules('iris')]
+        formulae = [adapter.get_formula_from_string(rule) for rule in get_rules('iris')]
         input_layer = Input((4,))
         predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)

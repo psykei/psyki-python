@@ -1,8 +1,14 @@
 from abc import ABC, abstractmethod
+from os import system
+from os.path import isdir
 from typing import Any
-from psyki.logic.datalog.grammar import DatalogFormula, Expression, DefinitionClause, Argument, Negation, Unary, Nary, \
-    Variable, Number, Predication
+from antlr4 import CommonTokenStream, InputStream
+from psyki.logic.datalog.grammar import *
+from psyki.resources import PATH
+if not isdir(str(PATH / 'dist')):
+    system("python setup.py generate_antlr4_parser")
 from psyki.resources.dist.DatalogParser import DatalogParser
+from psyki.resources.dist.DatalogLexer import DatalogLexer
 
 
 class Adapter(ABC):
@@ -11,11 +17,18 @@ class Adapter(ABC):
     def get_formula(self, ast: Any) -> DatalogFormula:
         pass
 
+    @abstractmethod
+    def get_formula_from_string(self, rule: str) -> DatalogFormula:
+        pass
+
 
 class Antlr4(Adapter):
 
     def __init__(self):
         pass
+
+    def get_formula_from_string(self, rule: str) -> DatalogFormula:
+        return self.get_formula(DatalogParser(CommonTokenStream(DatalogLexer(InputStream(rule)))).formula())
 
     def get_formula(self, ast: DatalogParser.FormulaContext) -> DatalogFormula:
         return DatalogFormula(self._get_definition_clause(ast.lhs), self._get_clause(ast.rhs), '←')
