@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
-from os import system
 from os.path import isdir
 from typing import Any
 from antlr4 import CommonTokenStream, InputStream
 from psyki.logic.datalog.grammar import *
-from psyki.resources import PATH
+from psyki.resources import PATH, create_antlr4_parser
 if not isdir(str(PATH / 'dist')):
-    system("python setup.py generate_antlr4_parser")
+    create_antlr4_parser(str(PATH / 'Datalog.g4'), str(PATH / 'dist'))
 from psyki.resources.dist.DatalogParser import DatalogParser
 from psyki.resources.dist.DatalogLexer import DatalogLexer
 
