@@ -2,10 +2,9 @@ from setuptools import setup, find_packages
 import pathlib
 import subprocess
 import distutils.cmd
+from psyki.resources import create_antlr4_parser
 
 # current directory
-from resources import create_antlr4_parser
-
 here = pathlib.Path(__file__).parent.resolve()
 
 version_file = here / 'VERSION'
