@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 import pathlib
 import subprocess
 import distutils.cmd
-from psyki.resources import create_antlr4_parser
 
 # current directory
+
 here = pathlib.Path(__file__).parent.resolve()
 
 version_file = here / 'VERSION'
@@ -74,7 +74,13 @@ class GenerateAntlr4Parser(distutils.cmd.Command):
         pass
 
     def run(self):
-        create_antlr4_parser(self.file, 'psyki/resources/dist')
+        import re
+        from os import system, popen
+        antlr4_version = re.split(r'=', popen('cat requirements.txt | grep antlr4').read())[1][:-1]
+        system('wget https://www.antlr.org/download/antlr-' + antlr4_version + '-complete.jar')
+        system('export CLASSPATH="./antlr-' + antlr4_version + '-complete.jar:$CLASSPATH"')
+        system('java -jar ./antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + self.file + ' -visitor -o psyki/resources/dist')
+        system('rm ./antlr-' + antlr4_version + '-complete.jar')
 
 
 setup(
