@@ -52,20 +52,26 @@ class LambdaLayer(Injector):
 
 class NetworkComposer(Injector):
 
-    def __init__(self, predictor: Model, feature_mapping: dict[str, int]):
+    def __init__(self, predictor: Model, feature_mapping: dict[str, int], layer: int = -1):
         self.predictor: Model = predictor
         self.feature_mapping: dict[str, int] = feature_mapping
+        self.layer = layer
         self._fuzzy_functions: Iterable[Callable] = ()
 
     def inject(self, rules: List[Formula]) -> Model:
         predictor_input: Tensor = self.predictor.input
-        predictor_output: Tensor = self.predictor.layers[-2].output
-        activation: Callable = self.predictor.layers[-1].activation
-        output_neurons: int = self.predictor.layers[-1].output.shape[1]
         fuzzifier = SubNetworkBuilder(predictor_input, self.feature_mapping)
         modules = fuzzifier.visit(rules)
-        new_predictor = Dense(output_neurons, activation=activation)(Concatenate(axis=1)([predictor_output] + modules))
-        self.predictor = Model(predictor_input, new_predictor)
+        x = self.predictor.layers[1](predictor_input)
+        for i, layer in enumerate(self.predictor.layers[2:self.layer]):
+            x = layer(x)
+        x = Concatenate(axis=1)([x] + modules)
+        self.predictor.layers[self.layer].build(x.shape)
+        x = self.predictor.layers[self.layer](x)
+        if self.layer != -1:
+            for i, layer in enumerate(self.predictor.layers[self.layer + 1:]):
+                x = layer(x)
+        self.predictor = Model(predictor_input, x)
         return self.predictor
 
     @staticmethod

@@ -39,6 +39,7 @@ predicate
 arguments
     : name=term #LastTerm
     | name=term ',' args=arguments #MoreArgs
+    | #None
     ;
 
 term
@@ -58,6 +59,6 @@ boolean
     ;
 
 Predication: [a-z]([a-z]|[0-9]|[_])*;
-Variable : [A-Z]([a-z]|[A-Z]|[0-9])*;
+Variable : [A-Z]([a-z]|[A-Z]|[0-9]|[_])*;
 Number : [-]?([0-9]*[.])?[0-9]+;
 WS : [ \t\n]+ -> skip ;
