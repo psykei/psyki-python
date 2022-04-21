@@ -52,11 +52,7 @@ jobs:
           path: './dist'
 
       - name: Upload
-        run: |
-          mkdir -p dist/psyki/resources/
-          cp psyki/resources/*.g4 dist/psyki/resources/
-          cp requirements.txt dist/
-          python -m twine upload dist/*
+        run: python -m twine upload dist/*
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
