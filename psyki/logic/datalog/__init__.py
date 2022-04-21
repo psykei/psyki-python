@@ -210,9 +210,9 @@ class SubNetworkBuilder(StructuringFuzzifier):
         return Dense(1, kernel_initializer=Ones, activation=eta_abs_one, trainable=False)(self._visit(node.predicate))
 
     def _get_predication_name(self, node: Argument):
-        if node.arg is not None:
+        if node is not None and node.arg is not None:
             return self._get_predication_name(node.arg)
-        elif isinstance(node.term, Predication):
+        elif node is not None and isinstance(node.term, Predication):
             return node.term.name
         else:
             return None
