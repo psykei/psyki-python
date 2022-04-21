@@ -1,3 +1,5 @@
 include VERSION
+include psyki/resources/*.g4
+include requirements.txt
 exclude test/*
 exclude main.py
