@@ -53,6 +53,7 @@ jobs:
 
       - name: Upload
         run: |
+          mkdir dist/psyki/resources/
           cp psyki/resources/*.g4 dist/psyki/resources/
           cp requirements.txt dist/
           python -m twine upload dist/*
