@@ -4,12 +4,19 @@ from numpy import ones
 from pandas import DataFrame
 from tensorflow import Tensor, stack, gather
 from tensorflow.keras import Model, Input
-from tensorflow.keras.layers import Concatenate, Lambda, Dense
+from tensorflow.keras.layers import Concatenate, Lambda
+from tensorflow.keras.models import clone_model
 from tensorflow.python.keras.saving.save import load_model
 from psyki.logic.prolog.grammar import PrologFormula
 from psyki.logic.datalog import Lukasiewicz, SubNetworkBuilder
 from psyki.ski import Injector, Formula, Fuzzifier
 from psyki.utils import eta, eta_one_abs, eta_abs_one
+
+
+def _model_deep_copy(predictor: Model) -> Model:
+    new_predictor = clone_model(predictor)
+    new_predictor.set_weights(predictor.get_weights())
+    return new_predictor
 
 
 class LambdaLayer(Injector):
@@ -22,16 +29,27 @@ class LambdaLayer(Injector):
         self.gamma: float = gamma
         self._fuzzy_functions: Iterable[Callable] = ()
 
+    class ConstrainedModel(Model):
+
+        def call(self, inputs, training=None, mask=None):
+            return super().call(inputs, training, mask)
+
+        def get_config(self):
+            pass
+
+        def remove_constraints(self) -> Model:
+            return Model(self.input, self.layers[-3].output)
+
     def inject(self, rules: List[Formula]) -> Model:
+        predictor = _model_deep_copy(self.predictor)
         fuzzifier = Lukasiewicz(self.class_mapping, self.feature_mapping)
         dict_functions = fuzzifier.visit(rules)
         self._fuzzy_functions = [dict_functions[name] for name, _ in sorted(self.class_mapping.items(),
                                                                             key=lambda i: i[1])]
-        predictor_output = self.predictor.layers[-1].output
-        x = Concatenate(axis=1)([self.predictor.input, predictor_output])
-        x = Lambda(self._cost, self.predictor.output.shape)(x)
-        self.predictor = Model(self.predictor.input, x)
-        return self.predictor
+        predictor_output = predictor.layers[-1].output
+        x = Concatenate(axis=1)([predictor.input, predictor_output])
+        x = Lambda(self._cost, predictor.output.shape)(x)
+        return self.ConstrainedModel(predictor.input, x)
 
     def _cost(self, output_layer: Tensor) -> Tensor:
         input_len = self.predictor.input.shape[1]
@@ -59,20 +77,20 @@ class NetworkComposer(Injector):
         self._fuzzy_functions: Iterable[Callable] = ()
 
     def inject(self, rules: List[Formula]) -> Model:
-        predictor_input: Tensor = self.predictor.input
+        predictor = _model_deep_copy(self.predictor)
+        predictor_input: Tensor = predictor.input
         fuzzifier = SubNetworkBuilder(predictor_input, self.feature_mapping)
         modules = fuzzifier.visit(rules)
-        x = self.predictor.layers[1](predictor_input)
-        for i, layer in enumerate(self.predictor.layers[2:self.layer]):
+        x = predictor.layers[1](predictor_input)
+        for i, layer in enumerate(predictor.layers[2:self.layer]):
             x = layer(x)
         x = Concatenate(axis=1)([x] + modules)
-        self.predictor.layers[self.layer].build(x.shape)
-        x = self.predictor.layers[self.layer](x)
+        predictor.layers[self.layer].build(x.shape)
+        x = predictor.layers[self.layer](x)
         if self.layer != -1:
-            for i, layer in enumerate(self.predictor.layers[self.layer + 1:]):
+            for i, layer in enumerate(predictor.layers[self.layer + 1:]):
                 x = layer(x)
-        self.predictor = Model(predictor_input, x)
-        return self.predictor
+        return Model(predictor_input, x)
 
     @staticmethod
     def load(file: str):
@@ -210,9 +228,10 @@ class DataEnricher(Injector):
         self.injection_layer = injection_layer
 
     def inject(self, rules: List[Formula]) -> Any:
-        input_length = self.predictor.input.shape[1] + len(rules)
+        predictor = _model_deep_copy(self.predictor)
+        input_length = predictor.input.shape[1] + len(rules)
         new_input = Input((input_length,))
-        new_output = DataEnricher.link_network(new_input, self.predictor.layers, self.injection_layer, len(rules))
+        new_output = DataEnricher.link_network(new_input, predictor.layers, self.injection_layer, len(rules))
         new_predictor = self.EnrichedPredictor(new_input, new_output)
         new_predictor.initialise(self.fuzzifier, rules, self.injection_layer)
         return new_predictor
