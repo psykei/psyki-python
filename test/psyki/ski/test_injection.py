@@ -1,5 +1,4 @@
 import unittest
-from antlr4 import InputStream, CommonTokenStream
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
@@ -7,9 +6,7 @@ from tensorflow.keras import Input, Model
 from tensorflow.python.framework.random_seed import set_random_seed
 from psyki.logic.prolog import EnricherFuzzifier, PrologFormula
 from psyki.logic.datalog.grammar.adapters import Antlr4
-from psyki.resources.dist.DatalogParser import DatalogParser
 from psyki.ski.injectors import LambdaLayer, NetworkComposer, DataEnricher
-from psyki.resources.dist.DatalogLexer import DatalogLexer
 from test.resources.rules.prolog import PATH
 from test.resources.rules import get_rules
 from test.utils import get_mlp
@@ -41,7 +38,7 @@ class TestInjection(unittest.TestCase):
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         model.fit(train_x, train_y, batch_size=4, epochs=30, verbose=0)
 
-        model = injector.remove()
+        model = model.remove_constraints()
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         accuracy = model.evaluate(test_x, test_y)[1]
         self.assertTrue(accuracy > 0.973)
@@ -79,5 +76,5 @@ class TestInjection(unittest.TestCase):
         new_predictor.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         new_predictor.fit(train_x, train_y, batch_size=4, epochs=30, verbose=0)
         accuracy = new_predictor.evaluate(test_x, test_y)[1]
-        self.assertTrue(accuracy > 0.986)
+        self.assertTrue(accuracy > 0.9733)
 
