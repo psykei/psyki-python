@@ -42,12 +42,15 @@ class Antlr4(Adapter):
             return Argument(self._get_term(node.name))
 
     def _get_clause(self,
-                    node: DatalogParser.ClauseExpressionContext or DatalogParser.ClauseExpressionNoParContext or DatalogParser.ClauseLiteralContext):
+                    node: DatalogParser.ClauseExpressionContext or DatalogParser.ClauseExpressionNoParContext or
+                          DatalogParser.ClauseLiteralContext or DatalogParser.ClauseClauseContext):
         if isinstance(node, DatalogParser.ClauseExpressionContext) \
                 or isinstance(node, DatalogParser.ClauseExpressionNoParContext):
             return Expression(self._get_clause(node.left), self._get_clause(node.right), node.op.text)
         elif isinstance(node, DatalogParser.ClauseLiteralContext):
             return self._get_literal(node.lit)
+        elif isinstance(node, DatalogParser.ClauseClauseContext):
+            return self._get_clause(node.c)
 
     def _get_literal(self, node: DatalogParser.LiteralPredContext or DatalogParser.LiteralNegContext):
         if isinstance(node, DatalogParser.LiteralNegContext):

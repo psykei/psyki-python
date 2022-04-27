@@ -20,6 +20,7 @@ clause
     | left=clause op=('=' | '<' | '≤' | '>' | '≥' | 'm') right=clause # ClauseExpressionNoPar
     | left=clause op=('∧' | '∨') right=clause # ClauseExpressionNoPar
     | left=clause op=('→' | '↔') right=clause # ClauseExpressionNoPar
+    | '(' c=clause ')' #ClauseClause
     ;
 
 literal
