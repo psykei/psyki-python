@@ -155,14 +155,14 @@ class SubNetworkBuilder(StructuringFuzzifier):
                 self.__rhs[predication_name] = r
             else:
                 incomplete_function = self.__rhs[predication_name]
-                self.classes[predication_name] = minimum(incomplete_function, r)
-                self.__rhs[predication_name] = minimum(incomplete_function, r)
+                self.classes[predication_name] = maximum(incomplete_function, r)
+                self.__rhs[predication_name] = maximum(incomplete_function, r)
         else:
             if definition_name not in self._predicates.keys():
                 self._predicates[definition_name] = r
             else:
                 incomplete_function = self._predicates[definition_name]
-                self._predicates[definition_name] = minimum(incomplete_function, r)
+                self._predicates[definition_name] = maximum(incomplete_function, r)
 
     def _visit_expression(self, node: Expression):
         previous_layer = [self._visit(node.lhs), self._visit(node.rhs)]
