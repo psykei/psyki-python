@@ -84,15 +84,21 @@ class NetworkComposer(Injector):
         fuzzifier = SubNetworkBuilder(predictor_input, self.feature_mapping)
         modules = fuzzifier.visit(rules)
         # new_added_layers = len(Model(predictor_input, modules).layers)
-        x = predictor.layers[1](predictor_input)
-        for i, layer in enumerate(predictor.layers[2:self.layer]):
-            x = layer(x)
-        x = Concatenate(axis=1)([x] + modules)
-        predictor.layers[self.layer].build(x.shape)
-        x = predictor.layers[self.layer](x)
-        if self.layer != -1:
-            for i, layer in enumerate(predictor.layers[self.layer + 1:]):
+        if self.layer == 0:
+            x = Concatenate(axis=1)([predictor_input] + modules)
+            predictor.layers[1].build(x.shape)
+            for layer in predictor.layers[1:]:
                 x = layer(x)
+        else:
+            x = predictor.layers[1](predictor_input)
+            for layer in predictor.layers[2:self.layer]:
+                x = layer(x)
+            x = Concatenate(axis=1)([x] + modules)
+            predictor.layers[self.layer].build(x.shape)
+            x = predictor.layers[self.layer](x)
+            if self.layer != -1:
+                for layer in predictor.layers[self.layer + 1:]:
+                    x = layer(x)
         new_predictor = Model(predictor_input, x)
 
         # Set all old weights and initialize the new ones.
