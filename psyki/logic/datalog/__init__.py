@@ -133,6 +133,7 @@ class SubNetworkBuilder(StructuringFuzzifier):
             Unary: self._visit_unary,
             Nary: self._visit_nary
         }
+        self._trainable = False
 
     def visit(self, rules: List[Formula]) -> Any:
         for rule in rules:
@@ -143,6 +144,7 @@ class SubNetworkBuilder(StructuringFuzzifier):
         return self.visit_mapping.get(visitable.__class__)(visitable)
 
     def _visit_formula(self, node: DatalogFormula):
+        self._trainable = node.op == '⇐'
         self._visit_definition_clause(node.lhs, self._visit(node.rhs))
 
     def _visit_definition_clause(self, node: DefinitionClause, r: Tensor):
@@ -172,28 +174,29 @@ class SubNetworkBuilder(StructuringFuzzifier):
             '→': None,
             '↔': None,
             '=': Dense(1, kernel_initializer=constant_initializer([1, -1]),
-                       activation=eta_one_abs, trainable=False)(Concatenate(axis=1)(previous_layer)),
+                       activation=eta_one_abs, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
             '<': Dense(1, kernel_initializer=constant_initializer([-1, 1]),
-                       activation=eta, trainable=False)(Concatenate(axis=1)(previous_layer)),
+                       activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
             '≤': Maximum()([Dense(1, kernel_initializer=constant_initializer([-1, 1]),
-                                  activation=eta, trainable=False)(Concatenate(axis=1)(previous_layer)),
-                            Dense(1, kernel_initializer=constant_initializer([1, -1]),
-                                  activation=eta_one_abs, trainable=False)(Concatenate(axis=1)(previous_layer))]),
+                                  activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
+                            Dense(1, kernel_initializer=constant_initializer([1, -1]), activation=eta_one_abs,
+                                  trainable=self._trainable)(Concatenate(axis=1)(previous_layer))]),
             '>': Dense(1, kernel_initializer=constant_initializer([1, -1]),
-                       activation=eta, trainable=False)(Concatenate(axis=1)(previous_layer)),
+                       activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
             '≥': Maximum()([Dense(1, kernel_initializer=constant_initializer([1, -1]),
-                                  activation=eta, trainable=False)(Concatenate(axis=1)(previous_layer)),
-                            Dense(1, kernel_initializer=constant_initializer([1, -1]),
-                                  activation=eta_one_abs, trainable=False)(Concatenate(axis=1)(previous_layer))]),
+                                  activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
+                            Dense(1, kernel_initializer=constant_initializer([1, -1]), activation=eta_one_abs,
+                                  trainable=self._trainable)(Concatenate(axis=1)(previous_layer))]),
             'm': Minimum()(previous_layer),
-            '+': Dense(1, kernel_initializer=Ones, activation='linear', trainable=False)(Concatenate(axis=1)
-                                                                                         (previous_layer)),
+            '+': Dense(1, kernel_initializer=Ones, activation='linear', trainable=self._trainable)(Concatenate(axis=1)
+                                                                                                   (previous_layer)),
             '*': Dot(axes=1)(previous_layer)
         }
         return operation.get(node.op)
 
     def _visit_variable(self, node: Variable):
-        return Lambda(lambda x: gather(x, [self.feature_mapping[node.name]], axis=1))(self.predictor_input) if node.name in self.feature_mapping.keys() else None
+        return Lambda(lambda x: gather(x, [self.feature_mapping[node.name]], axis=1))(self.predictor_input)\
+            if node.name in self.feature_mapping.keys() else None
 
     def _visit_number(self, node: Number):
         return Dense(1, kernel_initializer=Zeros,
