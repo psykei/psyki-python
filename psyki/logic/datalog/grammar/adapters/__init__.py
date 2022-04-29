@@ -30,7 +30,7 @@ class Antlr4(Adapter):
         return self.get_formula(DatalogParser(CommonTokenStream(DatalogLexer(InputStream(rule)))).formula())
 
     def get_formula(self, ast: DatalogParser.FormulaContext) -> DatalogFormula:
-        return DatalogFormula(self._get_definition_clause(ast.lhs), self._get_clause(ast.rhs), '←')
+        return DatalogFormula(self._get_definition_clause(ast.lhs), self._get_clause(ast.rhs), self._get_clause(ast.op))
 
     def _get_definition_clause(self, node: DatalogParser.DefPredicateArgsContext):
         return DefinitionClause(node.pred.text, self._get_arguments(node.args))
