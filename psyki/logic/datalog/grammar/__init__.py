@@ -1,6 +1,43 @@
 from __future__ import annotations
 from abc import ABC
+from typing import Iterable
 from psyki.ski import Formula
+import psyki.logic.datalog as datalog
+
+
+def optimize_datalog_formula(formula: Formula):
+    if isinstance(formula, datalog.grammar.Expression):
+        lhs = formula.lhs
+        rhs = formula.rhs
+        op = formula.op
+        if op in ('∧', '∨', '+'):
+            if isinstance(lhs, datalog.grammar.Expression):
+                if lhs.op == op:
+                    optimize_datalog_formula(lhs)
+                    for clause in lhs.nary:
+                        formula.nary.append(clause)
+                    formula.lhs = None
+                else:
+                    formula.nary.append(lhs)
+            else:
+                formula.nary.append(lhs)
+            if isinstance(rhs, datalog.grammar.Expression):
+                if rhs.op == op:
+                    optimize_datalog_formula(rhs)
+                    for clause in rhs.nary:
+                        formula.nary.append(clause)
+                    formula.rhs = None
+                else:
+                    formula.nary.append(rhs)
+            else:
+                formula.nary.append(rhs)
+    else:
+        if hasattr(formula, 'lhs'):
+            optimize_datalog_formula(formula.lhs)
+        if hasattr(formula, 'rhs'):
+            optimize_datalog_formula(formula.rhs)
+        if hasattr(formula, 'predicate'):
+            optimize_datalog_formula(formula.predicate)
 
 
 class DatalogFormula(Formula):
@@ -30,13 +67,17 @@ class Clause(Formula, ABC):
 
 class Expression(Clause):
 
-    def __init__(self, lhs: Clause, rhs: Clause, op: str):
+    def __init__(self, lhs: Clause, rhs: Clause, op: str, nary: Iterable[Clause] = []):
         self.lhs: Clause = lhs
         self.rhs: Clause = rhs
+        self.nary: list[Clause] = list(nary)
         self.op: str = op
 
     def __str__(self) -> str:
-        return '((' + str(self.lhs) + ')' + self.op + '(' + str(self.rhs) + '))'
+        if len(self.nary) == 0:
+            return '((' + str(self.lhs) + ')' + self.op + '(' + str(self.rhs) + '))'
+        else:
+            return '(' + self.op + '(' + ','.join(str(clause) for clause in self.nary) + ')'
 
 
 class Literal(Clause, ABC):

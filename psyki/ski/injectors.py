@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Iterable, Callable, List, Any
-
 import numpy as np
 from numpy import ones
 from pandas import DataFrame
@@ -9,6 +8,7 @@ from tensorflow.keras import Model, Input
 from tensorflow.keras.layers import Concatenate, Lambda
 from tensorflow.keras.models import clone_model
 from tensorflow.python.keras.saving.save import load_model
+from psyki.logic.datalog.grammar import optimize_datalog_formula
 from psyki.logic.prolog.grammar import PrologFormula
 from psyki.logic.datalog import Lukasiewicz, SubNetworkBuilder
 from psyki.ski import Injector, Formula, Fuzzifier
@@ -79,6 +79,8 @@ class NetworkComposer(Injector):
         self._fuzzy_functions: Iterable[Callable] = ()
 
     def inject(self, rules: List[Formula]) -> Model:
+        for rule in rules:
+            optimize_datalog_formula(rule)
         predictor = _model_deep_copy(self.predictor)
         predictor_input: Tensor = predictor.input
         fuzzifier = SubNetworkBuilder(predictor_input, self.feature_mapping)

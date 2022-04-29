@@ -167,31 +167,37 @@ class SubNetworkBuilder(StructuringFuzzifier):
                 self._predicates[definition_name] = maximum(incomplete_function, r)
 
     def _visit_expression(self, node: Expression):
-        previous_layer = [self._visit(node.lhs), self._visit(node.rhs)]
-        operation = {
-            '∧': Minimum()(previous_layer),
-            '∨': Maximum()(previous_layer),
-            '→': None,
-            '↔': None,
-            '=': Dense(1, kernel_initializer=constant_initializer([1, -1]),
-                       activation=eta_one_abs, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
-            '<': Dense(1, kernel_initializer=constant_initializer([-1, 1]),
-                       activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
-            '≤': Maximum()([Dense(1, kernel_initializer=constant_initializer([-1, 1]),
-                                  activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
-                            Dense(1, kernel_initializer=constant_initializer([1, -1]), activation=eta_one_abs,
-                                  trainable=self._trainable)(Concatenate(axis=1)(previous_layer))]),
-            '>': Dense(1, kernel_initializer=constant_initializer([1, -1]),
-                       activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
-            '≥': Maximum()([Dense(1, kernel_initializer=constant_initializer([1, -1]),
-                                  activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
-                            Dense(1, kernel_initializer=constant_initializer([1, -1]), activation=eta_one_abs,
-                                  trainable=self._trainable)(Concatenate(axis=1)(previous_layer))]),
-            'm': Minimum()(previous_layer),
-            '+': Dense(1, kernel_initializer=Ones, activation='linear', trainable=self._trainable)(Concatenate(axis=1)
-                                                                                                   (previous_layer)),
-            '*': Dot(axes=1)(previous_layer)
-        }
+        if len(node.nary) < 1:
+            previous_layer = [self._visit(node.lhs), self._visit(node.rhs)]
+        else:
+            previous_layer = [self._visit(clause) for clause in node.nary]
+        if len(node.nary) > 0:
+            operation = {
+                '∧': Minimum()(previous_layer),
+                '∨': Maximum()(previous_layer),
+                '+': Dense(1, kernel_initializer=Ones, activation='linear', trainable=self._trainable)(Concatenate(axis=1)(previous_layer))
+            }
+        else:
+            operation = {
+                '→': None,
+                '↔': None,
+                '=': Dense(1, kernel_initializer=constant_initializer([1, -1]),
+                           activation=eta_one_abs, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
+                '<': Dense(1, kernel_initializer=constant_initializer([-1, 1]),
+                           activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
+                '≤': Maximum()([Dense(1, kernel_initializer=constant_initializer([-1, 1]),
+                                      activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
+                                Dense(1, kernel_initializer=constant_initializer([1, -1]), activation=eta_one_abs,
+                                      trainable=self._trainable)(Concatenate(axis=1)(previous_layer))]),
+                '>': Dense(1, kernel_initializer=constant_initializer([1, -1]),
+                           activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
+                '≥': Maximum()([Dense(1, kernel_initializer=constant_initializer([1, -1]),
+                                      activation=eta, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
+                                Dense(1, kernel_initializer=constant_initializer([1, -1]), activation=eta_one_abs,
+                                      trainable=self._trainable)(Concatenate(axis=1)(previous_layer))]),
+                'm': Minimum()(previous_layer),
+                '*': Dot(axes=1)(previous_layer)
+            }
         return operation.get(node.op)
 
     def _visit_variable(self, node: Variable):
