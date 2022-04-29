@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import Iterable, Callable, List, Any
+
+import numpy as np
 from numpy import ones
 from pandas import DataFrame
 from tensorflow import Tensor, stack, gather
@@ -81,6 +83,7 @@ class NetworkComposer(Injector):
         predictor_input: Tensor = predictor.input
         fuzzifier = SubNetworkBuilder(predictor_input, self.feature_mapping)
         modules = fuzzifier.visit(rules)
+        # new_added_layers = len(Model(predictor_input, modules).layers)
         x = predictor.layers[1](predictor_input)
         for i, layer in enumerate(predictor.layers[2:self.layer]):
             x = layer(x)
@@ -90,7 +93,22 @@ class NetworkComposer(Injector):
         if self.layer != -1:
             for i, layer in enumerate(predictor.layers[self.layer + 1:]):
                 x = layer(x)
-        return Model(predictor_input, x)
+        new_predictor = Model(predictor_input, x)
+
+        # Set all old weights and initialize the new ones.
+        # TODO: for now only the last layers weights
+        if self.layer == -1:
+            old_weights = self.predictor.weights
+            next_neurons = new_predictor.layers[self.layer].output.shape[1]
+            new_weights = np.identity(max(len(modules), next_neurons))[:len(modules), :next_neurons]
+            old_weights[self.layer - 1] = np.concatenate((old_weights[self.layer - 1], new_weights), axis=0)
+            new_predictor.weights[-2].assign(old_weights[self.layer - 1])
+            new_predictor.weights[-1].assign(old_weights[self.layer])
+            """for layer in range(0, self.layer):
+                new_predictor.weights[layer].assign(old_weights[layer])
+            for layer in range(self.layer + new_added_layers, len(old_weights)):
+                new_predictor.weights[layer].assign(old_weights[layer])"""
+        return new_predictor
 
     @staticmethod
     def load(file: str):

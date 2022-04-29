@@ -47,9 +47,9 @@ class TestInjection(unittest.TestCase):
         set_random_seed(0)
         formulae = [adapter.get_formula_from_string(rule) for rule in get_rules('iris')]
         input_layer = Input((4,))
-        predictor = get_mlp(input_layer, 3, 10, 32, 'relu', 'softmax')
+        predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)
-        injector = NetworkComposer(predictor, variable_mapping, 4)
+        injector = NetworkComposer(predictor, variable_mapping)
         model = injector.inject(formulae)
 
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
