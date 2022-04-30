@@ -5,6 +5,7 @@ from psyki.ski import Formula
 import psyki.logic.datalog as datalog
 
 
+# TODO: refactoring
 def optimize_datalog_formula(formula: Formula):
     if isinstance(formula, datalog.grammar.Expression):
         lhs = formula.lhs
