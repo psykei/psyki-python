@@ -11,7 +11,7 @@ def optimize_datalog_formula(formula: Formula):
         lhs = formula.lhs
         rhs = formula.rhs
         op = formula.op
-        if op in ('∧', '∨', '+'):
+        if op in ('∧', '∨', '+') and len(formula.nary) == 0:
             if isinstance(lhs, datalog.grammar.Expression):
                 if lhs.op == op:
                     optimize_datalog_formula(lhs)
@@ -32,6 +32,9 @@ def optimize_datalog_formula(formula: Formula):
                     formula.nary.append(rhs)
             else:
                 formula.nary.append(rhs)
+        else:
+            optimize_datalog_formula(lhs)
+            optimize_datalog_formula(rhs)
     else:
         if hasattr(formula, 'lhs'):
             optimize_datalog_formula(formula.lhs)
