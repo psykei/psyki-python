@@ -166,6 +166,7 @@ class SubNetworkBuilder(StructuringFuzzifier):
                 incomplete_function = self._predicates[definition_name]
                 self._predicates[definition_name] = maximum(incomplete_function, r)
 
+    # TODO: refactoring
     def _visit_expression(self, node: Expression):
         if len(node.nary) < 1:
             previous_layer = [self._visit(node.lhs), self._visit(node.rhs)]
@@ -180,7 +181,9 @@ class SubNetworkBuilder(StructuringFuzzifier):
         else:
             operation = {
                 '→': None,
-                '↔': None,
+                '↔': None,'∧': Minimum()(previous_layer),
+                '∨': Maximum()(previous_layer),
+                '+': Dense(1, kernel_initializer=Ones, activation='linear', trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
                 '=': Dense(1, kernel_initializer=constant_initializer([1, -1]),
                            activation=eta_one_abs, trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
                 '<': Dense(1, kernel_initializer=constant_initializer([-1, 1]),
