@@ -102,20 +102,8 @@ class NetworkComposer(Injector):
                 for layer in predictor.layers[self.layer + 1:]:
                     x = layer(x)
         new_predictor = Model(predictor_input, x)
+        # TODO: clone all old weights into the same layers
 
-        # Set all old weights and initialize the new ones.
-        # TODO: for now only the last layers weights
-        if self.layer == -1:
-            old_weights = self.predictor.weights
-            next_neurons = new_predictor.layers[self.layer].output.shape[1]
-            new_weights = np.identity(max(len(modules), next_neurons))[:len(modules), :next_neurons]
-            old_weights[self.layer - 1] = np.concatenate((old_weights[self.layer - 1], new_weights), axis=0)
-            new_predictor.weights[-2].assign(old_weights[self.layer - 1])
-            new_predictor.weights[-1].assign(old_weights[self.layer])
-            """for layer in range(0, self.layer):
-                new_predictor.weights[layer].assign(old_weights[layer])
-            for layer in range(self.layer + new_added_layers, len(old_weights)):
-                new_predictor.weights[layer].assign(old_weights[layer])"""
         return new_predictor
 
     @staticmethod
