@@ -1,13 +1,10 @@
 import unittest
 import numpy as np
-from antlr4 import CommonTokenStream, InputStream
 from tensorflow.python.ops.numpy_ops import argmax
 from tensorflow import constant, float32, reshape, cast, stack, assert_equal, tile
 from tensorflow.python.ops.array_ops import gather_nd
+from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
 from psyki.logic.datalog import Lukasiewicz
-from psyki.logic.datalog.grammar.adapters import Antlr4
-from psyki.resources.dist.DatalogLexer import DatalogLexer
-from psyki.resources.dist.DatalogParser import DatalogParser
 from test.resources.data import get_dataset
 from test.resources.rules import get_rules
 from test.utils import POKER_CLASS_MAPPING, POKER_FEATURE_MAPPING
@@ -16,7 +13,7 @@ from test.utils import POKER_CLASS_MAPPING, POKER_FEATURE_MAPPING
 class TestLukasiewicz(unittest.TestCase):
 
     rules = list(get_rules('poker'))
-    formulae = [Antlr4().get_formula(DatalogParser(CommonTokenStream(DatalogLexer(InputStream(rule)))).formula()) for rule in rules]
+    formulae = [get_formula_from_string(rule) for rule in rules]
     fuzzifier = Lukasiewicz(POKER_CLASS_MAPPING, POKER_FEATURE_MAPPING)
     functions = fuzzifier.visit(formulae)
     true = tile(reshape(constant(0.), [1, 1]), [1, 1])

@@ -4,15 +4,17 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras import Input, Model
 from tensorflow.python.framework.random_seed import set_random_seed
+from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
 from psyki.logic.prolog import EnricherFuzzifier, PrologFormula
-from psyki.logic.datalog.grammar.adapters import Antlr4
 from psyki.ski.injectors import LambdaLayer, NetworkComposer, DataEnricher
 from test.resources.rules.prolog import PATH
 from test.resources.rules import get_rules
 from test.utils import get_mlp
 
 
-adapter = Antlr4()
+EPOCHS = 50
+BATCH_SIZE = 8
+VERBOSE = 0
 x, y = load_iris(return_X_y=True, as_frame=True)
 encoder = OneHotEncoder(sparse=False)
 encoder.fit_transform([y])
@@ -28,7 +30,7 @@ class TestInjection(unittest.TestCase):
 
     def test_lambda_layer_on_iris(self):
         set_random_seed(0)
-        formulae = [adapter.get_formula_from_string(rule) for rule in get_rules('iris')]
+        formulae = [get_formula_from_string(rule) for rule in get_rules('iris')]
         input_layer = Input((4,))
         predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)
@@ -36,16 +38,16 @@ class TestInjection(unittest.TestCase):
         model = injector.inject(formulae)
 
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        model.fit(train_x, train_y, batch_size=4, epochs=30, verbose=0)
+        model.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=VERBOSE)
 
         model = model.remove_constraints()
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         accuracy = model.evaluate(test_x, test_y)[1]
-        self.assertTrue(accuracy > 0.973)
+        self.assertTrue(accuracy > 0.986)
 
     def test_network_composer_on_iris(self):
         set_random_seed(0)
-        formulae = [adapter.get_formula_from_string(rule) for rule in get_rules('iris')]
+        formulae = [get_formula_from_string(rule) for rule in get_rules('iris')]
         input_layer = Input((4,))
         predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)
@@ -53,10 +55,10 @@ class TestInjection(unittest.TestCase):
         model = injector.inject(formulae)
 
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        model.fit(train_x, train_y, batch_size=4, epochs=30, verbose=0)
+        model.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=VERBOSE)
 
         accuracy = model.evaluate(test_x, test_y)[1]
-        self.assertTrue(accuracy > 0.986)
+        self.assertTrue(accuracy > 0.973)
 
     def test_data_enricher(self):
         set_random_seed(0)
@@ -74,7 +76,7 @@ class TestInjection(unittest.TestCase):
         new_predictor = injector.inject(queries)
 
         new_predictor.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        new_predictor.fit(train_x, train_y, batch_size=4, epochs=30, verbose=0)
+        new_predictor.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=VERBOSE)
         accuracy = new_predictor.evaluate(test_x, test_y)[1]
         self.assertTrue(accuracy > 0.9733)
 
