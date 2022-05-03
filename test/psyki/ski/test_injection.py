@@ -37,9 +37,7 @@ class TestInjection(unittest.TestCase):
         injector = LambdaLayer(predictor, class_mapping, variable_mapping)
         model = injector.inject(formulae)
 
-        model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        model.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=VERBOSE)
-
+        compile_and_train(model)
         model = model.remove_constraints()
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         accuracy = model.evaluate(test_x, test_y)[1]
@@ -54,9 +52,7 @@ class TestInjection(unittest.TestCase):
         injector = NetworkComposer(predictor, variable_mapping)
         model = injector.inject(formulae)
 
-        model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        model.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=VERBOSE)
-
+        compile_and_train(model)
         accuracy = model.evaluate(test_x, test_y)[1]
         self.assertTrue(accuracy > 0.973)
 
@@ -75,8 +71,11 @@ class TestInjection(unittest.TestCase):
         queries = [PrologFormula(rule) for rule in get_rules(q_path)]
         new_predictor = injector.inject(queries)
 
-        new_predictor.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        new_predictor.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=VERBOSE)
+        compile_and_train(new_predictor)
         accuracy = new_predictor.evaluate(test_x, test_y)[1]
         self.assertTrue(accuracy > 0.9733)
 
+
+def compile_and_train(model):
+    model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    model.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=VERBOSE)
