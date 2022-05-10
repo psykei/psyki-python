@@ -72,9 +72,12 @@ class LambdaLayer(Injector):
 
 class NetworkComposer(Injector):
 
-    def __init__(self, predictor: Model, feature_mapping: dict[str, int], layer: int = -1):
+    def __init__(self, predictor: Model, feature_mapping: dict[str, int], layer: int = 0):
         self.predictor: Model = predictor
         self.feature_mapping: dict[str, int] = feature_mapping
+        if layer < 0 or layer > len(predictor.layers) - 2:
+            raise Exception('Cannot inject knowledge into layer ' + str(layer) +
+                            '.\nYou can inject from layer 0 to ' + str(len(predictor.layers) - 2))
         self.layer = layer
         self._fuzzy_functions: Iterable[Callable] = ()
 
@@ -93,14 +96,16 @@ class NetworkComposer(Injector):
                 x = layer(x)
         else:
             x = predictor.layers[1](predictor_input)
-            for layer in predictor.layers[2:self.layer]:
+            for layer in predictor.layers[2:self.layer + 1]:
                 x = layer(x)
             x = Concatenate(axis=1)([x] + modules)
-            predictor.layers[self.layer].build(x.shape)
-            x = predictor.layers[self.layer](x)
-            if self.layer != -1:
-                for layer in predictor.layers[self.layer + 1:]:
-                    x = layer(x)
+            predictor.layers[self.layer + 1].build(x.shape)
+            x = predictor.layers[self.layer + 1](x)
+            for layer in predictor.layers[self.layer + 2:]:
+                # Correct shape if needed (e.g., dropout layers)
+                if layer.input_shape != x.shape:
+                    layer.build(x.shape)
+                x = layer(x)
         new_predictor = Model(predictor_input, x)
         # TODO: clone all old weights into the same layers
 
