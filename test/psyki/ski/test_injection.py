@@ -49,7 +49,7 @@ class TestInjection(unittest.TestCase):
         input_layer = Input((4,))
         predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)
-        injector = NetworkComposer(predictor, variable_mapping)
+        injector = NetworkComposer(predictor, variable_mapping, 2)
         model = injector.inject(formulae)
 
         compile_and_train(model)
