@@ -181,7 +181,8 @@ class SubNetworkBuilder(StructuringFuzzifier):
         else:
             operation = {
                 '→': None,
-                '↔': None,'∧': Minimum()(previous_layer),
+                '↔': None,
+                '∧': Minimum()(previous_layer),
                 '∨': Maximum()(previous_layer),
                 '+': Dense(1, kernel_initializer=Ones, activation='linear', trainable=self._trainable)(Concatenate(axis=1)(previous_layer)),
                 '=': Dense(1, kernel_initializer=constant_initializer([1, -1]),
