@@ -5,9 +5,7 @@ from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras import Input, Model
 from tensorflow.python.framework.random_seed import set_random_seed
 from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
-from psyki.logic.prolog import EnricherFuzzifier, PrologFormula
-from psyki.ski.injectors import LambdaLayer, NetworkComposer, DataEnricher
-from test.resources.rules.prolog import PATH
+from psyki.ski.injectors import LambdaLayer, NetworkComposer
 from test.resources.rules import get_rules
 from test.utils import get_mlp
 
@@ -55,25 +53,6 @@ class TestInjection(unittest.TestCase):
         compile_and_train(model)
         accuracy = model.evaluate(test_x, test_y)[1]
         self.assertTrue(accuracy > 0.973)
-
-    def test_data_enricher(self):
-        set_random_seed(0)
-        injection_layer = 0
-        input_layer = Input((4,))
-        predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
-        predictor = Model(input_layer, predictor)
-
-        kb_path = str(PATH / 'iris-kb')
-        q_path = str(PATH / 'iris-q')
-
-        fuzzifier = EnricherFuzzifier(kb_path + '.txt', class_mapping)
-        injector = DataEnricher(predictor, train_x, fuzzifier, injection_layer)
-        queries = [PrologFormula(rule) for rule in get_rules(q_path)]
-        new_predictor = injector.inject(queries)
-
-        compile_and_train(new_predictor)
-        accuracy = new_predictor.evaluate(test_x, test_y)[1]
-        self.assertTrue(accuracy > 0.9733)
 
 
 def compile_and_train(model):

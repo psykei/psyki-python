@@ -147,7 +147,7 @@ class TestLukasiewicz(unittest.TestCase):
         return result1, result2, result3, result4
 
     def test_on_dataset(self):
-        poker_training = get_dataset('poker-training')
+        poker_training = get_dataset('poker', 'train')
         functions = [self.functions[name] for name, _ in sorted(POKER_CLASS_MAPPING.items(), key=lambda i: i[1])]
         train_x = poker_training[:, :-1]
         train_y = poker_training[:, -1]

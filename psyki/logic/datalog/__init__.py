@@ -205,8 +205,10 @@ class SubNetworkBuilder(StructuringFuzzifier):
         return operation.get(node.op)
 
     def _visit_variable(self, node: Variable):
-        return Lambda(lambda x: gather(x, [self.feature_mapping[node.name]], axis=1))(self.predictor_input)\
-            if node.name in self.feature_mapping.keys() else None
+        if node.name in self.feature_mapping.keys():
+            return Lambda(lambda x: gather(x, [self.feature_mapping[node.name]], axis=1))(self.predictor_input)
+        else:
+            raise Exception("No match between variable name and feature names.")
 
     def _visit_number(self, node: Number):
         return Dense(1, kernel_initializer=Zeros,

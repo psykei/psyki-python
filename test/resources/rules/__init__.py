@@ -1,22 +1,22 @@
 import csv
 from pathlib import Path
-from typing import TextIO
-from test.resources import rules
+from test.resources.rules.iris import PATH as IRIS_PATH
+from test.resources.rules.poker import PATH as POKER_PATH
+from test.resources.rules.splice_junction import PATH as SJ_PATH
+
 
 PATH = Path(__file__).parents[0]
 
-
-def get_rule_path(filename: str) -> Path:
-    return PATH / f"{filename}.txt"
-
-
-def open_rule(filename: str) -> TextIO:
-    return open(get_rule_path(filename))
+RULES_REGISTER = {
+    "iris": IRIS_PATH,
+    "poker": POKER_PATH,
+    "splice_junction": SJ_PATH
+}
 
 
-def get_rules(name: str) -> list[str]:
+def get_rules(rule_domain: str = "iris", rule_name: str = "kb") -> list[str]:
     result = []
-    with open(str(rules.PATH / name) + '.txt', mode="r") as file:
+    with open(str(RULES_REGISTER[rule_domain] / rule_name) + '.txt', mode="r") as file:
         reader = csv.reader(file, delimiter=';')
         for item in reader:
             result += item
