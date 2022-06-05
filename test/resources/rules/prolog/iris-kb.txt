@@ -1,3 +1,0 @@
-iris(X, setosa):- X = [Pl | _], Pl =< 2.28.
-iris(X, virginica):- X = [Pl | [Pw | _]], Pl > 2.28, Pw > 1.68.
-iris(X, versicolor):- X = [Pl | [Pw | _]], Pl > 2.28, Pw =< 1.68.

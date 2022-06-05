@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Iterable, Callable, List, Any
-import numpy as np
 from numpy import ones
 from pandas import DataFrame
 from tensorflow import Tensor, stack, gather
@@ -16,6 +15,9 @@ from psyki.utils import eta, eta_one_abs, eta_abs_one
 
 
 def _model_deep_copy(predictor: Model) -> Model:
+    """
+    Return a copy of the original model with the same weights.
+    """
     new_predictor = clone_model(predictor)
     new_predictor.set_weights(predictor.get_weights())
     return new_predictor
@@ -71,6 +73,11 @@ class LambdaLayer(Injector):
 
 
 class NetworkComposer(Injector):
+    """
+    This is the implementation of KINS (Knowledge injection via network structuring) algorithm.
+    It is needed a prior model -- any neural network -- to inject the prior knowledge.
+    It is also necessary to explicitly use a mapping between feature names and logic variable names.
+    """
 
     def __init__(self, predictor: Model, feature_mapping: dict[str, int], layer: int = 0):
         self.predictor: Model = predictor
