@@ -89,12 +89,13 @@ class NetworkComposer(Injector):
         self._fuzzy_functions: Iterable[Callable] = ()
 
     def inject(self, rules: List[Formula]) -> Model:
-        for rule in rules:
+        rules_copy = [rule.copy() for rule in rules]
+        for rule in rules_copy:
             optimize_datalog_formula(rule)
         predictor = _model_deep_copy(self.predictor)
         predictor_input: Tensor = predictor.input
         fuzzifier = SubNetworkBuilder(predictor_input, self.feature_mapping)
-        modules = fuzzifier.visit(rules)
+        modules = fuzzifier.visit(rules_copy)
         # new_added_layers = len(Model(predictor_input, modules).layers)
         if self.layer == 0:
             x = Concatenate(axis=1)([predictor_input] + modules)

@@ -29,4 +29,7 @@ class Formula(ABC):
     """
     Visitable data structure that represents symbolic knowledge formula.
     """
-    pass
+
+    @abstractmethod
+    def copy(self) -> Formula:
+        pass
