@@ -7,7 +7,7 @@ from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
 from psyki.logic.datalog import Lukasiewicz
 from test.resources.data import get_dataset
 from test.resources.rules import get_rules
-from test.utils import POKER_CLASS_MAPPING, POKER_FEATURE_MAPPING
+from test.resources.rules.poker import FEATURE_MAPPING as POKER_FEATURE_MAPPING, CLASS_MAPPING as POKER_CLASS_MAPPING
 
 
 class TestLukasiewicz(unittest.TestCase):
@@ -123,8 +123,8 @@ class TestLukasiewicz(unittest.TestCase):
     def _test_implication_hand_output_combinations(self, function, hand1, hand2, output1, output2) -> None:
         result1, result2, result3, result4 = self._get_combination_values(function, hand1, hand2, output1, output2)
         assert_equal(result1, self.true)
-        assert_equal(result2, self.false)
-        assert_equal(result3, self.true)
+        assert_equal(result2, self.true)
+        assert_equal(result3, self.false)
         assert_equal(result4, self.true)
 
     def _test_double_implication_hand_output_combinations(self, function, hand1, hand2, output1, output2) -> None:

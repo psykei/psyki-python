@@ -54,6 +54,9 @@ class DatalogFormula(Formula):
     def __str__(self) -> str:
         return str(self.lhs) + self.op + str(self.rhs)
 
+    def copy(self) -> Formula:
+        return DatalogFormula(self.lhs.copy(), self.rhs.copy(), self.op)
+
 
 class DefinitionClause(Formula):
 
@@ -63,6 +66,9 @@ class DefinitionClause(Formula):
 
     def __str__(self) -> str:
         return self.predication + '(' + str(self.arg) + ')'
+
+    def copy(self) -> Formula:
+        return DefinitionClause(self.predication, self.arg)
 
 
 class Clause(Formula, ABC):
@@ -83,6 +89,9 @@ class Expression(Clause):
         else:
             return '(' + self.op + '(' + ','.join(str(clause) for clause in self.nary) + ')'
 
+    def copy(self) -> Formula:
+        return Expression(self.lhs.copy(), self.rhs.copy(), self.op, [c.copy() for c in self.nary])
+
 
 class Literal(Clause, ABC):
     pass
@@ -95,6 +104,9 @@ class Negation(Literal):
 
     def __str__(self) -> str:
         return 'neg(' + str(self.predicate) + ')'
+
+    def copy(self) -> Formula:
+        return Negation(self.predicate.copy())
 
 
 class Predicate(Clause, ABC):
@@ -109,6 +121,9 @@ class Unary(Predicate):
     def __str__(self) -> str:
         return self.name
 
+    def copy(self) -> Formula:
+        return Unary(self.name)
+
 
 class Nary(Predicate):
 
@@ -118,6 +133,9 @@ class Nary(Predicate):
 
     def __str__(self) -> str:
         return self.name + '(' + str(self.arg) + ')'
+
+    def copy(self) -> Formula:
+        return Nary(self.name, self.arg)
 
 
 class Term(Predicate, ABC):
@@ -136,6 +154,9 @@ class Predication(Constant):
     def __str__(self) -> str:
         return self.name
 
+    def copy(self) -> Formula:
+        return Predication(self.name)
+
 
 class Number(Constant):
 
@@ -144,6 +165,9 @@ class Number(Constant):
 
     def __str__(self) -> str:
         return str(self.value)
+
+    def copy(self) -> Formula:
+        return Number(self.value)
 
 
 class Variable(Term):
@@ -154,6 +178,9 @@ class Variable(Term):
     def __str__(self) -> str:
         return self.name
 
+    def copy(self) -> Formula:
+        return Variable(self.name)
+
 
 class Argument(Formula):
 
@@ -163,3 +190,6 @@ class Argument(Formula):
 
     def __str__(self) -> str:
         return str(self.term) + (',' + str(self.arg) if self.arg is not None else '')
+
+    def copy(self) -> Formula:
+        return Argument(self.term.copy(), self.arg)
