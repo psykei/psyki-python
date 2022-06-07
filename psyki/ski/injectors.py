@@ -125,6 +125,9 @@ class NetworkComposer(Injector):
 
 
 class DataEnricher(Injector):
+    """
+    NOT IMPLEMENTED
+    """
 
     class EnrichedPredictor(Model):
 
@@ -255,6 +258,7 @@ class DataEnricher(Injector):
         self.injection_layer = injection_layer
 
     def inject(self, rules: List[Formula]) -> Any:
+        raise Exception("Not implemented")
         predictor = _model_deep_copy(self.predictor)
         input_length = predictor.input.shape[1] + len(rules)
         new_input = Input((input_length,))
