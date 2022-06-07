@@ -60,11 +60,11 @@ class Lukasiewicz(ConstrainingFuzzifier):
             class_tensor = reshape(self.class_mapping[predication_name], (1, len(self.class_mapping)))
             l = lambda y: eta(reduce_max(abs(tile(class_tensor, (shape(y)[0], 1)) - y), axis=1))
             if predication_name not in self.classes.keys():
-                self.classes[predication_name] = lambda x, y: eta(l(y) - r(x))
+                self.classes[predication_name] = lambda x, y: eta(r(x) - l(y))
                 self.__rhs[predication_name] = lambda x: r(x)
             else:
                 incomplete_function = self.__rhs[predication_name]
-                self.classes[predication_name] = lambda x, y: eta(l(y) - minimum(incomplete_function(x), r(x)))
+                self.classes[predication_name] = lambda x, y: eta(minimum(incomplete_function(x), r(x)) - l(y))
                 self.__rhs[predication_name] = lambda x: minimum(incomplete_function(x), r(x))
         else:
             if definition_name not in self._predicates.keys():

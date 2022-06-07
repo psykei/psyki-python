@@ -123,8 +123,8 @@ class TestLukasiewicz(unittest.TestCase):
     def _test_implication_hand_output_combinations(self, function, hand1, hand2, output1, output2) -> None:
         result1, result2, result3, result4 = self._get_combination_values(function, hand1, hand2, output1, output2)
         assert_equal(result1, self.true)
-        assert_equal(result2, self.true)
-        assert_equal(result3, self.false)
+        assert_equal(result2, self.false)
+        assert_equal(result3, self.true)
         assert_equal(result4, self.true)
 
     def _test_double_implication_hand_output_combinations(self, function, hand1, hand2, output1, output2) -> None:
