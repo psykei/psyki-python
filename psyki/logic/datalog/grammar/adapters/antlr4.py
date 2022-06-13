@@ -27,9 +27,10 @@ def _get_arguments(node: DatalogParser.MoreArgsContext or DatalogParser.LastTerm
         return Argument(_get_term(node.name))
 
 
-def _get_clause(node: DatalogParser.ClauseExpressionContext or DatalogParser.ClauseExpressionNoParContext or
-                      DatalogParser.ClauseLiteralContext or DatalogParser.ClauseClauseContext):
-    if isinstance(node, DatalogParser.ClauseExpressionContext) or isinstance(node, DatalogParser.ClauseExpressionNoParContext):
+def _get_clause(node: DatalogParser.ClauseExpressionContext or DatalogParser.ClauseExpressionNoParContext
+                      or DatalogParser.ClauseLiteralContext or DatalogParser.ClauseClauseContext):
+    if isinstance(node, DatalogParser.ClauseExpressionContext)\
+            or isinstance(node, DatalogParser.ClauseExpressionNoParContext):
         return Expression(_get_clause(node.left), _get_clause(node.right), node.op.text)
     elif isinstance(node, DatalogParser.ClauseLiteralContext):
         return _get_literal(node.lit)
@@ -44,8 +45,8 @@ def _get_literal(node: DatalogParser.LiteralPredContext or DatalogParser.Literal
         return _get_predicate(node.pred)
 
 
-def _get_predicate(
-        node: DatalogParser.PredicateTermContext or DatalogParser.PredicateUnaryContext or DatalogParser.PredicateArgsContext):
+def _get_predicate(node: DatalogParser.PredicateTermContext or DatalogParser.PredicateUnaryContext
+                         or DatalogParser.PredicateArgsContext):
     if isinstance(node, DatalogParser.PredicateTermContext):
         return _get_term(node.name)
     elif isinstance(node, DatalogParser.PredicateUnaryContext):

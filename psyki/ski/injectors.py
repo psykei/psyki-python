@@ -25,12 +25,29 @@ def _model_deep_copy(predictor: Model) -> Model:
 
 class LambdaLayer(Injector):
 
-    def __init__(self, predictor: Model, class_mapping: dict[str, int],
-                 feature_mapping: dict[str, int], gamma: float = 1.):
-        self.predictor: Model = predictor
+    def __init__(self, predictor: Model, class_mapping: dict[str, int], feature_mapping: dict[str, int],
+                 gamma: float = 1., fuzzifier: Fuzzifier = None):
+        """
+        @param predictor: the predictor.
+        @param class_mapping: a map between constants representing the expected class in the logic formulae and the
+        corresponding index for the predictor. Example:
+            - 'setosa': 0,
+            - 'virginica': 1,
+            - 'versicolor': 2.
+        @param feature_mapping: a map between variables in the logic formulae and indices of dataset features. Example:
+            - 'PL': 0,
+            - 'PW': 1,
+            - 'SL': 2,
+            - 'SW': 3.
+        @param gamma: weight of the constraints.
+        @param fuzzifier: the fuzzifier used to map the knowledge (by default it is Lukasiewicz).
+        """
+        self.predictor: Model = _model_deep_copy(predictor)
         self.class_mapping: dict[str, int] = class_mapping
         self.feature_mapping: dict[str, int] = feature_mapping
         self.gamma: float = gamma
+        # Use as default fuzzifier Lukasiewicz.
+        self.fuzzifier = fuzzifier if fuzzifier is not None else Lukasiewicz(class_mapping, feature_mapping)
         self._fuzzy_functions: Iterable[Callable] = ()
 
     class ConstrainedModel(Model):
@@ -42,33 +59,36 @@ class LambdaLayer(Injector):
             pass
 
         def remove_constraints(self) -> Model:
+            # Layer -3 is the layer before the lambda layer (last original layer -> lambda -> output).
             return Model(self.input, self.layers[-3].output)
 
     def inject(self, rules: List[Formula]) -> Model:
-        predictor = _model_deep_copy(self.predictor)
-        fuzzifier = Lukasiewicz(self.class_mapping, self.feature_mapping)
-        dict_functions = fuzzifier.visit(rules)
-        self._fuzzy_functions = [dict_functions[name] for name, _ in sorted(self.class_mapping.items(),
-                                                                            key=lambda i: i[1])]
-        predictor_output = predictor.layers[-1].output
-        x = Concatenate(axis=1)([predictor.input, predictor_output])
-        x = Lambda(self._cost, predictor.output.shape)(x)
-        return self.ConstrainedModel(predictor.input, x)
+        dict_functions = self.fuzzifier.visit(rules)
+        # To ensure that every function refers to the right class we check the associated class name.
+        self._fuzzy_functions = [dict_functions[name] for name, _ in
+                                 sorted(self.class_mapping.items(), key=lambda i: i[1])]
+        predictor_output = self.predictor.layers[-1].output
+        x = Concatenate(axis=1)([self.predictor.input, predictor_output])
+        x = Lambda(self._cost, self.predictor.output.shape)(x)
+        return self.ConstrainedModel(self.predictor.input, x)
 
     def _cost(self, output_layer: Tensor) -> Tensor:
         input_len = self.predictor.input.shape[1]
         x, y = output_layer[:, :input_len], output_layer[:, input_len:]
         cost = stack([function(x, y) for function in self._fuzzy_functions], axis=1)
-        return y + (cost / self.gamma)
+        return y + (cost * self.gamma)
 
     def remove(self) -> Any:
         """
-        Remove the constraining obtained by the injected rules.
+        Remove the lambda layer obtained by the injected rules.
         """
         self.predictor = Model(self.predictor.input, self.predictor.layers[-3].output)
         return self.predictor
 
     def load(self, file):
+        """
+        Use this function to load a trained model.
+        """
         return load_model(file, custom_objects={'_cost': self._cost})
 
 
@@ -79,37 +99,39 @@ class NetworkComposer(Injector):
     It is also necessary to explicitly use a mapping between feature names and logic variable names.
     """
 
-    def __init__(self, predictor: Model, feature_mapping: dict[str, int], layer: int = 0):
-        self.predictor: Model = predictor
+    def __init__(self, predictor: Model, feature_mapping: dict[str, int], layer: int = 0, fuzzifier: Fuzzifier = None):
+        self.predictor: Model = _model_deep_copy(predictor)
         self.feature_mapping: dict[str, int] = feature_mapping
         if layer < 0 or layer > len(predictor.layers) - 2:
             raise Exception('Cannot inject knowledge into layer ' + str(layer) +
                             '.\nYou can inject from layer 0 to ' + str(len(predictor.layers) - 2))
         self.layer = layer
+        # Use as default fuzzifier SubNetworkBuilder.
+        self.fuzzifier = fuzzifier if fuzzifier is not None else SubNetworkBuilder(self.predictor.input, feature_mapping)
         self._fuzzy_functions: Iterable[Callable] = ()
 
     def inject(self, rules: List[Formula]) -> Model:
+        # Prevent side effect on the original rules during optimization.
         rules_copy = [rule.copy() for rule in rules]
         for rule in rules_copy:
             optimize_datalog_formula(rule)
-        predictor = _model_deep_copy(self.predictor)
-        predictor_input: Tensor = predictor.input
-        fuzzifier = SubNetworkBuilder(predictor_input, self.feature_mapping)
-        modules = fuzzifier.visit(rules_copy)
-        # new_added_layers = len(Model(predictor_input, modules).layers)
+        predictor_input: Tensor = self.predictor.input
+        modules = self.fuzzifier.visit(rules_copy)
         if self.layer == 0:
+            # Injection!
             x = Concatenate(axis=1)([predictor_input] + modules)
-            predictor.layers[1].build(x.shape)
-            for layer in predictor.layers[1:]:
+            self.predictor.layers[1].build(x.shape)
+            for layer in self.predictor.layers[1:]:
                 x = layer(x)
         else:
-            x = predictor.layers[1](predictor_input)
-            for layer in predictor.layers[2:self.layer + 1]:
+            x = self.predictor.layers[1](predictor_input)
+            for layer in self.predictor.layers[2:self.layer + 1]:
                 x = layer(x)
+            # Injection!
             x = Concatenate(axis=1)([x] + modules)
-            predictor.layers[self.layer + 1].build(x.shape)
-            x = predictor.layers[self.layer + 1](x)
-            for layer in predictor.layers[self.layer + 2:]:
+            self.predictor.layers[self.layer + 1].build(x.shape)
+            x = self.predictor.layers[self.layer + 1](x)
+            for layer in self.predictor.layers[self.layer + 2:]:
                 # Correct shape if needed (e.g., dropout layers)
                 if layer.input_shape != x.shape:
                     layer.build(x.shape)
@@ -132,6 +154,7 @@ class DataEnricher(Injector):
     class EnrichedPredictor(Model):
 
         def __init__(self, *args, **kwargs):
+            raise Exception("EnrichedPredictor not implemented yet")
             super(DataEnricher.EnrichedPredictor, self).__init__(*args, **kwargs)
             self.engine = None
             self.queries = None
