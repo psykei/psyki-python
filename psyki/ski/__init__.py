@@ -12,12 +12,15 @@ class Injector(ABC):
 
     @abstractmethod
     def inject(self, rules: List[Formula]) -> Any:
+        """
+        @param rules: list of logic rules that represents the prior knowledge to be injected.
+        """
         pass
 
 
 class Fuzzifier(ABC):
     """
-    A fuzzifier visits a Formula representing symbolic knowledge to build an injectable fuzzy knowledge object.
+    A fuzzifier visits a list of formulae representing symbolic knowledge to build an injectable fuzzy knowledge object.
     """
 
     @abstractmethod
