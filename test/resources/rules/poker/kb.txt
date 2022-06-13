@@ -36,7 +36,8 @@ three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R3 ∧ R2 = R5
 three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R2 = R4 ∧ R2 = R5
 three(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← R3 = R4 ∧ R3 = R5
 
-min(R1,R2,R3,R4,R5) ← (R1 m R2 m R3 m R4 m R5)
+fake(A,B,C,D,E) ← (A m B m C m D m E)
+min(X1,X2,X3,X4,X5) ← fake(X1,X2,X3,X4,X5)
 
 straight(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5) ← ((R1 + R2 + R3 + R4 + R5) = ((5 * min(R1,R2,R3,R4,R5)) + 10)) ∧ ¬(pair(S1,R1,S2,R2,S3,R3,S4,R4,S5,R5))
 

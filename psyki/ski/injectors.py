@@ -94,12 +94,22 @@ class LambdaLayer(Injector):
 
 class NetworkComposer(Injector):
     """
-    This is the implementation of KINS (Knowledge injection via network structuring) algorithm.
-    It is needed a prior model -- any neural network -- to inject the prior knowledge.
-    It is also necessary to explicitly use a mapping between feature names and logic variable names.
+    This injector builds a set of moduls, aka ad-hoc layers, and inserts them into the predictor (a neural network).
+    In this way the predictor can exploit the knowledge via these modules which mimic the logic formulae.
+    With the default fuzzifier this is the implementation of KINS: Knowledge injection via network structuring.
     """
 
     def __init__(self, predictor: Model, feature_mapping: dict[str, int], layer: int = 0, fuzzifier: Fuzzifier = None):
+        """
+        @param predictor: the predictor.
+        @param feature_mapping: a map between variables in the logic formulae and indices of dataset features. Example:
+            - 'PL': 0,
+            - 'PW': 1,
+            - 'SL': 2,
+            - 'SW': 3.
+        @param layer: the level of the layer where to perform the injection.
+        @param fuzzifier: the fuzzifier used to map the knowledge (by default it is SubNetworkBuilder).
+        """
         self.predictor: Model = _model_deep_copy(predictor)
         self.feature_mapping: dict[str, int] = feature_mapping
         if layer < 0 or layer > len(predictor.layers) - 2:

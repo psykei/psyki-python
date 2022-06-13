@@ -8,12 +8,15 @@ from tensorflow.keras.layers import Lambda
 from tensorflow.python.ops.array_ops import shape
 from tensorflow.python.ops.init_ops import constant_initializer, Ones, Zeros
 from psyki.logic.datalog.grammar import DatalogFormula, Expression, Variable, Number, Unary, Predication, \
-    DefinitionClause, Argument, Nary, Negation
+    DefinitionClause, Argument, Nary, Negation, Clause
 from psyki.ski import Fuzzifier, Formula
 from psyki.utils import eta, eta_one_abs, eta_abs_one
 
 
 class DatalogFuzzifier(Fuzzifier, ABC):
+    feature_mapping: dict[str, int] = {}
+    classes = {}
+    _predicates: dict[str, tuple[dict[str, int], Callable]] = {}
 
     def __init__(self):
         self.visit_mapping: dict[Formula.__class__, Callable] = {
@@ -27,36 +30,59 @@ class DatalogFuzzifier(Fuzzifier, ABC):
         }
 
     @abstractmethod
-    def _visit(self, formula: Formula) -> Any:
+    def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
         pass
 
     @abstractmethod
-    def _visit_formula(self, formula: Formula) -> Any:
+    def _visit_formula(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
         pass
 
     @abstractmethod
-    def _visit_expression(self, formula: Formula) -> Any:
+    def _visit_expression(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
         pass
 
     @abstractmethod
-    def _visit_negation(self, formula: Formula) -> Any:
+    def _visit_negation(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
         pass
 
     @abstractmethod
-    def _visit_variable(self, formula: Formula) -> Any:
+    def _visit_variable(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
         pass
 
     @abstractmethod
-    def _visit_number(self, formula: Formula) -> Any:
+    def _visit_number(self, formula: Formula, _) -> Any:
         pass
 
     @abstractmethod
-    def _visit_unary(self, formula: Formula) -> Any:
+    def _visit_unary(self, formula: Formula, _) -> Any:
         pass
 
-    @abstractmethod
-    def _visit_nary(self, formula: Formula) -> Any:
-        pass
+    def _visit_nary(self, node: Nary, local_mapping: dict[str, int] = None):
+        # Prevents side effect on the original local map.
+        local_mapping_copy = self._predicates[node.name][0].copy()
+        inv_map = {v: k for k, v in local_mapping_copy.items()}
+        # Dynamic bounding between the variables of the caller and the callee.
+        for i, variable in enumerate(self._get_variables_names(node.arg)):
+            if i in inv_map.keys():
+                if variable in self.feature_mapping:
+                    local_mapping_copy[inv_map[i]] = self.feature_mapping.get(variable)
+                elif variable in local_mapping:
+                    local_mapping_copy[inv_map[i]] = local_mapping.get(variable)
+        return self._predicates[node.name][1](local_mapping_copy)
+
+    def _get_variables_names(self, node: Argument) -> list[str]:
+        if node is not None and isinstance(node.term, Variable):
+            return [node.term.name] + self._get_variables_names(node.arg)
+        else:
+            return []
+
+    def _get_predication_name(self, node: Argument):
+        if node is not None and node.arg is not None:
+            return self._get_predication_name(node.arg)
+        elif node is not None and isinstance(node.term, Predication):
+            return node.term.name
+        else:
+            return None
 
 
 class ConstrainingFuzzifier(DatalogFuzzifier, ABC):
@@ -65,13 +91,9 @@ class ConstrainingFuzzifier(DatalogFuzzifier, ABC):
     behaviour of the predictor during the training in such a way that it is penalised when it violates the prior
     knowledge.
     """
-    def __init__(self):
-        super().__init__()
-        self.classes = None
-
     def visit(self, rules: List[Formula]) -> Any:
         for rule in rules:
-            self._visit(rule)
+            self._visit(rule, {})
         return self.classes
 
 
@@ -79,7 +101,10 @@ class StructuringFuzzifier(DatalogFuzzifier, ABC):
     """
     A fuzzifier that encodes logic formulae into new sub parts of the predictors which mimic the logic formulae.
     """
-    pass
+    def visit(self, rules: List[Formula]) -> Any:
+        for rule in rules:
+            self._visit(rule, {})
+        return list(self.classes.values())
 
 
 class Lukasiewicz(ConstrainingFuzzifier):
@@ -107,7 +132,6 @@ class Lukasiewicz(ConstrainingFuzzifier):
         self.class_mapping = {string: cast(to_dense(SparseTensor([[0, index]], [1.], (1, len(class_mapping)))), float)
                               for string, index in class_mapping.items()}
         self.classes: dict[str, Callable] = {}
-        self._predicates: dict[str, Callable] = {}
         self._rhs: dict[str, Callable] = {}
         self._operation = {
             '∧': lambda l, r: lambda x: eta(maximum(l(x), r(x))),
@@ -125,19 +149,21 @@ class Lukasiewicz(ConstrainingFuzzifier):
             '*': lambda l, r: lambda x: l(x) * r(x)
         }
 
-    def _visit(self, formula: Formula) -> Callable:
-        return self.visit_mapping.get(formula.__class__)(formula)
+    def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Callable:
+        return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
 
-    def _visit_formula(self, node: DatalogFormula) -> None:
-        self._visit_definition_clause(node.lhs, self._visit(node.rhs))
+    def _visit_formula(self, node: DatalogFormula, local_mapping: dict[str, int] = None) -> None:
+        self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
 
-    def _visit_definition_clause(self, node: DefinitionClause, r: Callable) -> None:
+    def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause,
+                                 local_mapping: dict[str, int] = None) -> None:
         definition_name = node.predication
         predication_name = self._get_predication_name(node.arg)
 
         if predication_name is not None:
             class_tensor = reshape(self.class_mapping[predication_name], (1, len(self.class_mapping)))
             l = lambda y: eta(reduce_max(abs(tile(class_tensor, (shape(y)[0], 1)) - y), axis=1))
+            r = self._visit(rhs, local_mapping)
             if predication_name not in self.classes.keys():
                 self.classes[predication_name] = lambda x, y: eta(r(x) - l(y))
                 self._rhs[predication_name] = lambda x: r(x)
@@ -146,38 +172,40 @@ class Lukasiewicz(ConstrainingFuzzifier):
                 self.classes[predication_name] = lambda x, y: eta(minimum(incomplete_function(x), r(x)) - l(y))
                 self._rhs[predication_name] = lambda x: minimum(incomplete_function(x), r(x))
         else:
-            if definition_name not in self._predicates.keys():
-                self._predicates[definition_name] = lambda x: r(x)
-            else:
-                incomplete_function = self._predicates[definition_name]
-                self._predicates[definition_name] = lambda x: eta(minimum(incomplete_function(x), r(x)))
+            # Substitute variables that are not matching features with mapping functions
+            variables_names = self._get_variables_names(node.arg)
+            for i, variable in enumerate(variables_names):
+                if variable not in self.feature_mapping.keys():
+                    local_mapping[variable] = i
 
-    def _visit_expression(self, node: Expression) -> Callable:
-        l, r = self._visit(node.lhs), self._visit(node.rhs)
+            if definition_name not in self._predicates.keys():
+                self._predicates[definition_name] = (local_mapping, lambda m: lambda x: self._visit(rhs, m)(x))
+            else:
+                incomplete_function = self._predicates[definition_name][1]
+                self._predicates[definition_name] = (local_mapping,
+                                                     lambda m: lambda x: eta(minimum(incomplete_function(m)(x),
+                                                                                     self._visit(rhs, m)(x))))
+
+    def _visit_expression(self, node: Expression, local_mapping: dict[str, int] = None) -> Callable:
+        l, r = self._visit(node.lhs, local_mapping), self._visit(node.rhs, local_mapping)
         return self._operation.get(node.op)(l, r)
 
-    def _visit_variable(self, node: Variable):
-        return lambda x: x[:, self.feature_mapping[node.name]] if node.name in self.feature_mapping.keys() else None
+    def _visit_variable(self, node: Variable, local_mapping: dict[str, int] = None):
+        if node.name in self.feature_mapping.keys():
+            return lambda x: x[:, self.feature_mapping[node.name]]
+        elif node.name in local_mapping.keys():
+            return lambda x: x[:, local_mapping[node.name]]
+        else:
+            raise Exception("No match between variable name and feature names.")
 
-    def _visit_number(self, node: Number):
+    def _visit_number(self, node: Number, _):
         return lambda _: node.value
 
-    def _visit_unary(self, node: Unary):
-        return self._predicates[node.name]
+    def _visit_unary(self, node: Unary, _):
+        return self._predicates[node.name][1]({})
 
-    def _visit_nary(self, node: Nary):
-        return self._predicates[node.name]
-
-    def _visit_negation(self, node: Negation):
-        return lambda x: eta(constant(1.) - self._visit(node.predicate)(x))
-
-    def _get_predication_name(self, node: Argument):
-        if node.arg is not None:
-            return self._get_predication_name(node.arg)
-        elif isinstance(node.term, Predication):
-            return node.term.name
-        else:
-            return None
+    def _visit_negation(self, node: Negation, local_mapping: dict[str, int] = None):
+        return lambda x: eta(constant(1.) - self._visit(node.predicate, local_mapping)(x))
 
 
 class SubNetworkBuilder(StructuringFuzzifier):
@@ -200,7 +228,6 @@ class SubNetworkBuilder(StructuringFuzzifier):
         self.predictor_input = predictor_input
         self.feature_mapping = feature_mapping
         self.classes: dict[str, Tensor] = {}
-        self._predicates: dict[str, Tensor] = {}
         self.__rhs: dict[str, Tensor] = {}
         self._trainable = False
         self._operation = {
@@ -209,88 +236,82 @@ class SubNetworkBuilder(StructuringFuzzifier):
             '∧': lambda l: Minimum()(l),
             '∨': lambda l: Maximum()(l),
             '+': lambda l: Dense(1, kernel_initializer=Ones, activation='linear', trainable=self._trainable)
-                                (Concatenate(axis=1)(l)),
+            (Concatenate(axis=1)(l)),
             '=': lambda l: Dense(1, kernel_initializer=constant_initializer([1, -1]),
                                  activation=eta_one_abs, trainable=self._trainable)(Concatenate(axis=1)(l)),
             '<': lambda l: Dense(1, kernel_initializer=constant_initializer([-1, 1]),
                                  activation=eta, trainable=self._trainable)(Concatenate(axis=1)(l)),
             '≤': lambda l: Maximum()([Dense(1, kernel_initializer=constant_initializer([-1, 1]),
-                                     activation=eta, trainable=self._trainable)(Concatenate(axis=1)(l)),
+                                            activation=eta, trainable=self._trainable)(Concatenate(axis=1)(l)),
                                       Dense(1, kernel_initializer=constant_initializer([1, -1]), activation=eta_one_abs,
                                             trainable=self._trainable)(Concatenate(axis=1)(l))]),
             '>': lambda l: Dense(1, kernel_initializer=constant_initializer([1, -1]),
                                  activation=eta, trainable=self._trainable)(Concatenate(axis=1)(l)),
             '≥': lambda l: Maximum()([Dense(1, kernel_initializer=constant_initializer([1, -1]),
-                                      activation=eta, trainable=self._trainable)(Concatenate(axis=1)(l)),
+                                            activation=eta, trainable=self._trainable)(Concatenate(axis=1)(l)),
                                       Dense(1, kernel_initializer=constant_initializer([1, -1]), activation=eta_one_abs,
                                             trainable=self._trainable)(Concatenate(axis=1)(l))]),
             'm': lambda l: Minimum()(l),
             '*': lambda l: Dot(axes=1)(l)
         }
 
-    def visit(self, rules: List[Formula]) -> Any:
-        for rule in rules:
-            self._visit(rule)
-        return list(self.classes.values())
+    def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
+        return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
 
-    def _visit(self, formula: Formula) -> Any:
-        return self.visit_mapping.get(formula.__class__)(formula)
-
-    def _visit_formula(self, node: DatalogFormula):
+    def _visit_formula(self, node: DatalogFormula, local_mapping: dict[str, int] = None):
         # if the implication symbol is a double left arrow '⇐', then the weights of the module are trainable.
         self._trainable = node.op == '⇐'
-        self._visit_definition_clause(node.lhs, self._visit(node.rhs))
+        self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
 
-    def _visit_definition_clause(self, node: DefinitionClause, r: Tensor):
+    def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause, local_mapping: dict[str, int] = None):
         definition_name = node.predication
         predication_name = self._get_predication_name(node.arg)
 
         if predication_name is not None:
             if predication_name not in self.classes.keys():
-                self.classes[predication_name] = r
-                self.__rhs[predication_name] = r
+                self.classes[predication_name] = self._visit(rhs, local_mapping)
+                self.__rhs[predication_name] = self._visit(rhs, local_mapping)
             else:
                 incomplete_function = self.__rhs[predication_name]
-                self.classes[predication_name] = maximum(incomplete_function, r)
-                self.__rhs[predication_name] = maximum(incomplete_function, r)
+                self.classes[predication_name] = maximum(incomplete_function, self._visit(rhs, local_mapping))
+                self.__rhs[predication_name] = maximum(incomplete_function, self._visit(rhs, local_mapping))
         else:
-            if definition_name not in self._predicates.keys():
-                self._predicates[definition_name] = r
-            else:
-                incomplete_function = self._predicates[definition_name]
-                self._predicates[definition_name] = maximum(incomplete_function, r)
+            # Substitute variables that are not matching features with mapping functions
+            variables_names = self._get_variables_names(node.arg)
+            for i, variable in enumerate(variables_names):
+                if variable not in self.feature_mapping.keys():
+                    local_mapping[variable] = i
 
-    def _visit_expression(self, node: Expression):
+            if definition_name not in self._predicates.keys():
+                self._predicates[definition_name] = (local_mapping, lambda m: self._visit(rhs, m))
+            else:
+                incomplete_function = self._predicates[definition_name][1]
+                self._predicates[definition_name] = (local_mapping,
+                                                     lambda m: maximum(incomplete_function(m), self._visit(rhs, m)))
+
+    def _visit_expression(self, node: Expression, local_mapping: dict[str, int] = None):
         if len(node.nary) < 1:
-            previous_layer = [self._visit(node.lhs), self._visit(node.rhs)]
+            previous_layer = [self._visit(node.lhs, local_mapping), self._visit(node.rhs, local_mapping)]
         else:
-            previous_layer = [self._visit(clause) for clause in node.nary]
+            previous_layer = [self._visit(clause, local_mapping) for clause in node.nary]
         return self._operation.get(node.op)(previous_layer)
 
-    def _visit_variable(self, node: Variable):
+    def _visit_variable(self, node: Variable, local_mapping: dict[str, int] = None):
         if node.name in self.feature_mapping.keys():
             return Lambda(lambda x: gather(x, [self.feature_mapping[node.name]], axis=1))(self.predictor_input)
+        elif node.name in local_mapping.keys():
+            return Lambda(lambda x: gather(x, [local_mapping[node.name]], axis=1))(self.predictor_input)
         else:
             raise Exception("No match between variable name and feature names.")
 
-    def _visit_number(self, node: Number):
+    def _visit_number(self, node: Number, _):
         return Dense(1, kernel_initializer=Zeros,
                      bias_initializer=constant_initializer(node.value),
                      trainable=False, activation='linear')(self.predictor_input)
 
-    def _visit_unary(self, node: Unary):
-        return self._predicates[node.name]
+    def _visit_unary(self, node: Unary, _):
+        return self._predicates[node.name][1]({})
 
-    def _visit_nary(self, node: Nary):
-        return self._predicates[node.name]
-
-    def _visit_negation(self, node: Negation):
-        return Dense(1, kernel_initializer=Ones, activation=eta_abs_one, trainable=False)(self._visit(node.predicate))
-
-    def _get_predication_name(self, node: Argument):
-        if node is not None and node.arg is not None:
-            return self._get_predication_name(node.arg)
-        elif node is not None and isinstance(node.term, Predication):
-            return node.term.name
-        else:
-            return None
+    def _visit_negation(self, node: Negation, local_mapping: dict[str, int] = None):
+        return Dense(1, kernel_initializer=Ones, activation=eta_abs_one, trainable=False) \
+            (self._visit(node.predicate, local_mapping))
