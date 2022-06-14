@@ -59,6 +59,9 @@ class LambdaLayer(Injector):
             pass
 
         def remove_constraints(self) -> Model:
+            """
+            Remove the lambda layer obtained by the injected rules.
+            """
             # Layer -3 is the layer before the lambda layer (last original layer -> lambda -> output).
             return Model(self.input, self.layers[-3].output)
 
@@ -67,23 +70,17 @@ class LambdaLayer(Injector):
         # To ensure that every function refers to the right class we check the associated class name.
         self._fuzzy_functions = [dict_functions[name] for name, _ in
                                  sorted(self.class_mapping.items(), key=lambda i: i[1])]
-        predictor_output = self.predictor.layers[-1].output
-        x = Concatenate(axis=1)([self.predictor.input, predictor_output])
-        x = Lambda(self._cost, self.predictor.output.shape)(x)
-        return self.ConstrainedModel(self.predictor.input, x)
+        predictor = _model_deep_copy(self.predictor)
+        predictor_output = predictor.layers[-1].output
+        x = Concatenate(axis=1)([predictor.input, predictor_output])
+        x = Lambda(self._cost, predictor.output.shape)(x)
+        return self.ConstrainedModel(predictor.input, x)
 
     def _cost(self, output_layer: Tensor) -> Tensor:
         input_len = self.predictor.input.shape[1]
         x, y = output_layer[:, :input_len], output_layer[:, input_len:]
         cost = stack([function(x, y) for function in self._fuzzy_functions], axis=1)
         return y + (cost * self.gamma)
-
-    def remove(self) -> Any:
-        """
-        Remove the lambda layer obtained by the injected rules.
-        """
-        self.predictor = Model(self.predictor.input, self.predictor.layers[-3].output)
-        return self.predictor
 
     def load(self, file):
         """
