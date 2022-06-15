@@ -44,7 +44,7 @@ class LambdaLayer(Injector):
         """
         self.predictor: Model = _model_deep_copy(predictor)
         self.class_mapping: dict[str, int] = class_mapping
-        self.feature_mapping: dict[str, int] = feature_mapping
+        # self.feature_mapping: dict[str, int] = feature_mapping
         self.gamma: float = gamma
         # Use as default fuzzifier Lukasiewicz.
         self.fuzzifier = fuzzifier if fuzzifier is not None else Lukasiewicz(class_mapping, feature_mapping)
@@ -82,6 +82,9 @@ class LambdaLayer(Injector):
         cost = stack([function(x, y) for function in self._fuzzy_functions], axis=1)
         return y + (cost * self.gamma)
 
+    def _clear(self):
+        self._fuzzy_functions = ()
+
     def load(self, file):
         """
         Use this function to load a trained model.
@@ -108,7 +111,7 @@ class NetworkComposer(Injector):
         @param fuzzifier: the fuzzifier used to map the knowledge (by default it is SubNetworkBuilder).
         """
         self.predictor: Model = _model_deep_copy(predictor)
-        self.feature_mapping: dict[str, int] = feature_mapping
+        # self.feature_mapping: dict[str, int] = feature_mapping
         if layer < 0 or layer > len(predictor.layers) - 2:
             raise Exception('Cannot inject knowledge into layer ' + str(layer) +
                             '.\nYou can inject from layer 0 to ' + str(len(predictor.layers) - 2))
@@ -118,6 +121,7 @@ class NetworkComposer(Injector):
         self._fuzzy_functions: Iterable[Callable] = ()
 
     def inject(self, rules: List[Formula]) -> Model:
+        self._clear()
         # Prevent side effect on the original rules during optimization.
         rules_copy = [rule.copy() for rule in rules]
         for rule in rules_copy:
@@ -151,6 +155,9 @@ class NetworkComposer(Injector):
     @staticmethod
     def load(file: str):
         return load_model(file, custom_objects={'eta': eta, 'eta_one_abs': eta_one_abs, 'eta_abs_one': eta_abs_one})
+
+    def _clear(self):
+        self._fuzzy_functions = ()
 
 
 class DataEnricher(Injector):
