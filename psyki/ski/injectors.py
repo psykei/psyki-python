@@ -52,36 +52,43 @@ class LambdaLayer(Injector):
 
     class ConstrainedModel(Model):
 
+        def __init__(self, original_predictor: Model, constraints: Iterable[Callable], gamma: float = 1):
+            self._gamma = gamma
+            self._constraints = constraints
+            self._input_shape = original_predictor.input_shape
+            predictor_output = original_predictor.layers[-1].output
+            x = Concatenate(axis=1)([original_predictor.input, predictor_output])
+            x = Lambda(self._cost, original_predictor.output.shape)(x)
+            super().__init__(original_predictor.inputs, x)
+
         def call(self, inputs, training=None, mask=None):
             return super().call(inputs, training, mask)
 
         def get_config(self):
             pass
 
-        def remove_constraints(self) -> None:
+        def set_gamma(self, gamma: float = 1):
+            self._gamma = gamma
+
+        def remove_constraints(self) -> Model:
             """
             Remove the lambda layer obtained by the injected rules.
             """
-            # Layer -3 is the layer before the lambda layer (last original layer -> merge -> lambda).
-            del self.layers[-1]
-            del self.layers[-1]
+            # Layer -3 is the layer before the lambda layer (last original layer -> lambda -> output).
+            return Model(self.input, self.layers[-3].output)
+
+        def _cost(self, output_layer: Tensor) -> Tensor:
+            input_len = self._input_shape[1]
+            x, y = output_layer[:, :input_len], output_layer[:, input_len:]
+            cost = stack([function(x, y) for function in self._constraints], axis=1)
+            return y + (cost * self._gamma)
 
     def inject(self, rules: List[Formula]) -> Model:
         dict_functions = self.fuzzifier.visit(rules)
         # To ensure that every function refers to the right class we check the associated class name.
         self._fuzzy_functions = [dict_functions[name] for name, _ in
                                  sorted(self.class_mapping.items(), key=lambda i: i[1])]
-        predictor = _model_deep_copy(self.predictor)
-        predictor_output = predictor.layers[-1].output
-        x = Concatenate(axis=1)([predictor.input, predictor_output])
-        x = Lambda(self._cost, predictor.output.shape)(x)
-        return self.ConstrainedModel(predictor.input, x)
-
-    def _cost(self, output_layer: Tensor) -> Tensor:
-        input_len = self.predictor.input.shape[1]
-        x, y = output_layer[:, :input_len], output_layer[:, input_len:]
-        cost = stack([function(x, y) for function in self._fuzzy_functions], axis=1)
-        return y + (cost * self.gamma)
+        return self.ConstrainedModel(_model_deep_copy(self.predictor), self._fuzzy_functions, self.gamma)
 
     def _clear(self):
         self._fuzzy_functions = ()
@@ -90,7 +97,8 @@ class LambdaLayer(Injector):
         """
         Use this function to load a trained model.
         """
-        return load_model(file, custom_objects={'_cost': self._cost})
+        # return load_model(file, custom_objects={'_cost': self._cost})
+        raise Exception("Load of constrained model not implemented yet")
 
 
 class NetworkComposer(Injector):
