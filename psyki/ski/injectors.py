@@ -58,12 +58,13 @@ class LambdaLayer(Injector):
         def get_config(self):
             pass
 
-        def remove_constraints(self) -> Model:
+        def remove_constraints(self) -> None:
             """
             Remove the lambda layer obtained by the injected rules.
             """
-            # Layer -3 is the layer before the lambda layer (last original layer -> lambda -> output).
-            return Model(self.input, self.layers[-3].output)
+            # Layer -3 is the layer before the lambda layer (last original layer -> merge -> lambda).
+            del self.layers[-1]
+            del self.layers[-1]
 
     def inject(self, rules: List[Formula]) -> Model:
         dict_functions = self.fuzzifier.visit(rules)
