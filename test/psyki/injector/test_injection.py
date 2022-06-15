@@ -36,7 +36,7 @@ class TestInjection(unittest.TestCase):
         model = injector.inject(formulae)
 
         compile_and_train(model)
-        model = model.remove_constraints()
+        model.remove_constraints()
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         accuracy = model.evaluate(test_x, test_y)[1]
         self.assertTrue(accuracy > 0.986)
