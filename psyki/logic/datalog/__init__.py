@@ -29,6 +29,9 @@ class DatalogFuzzifier(Fuzzifier, ABC):
             Nary: self._visit_nary
         }
 
+    def visit(self, rules: List[Formula]) -> Any:
+        self._clear()
+
     @abstractmethod
     def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
         pass
@@ -96,7 +99,7 @@ class ConstrainingFuzzifier(DatalogFuzzifier, ABC):
     knowledge.
     """
     def visit(self, rules: List[Formula]) -> Any:
-        self._clear()
+        super().visit(rules)
         for rule in rules:
             self._visit(rule, {})
         return self.classes
@@ -107,6 +110,7 @@ class StructuringFuzzifier(DatalogFuzzifier, ABC):
     A fuzzifier that encodes logic formulae into new sub parts of the predictors which mimic the logic formulae.
     """
     def visit(self, rules: List[Formula]) -> Any:
+        super().visit(rules)
         for rule in rules:
             self._visit(rule, {})
         return list(self.classes.values())
@@ -155,8 +159,9 @@ class Lukasiewicz(ConstrainingFuzzifier):
         }
 
     def _clear(self):
-        self.classes: dict[str, Callable] = {}
-        self._rhs: dict[str, Callable] = {}
+        self.classes = {}
+        self._rhs = {}
+        self._predicates = {}
 
     def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Callable:
         return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
@@ -265,8 +270,9 @@ class SubNetworkBuilder(StructuringFuzzifier):
         }
 
     def _clear(self):
-        self.classes: dict[str, Tensor] = {}
-        self.__rhs: dict[str, Tensor] = {}
+        self.classes = {}
+        self.__rhs = {}
+        self._predicates = {}
         self._trainable = False
 
     def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
