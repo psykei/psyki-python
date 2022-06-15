@@ -84,6 +84,10 @@ class DatalogFuzzifier(Fuzzifier, ABC):
         else:
             return None
 
+    @abstractmethod
+    def _clear(self):
+        pass
+
 
 class ConstrainingFuzzifier(DatalogFuzzifier, ABC):
     """
@@ -92,6 +96,7 @@ class ConstrainingFuzzifier(DatalogFuzzifier, ABC):
     knowledge.
     """
     def visit(self, rules: List[Formula]) -> Any:
+        self._clear()
         for rule in rules:
             self._visit(rule, {})
         return self.classes
@@ -148,6 +153,10 @@ class Lukasiewicz(ConstrainingFuzzifier):
             '+': lambda l, r: lambda x: l(x) + r(x),
             '*': lambda l, r: lambda x: l(x) * r(x)
         }
+
+    def _clear(self):
+        self.classes: dict[str, Callable] = {}
+        self._rhs: dict[str, Callable] = {}
 
     def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Callable:
         return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
@@ -254,6 +263,11 @@ class SubNetworkBuilder(StructuringFuzzifier):
             'm': lambda l: Minimum()(l),
             '*': lambda l: Dot(axes=1)(l)
         }
+
+    def _clear(self):
+        self.classes: dict[str, Tensor] = {}
+        self.__rhs: dict[str, Tensor] = {}
+        self._trainable = False
 
     def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
         return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
