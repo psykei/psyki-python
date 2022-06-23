@@ -34,10 +34,11 @@
         <path d="M0 0 L0 20 L26 20 L26 0 Z"/>
       </clipPath>
     </defs>
-    <g fill="gray" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke="gray">
-      <line y2="-39" fill="none" x1="-35" clip-path="url(#clipPath1)" x2="-35" y1="-41"/>
+    <g fill="white" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(205,260)" stroke="white">
+      <rect x="-205" width="555" height="220" y="-260" clip-path="url(#clipPath2)" stroke="none"/>
     </g>
     <g fill="gray" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke="gray">
+      <line y2="-39" fill="none" x1="-35" clip-path="url(#clipPath1)" x2="-35" y1="-41"/>
       <line y2="-40" fill="none" x1="-36" clip-path="url(#clipPath1)" x2="-34" y1="-40"/>
       <line y2="-9" fill="none" x1="-35" clip-path="url(#clipPath1)" x2="-35" y1="-11"/>
       <line y2="-10" fill="none" x1="-36" clip-path="url(#clipPath1)" x2="-34" y1="-10"/>
