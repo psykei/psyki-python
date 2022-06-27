@@ -110,7 +110,7 @@ setup(
     include_package_data=True,
     python_requires='>=3.9.0, <3.10',
     install_requires=[
-        'antlr4-python3-runtime~=4.9.3',
+        'antlr4-python3-runtime~=4.10.0',
         'tensorflow>=2.7.0',
         'numpy>=1.22.3',
         'scikit-learn>=1.0.2',
