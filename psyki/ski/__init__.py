@@ -8,7 +8,7 @@ class Injector(ABC):
     An injector is a class that allows a sub-symbolic predictor to exploit prior symbolic knowledge.
     The knowledge is provided via rules in some sort of logic form (e.g. FOL, Skolem, Horn).
     """
-    predictor: Any  # Any class that has methods fit and predict
+    _predictor: Any  # Any class that has methods fit and predict
 
     @abstractmethod
     def inject(self, rules: List[Formula]) -> Any:
