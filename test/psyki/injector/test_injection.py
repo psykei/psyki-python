@@ -13,6 +13,7 @@ from test.utils import get_mlp
 EPOCHS = 50
 BATCH_SIZE = 8
 VERBOSE = 0
+ACCEPTABLE_ACCURACY = 0.97
 x, y = load_iris(return_X_y=True, as_frame=True)
 encoder = OneHotEncoder(sparse=False)
 encoder.fit_transform([y])
@@ -32,14 +33,14 @@ class TestInjection(unittest.TestCase):
         input_layer = Input((4,))
         predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)
-        injector = LambdaLayer(predictor, class_mapping, variable_mapping, gamma=0.5)
+        injector = LambdaLayer(predictor, class_mapping, variable_mapping)
         model = injector.inject(formulae)
 
         compile_and_train(model)
         model = model.remove_constraints()
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         accuracy = model.evaluate(test_x, test_y)[1]
-        self.assertTrue(accuracy > 0.986)
+        self.assertTrue(accuracy > ACCEPTABLE_ACCURACY)
 
     def test_network_composer_on_iris(self):
         set_random_seed(0)
@@ -52,7 +53,7 @@ class TestInjection(unittest.TestCase):
 
         compile_and_train(model)
         accuracy = model.evaluate(test_x, test_y)[1]
-        self.assertTrue(accuracy > 0.973)
+        self.assertTrue(accuracy > ACCEPTABLE_ACCURACY)
 
 
 def compile_and_train(model):
