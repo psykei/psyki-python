@@ -23,7 +23,7 @@ def _model_deep_copy(predictor: Model) -> Model:
 class LambdaLayer(Injector):
 
     def __init__(self, predictor: Model, class_mapping: dict[str, int], feature_mapping: dict[str, int],
-                 gamma: float = 1., fuzzifier: Fuzzifier = None):
+                 gamma: float = None, fuzzifier: Fuzzifier = None):
         """
         @param predictor: the predictor.
         @param class_mapping: a map between constants representing the expected class in the logic formulae and the
@@ -49,7 +49,7 @@ class LambdaLayer(Injector):
 
     class ConstrainedModel(Model):
 
-        def __init__(self, original_predictor: Model, constraints: Iterable[Callable], gamma: float = 1):
+        def __init__(self, original_predictor: Model, constraints: Iterable[Callable], gamma: float = None):
             self._gamma = gamma
             self._constraints = constraints
             self._input_shape = original_predictor.input_shape
@@ -83,8 +83,8 @@ class LambdaLayer(Injector):
             # Important! Changing the value of gamma will affect the knowledge cost.
             input_len = self._input_shape[1]
             x, y = output_layer[:, :input_len], output_layer[:, input_len:]
-            cost = stack([function(x, y) for function in self._constraints], axis=1)
-            return y + (cost * self._gamma)
+            cost = stack([function(x, 1 - y) for function in self._constraints], axis=1)
+            return y * (1 / (1 + cost)) if self._gamma is None else y + (cost * self._gamma)
 
     def inject(self, rules: List[Formula]) -> Model:
         dict_functions = self._fuzzifier.visit(rules)
