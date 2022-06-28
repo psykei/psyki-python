@@ -1,7 +1,7 @@
 grammar Datalog;
 
 formula
-    : lhs=def_clause op=('←' | '⇐') rhs=clause
+    : lhs=def_clause op=('←' | '⇐' | '→' | '⇒' | '↔' | '⇔') rhs=clause
     ;
 
 def_clause

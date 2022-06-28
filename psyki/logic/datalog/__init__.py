@@ -157,6 +157,7 @@ class Lukasiewicz(ConstrainingFuzzifier):
             '+': lambda l, r: lambda x: l(x) + r(x),
             '*': lambda l, r: lambda x: l(x) * r(x)
         }
+        self._implication = ''
 
     def _clear(self):
         self.classes = {}
@@ -167,6 +168,7 @@ class Lukasiewicz(ConstrainingFuzzifier):
         return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
 
     def _visit_formula(self, node: DatalogFormula, local_mapping: dict[str, int] = None) -> None:
+        self._implication = node.op
         self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
 
     def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause,
@@ -179,7 +181,12 @@ class Lukasiewicz(ConstrainingFuzzifier):
             l = lambda y: eta(reduce_max(abs(tile(class_tensor, (shape(y)[0], 1)) - y), axis=1))
             r = self._visit(rhs, local_mapping)
             if predication_name not in self.classes.keys():
-                self.classes[predication_name] = lambda x, y: eta(r(x) - l(y))
+                if self._implication in ('→', '⇒'):
+                    self.classes[predication_name] = lambda x, y: eta(r(x) - l(y))
+                elif self._implication in ('←', '⇐'):
+                    self.classes[predication_name] = lambda x, y: eta(l(y) - r(x))
+                else:
+                    self.classes[predication_name] = lambda x, y: eta(abs(l(y) - r(x)))
                 self._rhs[predication_name] = lambda x: r(x)
             else:
                 incomplete_function = self._rhs[predication_name]
@@ -280,7 +287,7 @@ class SubNetworkBuilder(StructuringFuzzifier):
 
     def _visit_formula(self, node: DatalogFormula, local_mapping: dict[str, int] = None):
         # if the implication symbol is a double left arrow '⇐', then the weights of the module are trainable.
-        self._trainable = node.op == '⇐'
+        self._trainable = node.op in ('⇐', '⇒', '⇔')
         self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
 
     def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause, local_mapping: dict[str, int] = None):
