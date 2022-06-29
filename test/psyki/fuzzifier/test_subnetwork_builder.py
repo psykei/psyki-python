@@ -2,10 +2,10 @@ import unittest
 from psyki.logic.datalog import SubNetworkBuilder
 from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
 from tensorflow.keras import Input, Model
-from test.resources.data import data_to_int, get_binary_data, get_dataset_dataframe
-from test.resources.rules import get_rules
-from test.resources.data.splice_junction import CLASS_MAPPING, AGGREGATE_FEATURE_MAPPING, \
+from test.resources.data import data_to_int, get_binary_data, get_dataset_dataframe, \
     get_splice_junction_extended_feature_mapping
+from test.resources.rules import get_rules
+from test.resources.data.splice_junction import CLASS_MAPPING, AGGREGATE_FEATURE_MAPPING
 from test.resources.rules.splice_junction import get_splice_junction_datalog_rules, get_binary_datalog_rules
 
 
