@@ -22,7 +22,7 @@ train, test = train_test_split(dataset, test_size=0.5, random_state=0)
 train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1]
 test_x, test_y = test.iloc[:, :-1], test.iloc[:, -1]
 class_mapping = {'setosa': 0, 'virginica': 1, 'versicolor': 2}
-variable_mapping = {'PL': 0, 'PW': 1, 'SL': 2, 'SW': 3}
+variable_mapping = {'SL': 0, 'SW': 1, 'PL': 2, 'PW': 3}
 
 
 class TestInjection(unittest.TestCase):
