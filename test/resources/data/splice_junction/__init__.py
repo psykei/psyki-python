@@ -23,23 +23,3 @@ AGGREGATE_FEATURE_MAPPING = {'a': ('a',),
                              'r': ('a', 'g'),
                              's': ('c', 'g'),
                              'y': ('c', 't')}
-
-SPLICE_JUNCTION_INDICES = get_indices()
-
-
-def get_splice_junction_feature_mapping() -> dict[str: int]:
-    return _get_feature_mapping(SPLICE_JUNCTION_INDICES)
-
-
-def get_splice_junction_extended_feature_mapping() -> dict[str: int]:
-    return _get_extended_feature_mapping(FEATURES, SPLICE_JUNCTION_INDICES)
-
-
-def _get_feature_mapping(variable_indices: list[int]) -> dict[str: int]:
-    return {'X' + ('_' if j < 0 else '') + str(abs(j)): i for i, j in enumerate(variable_indices)}
-
-
-def _get_extended_feature_mapping(features: list[str], variable_indices: list[int]) -> dict[str: int]:
-    result = {'X' + ('_' if j < 0 else '') + str(abs(j)) + f: k + i * len(features)
-            for i, j in enumerate(variable_indices) for k, f in enumerate(features)}
-    return result
