@@ -26,8 +26,7 @@ class TestLukasiewicz(unittest.TestCase):
         output2 = constant([0, 1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=float32)
         function = self.functions['nothing']
 
-        self._test_double_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
-        # self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
 
     def test_two(self):
         hand1 = constant([4, 9, 2, 2, 4, 2, 4, 6, 3, 9], dtype=float32)
@@ -54,8 +53,7 @@ class TestLukasiewicz(unittest.TestCase):
         output2 = constant([0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=float32)
         function = self.functions['full']
 
-        self._test_double_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
-        # self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
 
     def test_four(self):
         hand1 = constant([4, 9, 1, 9, 4, 7, 2, 9, 3, 9], dtype=float32)
@@ -64,8 +62,7 @@ class TestLukasiewicz(unittest.TestCase):
         output2 = constant([0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=float32)
         function = self.functions['four']
 
-        self._test_double_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
-        # self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
 
     def test_three(self):
         hand1 = constant([4, 9, 4, 2, 4, 7, 3, 9, 1, 9], dtype=float32)
@@ -117,21 +114,13 @@ class TestLukasiewicz(unittest.TestCase):
         output2 = constant([0, 0, 0, 0, 0, 0, 0, 0, 1, 0], dtype=float32)
         function = self.functions['royal_flush']
 
-        self._test_double_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
-        # self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
 
     def _test_implication_hand_output_combinations(self, function, hand1, hand2, output1, output2) -> None:
         result1, result2, result3, result4 = self._get_combination_values(function, hand1, hand2, output1, output2)
         assert_equal(result1, self.true)
         assert_equal(result2, self.false)
         assert_equal(result3, self.true)
-        assert_equal(result4, self.true)
-
-    def _test_double_implication_hand_output_combinations(self, function, hand1, hand2, output1, output2) -> None:
-        result1, result2, result3, result4 = self._get_combination_values(function, hand1, hand2, output1, output2)
-        assert_equal(result1, self.true)
-        assert_equal(result2, self.false)
-        assert_equal(result3, self.false)
         assert_equal(result4, self.true)
 
     @staticmethod

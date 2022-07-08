@@ -51,7 +51,7 @@ pip install psyki
 
 ### Demo
 
-`demo.ipynb` is a notebook that shows how injection is applied to a network for poker hand classification task.
+`demo/demo.ipynb` is a notebook that shows how injection is applied to a network for poker hand classification task.
 Rules are defined in `resources/rules/poker.csv`.
 
 

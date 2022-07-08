@@ -6,6 +6,7 @@ VERSION
 test/resources/data/poker/
 !test/resources/data/poker/__init__.py
 *.data
+demo/
 
 *~
 *.jar
