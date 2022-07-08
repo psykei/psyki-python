@@ -23,7 +23,7 @@ def _model_deep_copy(predictor: Model) -> Model:
 class LambdaLayer(Injector):
 
     def __init__(self, predictor: Model, class_mapping: dict[str, int], feature_mapping: dict[str, int],
-                 gamma: float = None, fuzzifier: Fuzzifier = None):
+                 fuzzifier: Fuzzifier = None):
         """
         @param predictor: the predictor.
         @param class_mapping: a map between constants representing the expected class in the logic formulae and the
@@ -41,16 +41,13 @@ class LambdaLayer(Injector):
         """
         self._predictor: Model = _model_deep_copy(predictor)
         self._class_mapping: dict[str, int] = class_mapping
-        # self.feature_mapping: dict[str, int] = feature_mapping
-        self._gamma: float = gamma
         # Use as default fuzzifier Lukasiewicz.
         self._fuzzifier = fuzzifier if fuzzifier is not None else Lukasiewicz(class_mapping, feature_mapping)
         self._fuzzy_functions: Iterable[Callable] = ()
 
     class ConstrainedModel(Model):
 
-        def __init__(self, original_predictor: Model, constraints: Iterable[Callable], gamma: float = None):
-            self._gamma = gamma
+        def __init__(self, original_predictor: Model, constraints: Iterable[Callable]):
             self._constraints = constraints
             self._input_shape = original_predictor.input_shape
             predictor_output = original_predictor.layers[-1].output
@@ -64,14 +61,6 @@ class LambdaLayer(Injector):
         def get_config(self):
             pass
 
-        @property
-        def gamma(self):
-            return self._gamma
-
-        @gamma.setter
-        def gamma(self, value: float):
-            self._gamma = value
-
         def remove_constraints(self) -> Model:
             """
             Remove the lambda layer obtained by the injected rules.
@@ -84,14 +73,14 @@ class LambdaLayer(Injector):
             input_len = self._input_shape[1]
             x, y = output_layer[:, :input_len], output_layer[:, input_len:]
             cost = stack([function(x, 1 - y) for function in self._constraints], axis=1)
-            return y * (1 / (1 + cost)) if self._gamma is None else y + (cost * self._gamma)
+            return y * (1 + cost)
 
     def inject(self, rules: List[Formula]) -> Model:
         dict_functions = self._fuzzifier.visit(rules)
         # To ensure that every function refers to the right class we check the associated class name.
         self._fuzzy_functions = [dict_functions[name] for name, _ in
                                  sorted(self._class_mapping.items(), key=lambda i: i[1])]
-        return self.ConstrainedModel(_model_deep_copy(self._predictor), self._fuzzy_functions, self._gamma)
+        return self.ConstrainedModel(_model_deep_copy(self._predictor), self._fuzzy_functions)
 
     def _clear(self):
         self._fuzzy_functions = ()
