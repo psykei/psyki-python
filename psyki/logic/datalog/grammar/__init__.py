@@ -46,7 +46,7 @@ def optimize_datalog_formula(formula: Formula):
 
 class DatalogFormula(Formula):
 
-    def __init__(self, lhs: DefinitionClause, rhs: Clause, op: str):
+    def __init__(self, lhs: DefinitionClause, rhs: Clause, op: str = '←'):
         self.lhs: DefinitionClause = lhs
         self.rhs: Clause = rhs
         self.op: str = op

@@ -1,0 +1,19 @@
+import unittest
+from logic.datalog.grammar.adapters.tuppy import prolog_to_datalog
+from test.resources.rules.iris import PATH
+from psyki.logic.prolog.grammar.adapters.tuppy import file_to_prolog
+
+
+class TestTuppy(unittest.TestCase):
+
+    iris_kb = 'kb-prolog.txt'
+
+    def test_from_text_to_formula(self):
+        prolog_theory = file_to_prolog(PATH / self.iris_kb)
+        datalog_formula = prolog_to_datalog(prolog_theory)
+        for rule in datalog_formula:
+            print(rule)
+
+
+if __name__ == '__main__':
+    unittest.main()
