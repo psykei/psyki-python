@@ -1,0 +1,3 @@
+iris(PetalLength, PetalWidth, SepalLength, SepalWidth, setosa) :- '=<'(PetalLength, 2.35).
+iris(PetalLength, PetalWidth, SepalLength, SepalWidth, virginica) :- ('>'(PetalLength, 2.35), '=<'(PetalWidth, 1.65)).
+iris(PetalLength, PetalWidth, SepalLength, SepalWidth, versicolor) :- ('>'(PetalLength, 2.35), '>'(PetalWidth, 1.65)).
