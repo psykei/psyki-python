@@ -6,6 +6,25 @@ Some quick links:
 * [PyPi Repository](https://pypi.org/project/psyki/)
 * [Issues](https://github.com/psykei/psyki-python/issues)
 
+### Reference paper
+
+> Matteo Magnini, Giovanni Ciatto, Andrea Omicini. "[On the Design of PSyKI: A Platform for Symbolic Knowledge Injection into Sub-Symbolic Predictors]", in: Proceedings of the 4th International Workshop on EXplainable and TRAnsparent AI and Multi-Agent Systems, 2022.
+
+Bibtex: 
+```bibtex
+@inproceedings{PsykiExtraamas2022,
+	keywords = {Symbolic Knowledge Injection,  Explainable AI, XAI, Neural Networks, PSyKI},
+	year = 2022,
+	talk = {Talks.PsykiExtraamas2022},
+	author = {Magnini, Matteo and Ciatto, Giovanni and Omicini, Andrea},
+	venue_e = {Events.Extraamas2022},
+	sort = {inproceedings},
+	publisher = {Springer},
+	status = {In press},
+	title = {On the Design of PSyKI: a Platform for Symbolic Knowledge Injection into Sub-Symbolic Predictors},
+	booktitle = {Proceedings of the 4th International Workshop on EXplainable and TRAnsparent AI and Multi-Agent Systems}
+}
+```
 
 ## Intro
 
