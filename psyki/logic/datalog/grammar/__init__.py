@@ -158,6 +158,22 @@ class Predication(Constant):
         return Predication(self.name)
 
 
+class Boolean(Constant):
+
+    def __init__(self, value: bool = True):
+        self.value: bool = value
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    @property
+    def is_true(self) -> bool:
+        return self.value
+
+    def copy(self) -> Formula:
+        return Boolean(self.value)
+
+
 class Number(Constant):
 
     def __init__(self, value: str):
