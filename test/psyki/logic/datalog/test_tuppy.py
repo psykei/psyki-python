@@ -1,5 +1,5 @@
 import unittest
-from logic.datalog.grammar.adapters.tuppy import prolog_to_datalog
+from psyki.logic.datalog.grammar.adapters.tuppy import prolog_to_datalog
 from test.resources.rules.iris import PATH
 from psyki.logic.prolog.grammar.adapters.tuppy import file_to_prolog
 
