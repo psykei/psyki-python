@@ -8,7 +8,7 @@ from tensorflow.keras.layers import Lambda
 from tensorflow.python.ops.array_ops import shape
 from tensorflow.python.ops.init_ops import constant_initializer, Ones, Zeros
 from psyki.logic.datalog.grammar import DatalogFormula, Expression, Variable, Number, Unary, Predication, \
-    DefinitionClause, Argument, Nary, Negation, Clause
+    DefinitionClause, Argument, Nary, Negation, Clause, Boolean
 from psyki.ski import Fuzzifier, Formula
 from psyki.utils import eta, eta_one_abs, eta_abs_one
 
@@ -24,6 +24,7 @@ class DatalogFuzzifier(Fuzzifier, ABC):
             Expression: self._visit_expression,
             Negation: self._visit_negation,
             Variable: self._visit_variable,
+            Boolean: self._visit_boolean,
             Number: self._visit_number,
             Unary: self._visit_unary,
             Nary: self._visit_nary
@@ -50,6 +51,10 @@ class DatalogFuzzifier(Fuzzifier, ABC):
 
     @abstractmethod
     def _visit_variable(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
+        pass
+
+    @abstractmethod
+    def _visit_boolean(self, formula: Formula, _) -> Any:
         pass
 
     @abstractmethod
@@ -98,6 +103,7 @@ class ConstrainingFuzzifier(DatalogFuzzifier, ABC):
     behaviour of the predictor during the training in such a way that it is penalised when it violates the prior
     knowledge.
     """
+
     def visit(self, rules: List[Formula]) -> Any:
         super().visit(rules)
         for rule in rules:
@@ -109,6 +115,7 @@ class StructuringFuzzifier(DatalogFuzzifier, ABC):
     """
     A fuzzifier that encodes logic formulae into new sub parts of the predictors which mimic the logic formulae.
     """
+
     def visit(self, rules: List[Formula]) -> Any:
         super().visit(rules)
         for rule in rules:
@@ -212,6 +219,9 @@ class Lukasiewicz(ConstrainingFuzzifier):
             return lambda x: x[:, local_mapping[node.name]]
         else:
             raise Exception("No match between variable name and feature names.")
+
+    def _visit_boolean(self, node: Boolean, _):
+        return lambda _: 0. if node.is_true else 1.
 
     def _visit_number(self, node: Number, _):
         return lambda _: node.value
@@ -320,6 +330,11 @@ class SubNetworkBuilder(StructuringFuzzifier):
             return Lambda(lambda x: gather(x, [local_mapping[node.name]], axis=1))(self.predictor_input)
         else:
             raise Exception("No match between variable name and feature names.")
+
+    def _visit_boolean(self, node: Boolean, _):
+        return Dense(1, kernel_initializer=Zeros,
+                     bias_initializer=constant_initializer(1. if node.is_true else 0.),
+                     trainable=False, activation='linear')(self.predictor_input)
 
     def _visit_number(self, node: Number, _):
         return Dense(1, kernel_initializer=Zeros,

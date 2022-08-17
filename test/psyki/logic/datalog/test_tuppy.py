@@ -11,8 +11,6 @@ class TestTuppy(unittest.TestCase):
     def test_from_text_to_formula(self):
         prolog_theory = file_to_prolog(PATH / self.iris_kb)
         datalog_formula = prolog_to_datalog(prolog_theory)
-        for rule in datalog_formula:
-            print(rule)
 
 
 if __name__ == '__main__':
