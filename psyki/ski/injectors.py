@@ -5,6 +5,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Lambda
 from tensorflow.keras.models import clone_model
 from tensorflow.python.keras.saving.save import load_model
+from tensorflow.python.keras.utils.generic_utils import get_custom_objects
 from psyki.logic.datalog.grammar import optimize_datalog_formula
 from psyki.logic.datalog import Lukasiewicz, SubNetworkBuilder
 from psyki.ski import Injector, Formula, Fuzzifier
@@ -100,6 +101,8 @@ class NetworkComposer(Injector):
     With the default fuzzifier this is the implementation of KINS: Knowledge injection via network structuring.
     """
 
+    custom_objects: dict[str: Callable] = {'eta': eta, 'eta_one_abs': eta_one_abs, 'eta_abs_one': eta_abs_one}
+
     def __init__(self, predictor: Model, feature_mapping: dict[str, int], layer: int = 0, fuzzifier: Fuzzifier = None):
         """
         @param predictor: the predictor.
@@ -151,11 +154,12 @@ class NetworkComposer(Injector):
         new_predictor = Model(predictor_input, x)
         # TODO: clone all old weights into the same layers
 
+        get_custom_objects().update(self.custom_objects)
         return new_predictor
 
     @staticmethod
     def load(file: str):
-        return load_model(file, custom_objects={'eta': eta, 'eta_one_abs': eta_one_abs, 'eta_abs_one': eta_abs_one})
+        return load_model(file, custom_objects=NetworkComposer.custom_objects)
 
     def _clear(self):
         self._fuzzy_functions = ()
