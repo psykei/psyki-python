@@ -5,7 +5,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Lambda
 from tensorflow.keras.models import clone_model
 from tensorflow.python.keras.saving.save import load_model
-from tensorflow.python.keras.utils.generic_utils import get_custom_objects
+from tensorflow.keras.utils import get_custom_objects
 from psyki.logic.datalog.grammar import optimize_datalog_formula
 from psyki.logic.datalog import Lukasiewicz, SubNetworkBuilder
 from psyki.ski import Injector, Formula, Fuzzifier
