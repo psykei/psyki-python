@@ -33,7 +33,7 @@ def to_prolog_string(rule: DatalogFormula) -> str:
         if isinstance(e.rhs, Expression):
             result = result + unfold_body(e.rhs)
         if not isinstance(e.lhs, Expression) and not isinstance(e.rhs, Expression):
-            return ['\'' + op_mapping[e.op] + '\'(' + str(e.rhs) + ', ' + str(e.rhs) + ')']
+            return ['\'' + op_mapping[e.op] + '\'(' + str(e.lhs) + ', ' + str(e.rhs) + ')']
         return result
 
     head = str(rule.lhs)
