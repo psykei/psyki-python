@@ -9,3 +9,7 @@ class TestFormula(unittest.TestCase):
     def test_parsing_with_antlr4(self):
         formula = get_formula_from_string(self.virginica_rule)
         self.assertEqual(self.expected_formula_structure, str(formula))
+
+
+if __name__ == '__main__':
+    unittest.main()

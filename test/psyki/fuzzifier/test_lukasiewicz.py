@@ -145,3 +145,6 @@ class TestLukasiewicz(unittest.TestCase):
         result = stack([reshape(function(x, y), [x.shape[0], 1]) for function in functions], axis=1)
         indices = stack([range(0, len(poker_training)), argmax(train_y, axis=1)], axis=1)
         assert_equal(gather_nd(result, indices), 0.)
+
+if __name__ == '__main__':
+    unittest.main()

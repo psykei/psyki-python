@@ -59,3 +59,7 @@ class TestInjection(unittest.TestCase):
 def compile_and_train(model):
     model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     model.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=VERBOSE)
+
+
+if __name__ == '__main__':
+    unittest.main()

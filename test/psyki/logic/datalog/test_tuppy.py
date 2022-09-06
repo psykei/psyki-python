@@ -13,5 +13,6 @@ class TestTuppy(unittest.TestCase):
         prolog_theory = file_to_prolog(PATH / self.iris_kb)
         datalog_formula = prolog_to_datalog(prolog_theory)
 
+
 if __name__ == '__main__':
     unittest.main()
