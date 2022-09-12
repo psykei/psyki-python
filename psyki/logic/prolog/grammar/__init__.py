@@ -1,5 +1,5 @@
 from tuprolog.core.parsing import parse_struct
-from psyki.ski import Formula
+from psyki.logic import Formula
 
 
 class PrologFormula(Formula):

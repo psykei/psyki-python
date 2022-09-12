@@ -5,7 +5,8 @@ from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras import Input, Model
 from tensorflow.python.framework.random_seed import set_random_seed
 from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
-from psyki.ski.injectors import LambdaLayer, NetworkComposer
+from psyki.ski.kill import LambdaLayer
+from psyki.ski.kins import NetworkStructurer
 from test.resources.rules import get_rules
 from test.utils import get_mlp
 
@@ -33,7 +34,7 @@ class TestInjection(unittest.TestCase):
         input_layer = Input((4,))
         predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)
-        injector = LambdaLayer(predictor, class_mapping, variable_mapping)
+        injector = LambdaLayer(predictor, class_mapping, variable_mapping, 'lukasiewicz')
         model = injector.inject(formulae)
 
         compile_and_train(model)
@@ -48,7 +49,7 @@ class TestInjection(unittest.TestCase):
         input_layer = Input((4,))
         predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
         predictor = Model(input_layer, predictor)
-        injector = NetworkComposer(predictor, variable_mapping, 2)
+        injector = NetworkStructurer(predictor, variable_mapping, 'netbuilder', 2)
         model = injector.inject(formulae)
 
         compile_and_train(model)

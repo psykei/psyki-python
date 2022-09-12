@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Iterable, Callable
 from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
-from psyki.ski import Formula
+from psyki.logic import Formula
 from test.resources.rules.utils import VARIABLE_BASE_NAME, RULE_DEFINITION_SYMBOLS_REGEX, STATIC_IMPLICATION_SYMBOL, \
     STATIC_RULE_SYMBOL, MUTABLE_IMPLICATION_SYMBOL
 from test.resources.rules.iris import PATH as IRIS_PATH

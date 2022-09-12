@@ -1,12 +1,15 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, List
+from tensorflow.keras import Model
+from psyki.logic import Formula
 
 
 class Injector(ABC):
     """
-    An injector is a class that allows a sub-symbolic predictor to exploit prior symbolic knowledge.
-    The knowledge is provided via rules in some sort of logic form (e.g. FOL, Skolem, Horn).
+    An injector allows a sub-symbolic predictor to exploit prior symbolic knowledge.
+    The knowledge is provided via logic rules representation.
+    Usually, after the injection, the predictor must be trained like in a standard ML workflow.
     """
     _predictor: Any  # Any class that has methods fit and predict
 
@@ -17,22 +20,18 @@ class Injector(ABC):
         """
         pass
 
+    @staticmethod
+    def kill(model: Model,
+             class_mapping: dict[str, int],
+             feature_mapping: dict[str, int],
+             fuzzifier: str = 'lukasiewicz') -> Injector:
+        from psyki.ski.kill import LambdaLayer
+        return LambdaLayer(model, class_mapping, feature_mapping, fuzzifier)
 
-class Fuzzifier(ABC):
-    """
-    A fuzzifier visits a list of formulae representing symbolic knowledge to build an injectable fuzzy knowledge object.
-    """
-
-    @abstractmethod
-    def visit(self, rules: List[Formula]) -> Any:
-        pass
-
-
-class Formula(ABC):
-    """
-    Visitable data structure that represents symbolic knowledge formula.
-    """
-
-    @abstractmethod
-    def copy(self) -> Formula:
-        pass
+    @staticmethod
+    def kins(model: Model,
+             feature_mapping: dict[str, int],
+             fuzzifier: str = 'netbuilder',
+             injection_layer: int = 0) -> Injector:
+        from psyki.ski.kins import NetworkStructurer
+        return NetworkStructurer(model, feature_mapping, fuzzifier, injection_layer)

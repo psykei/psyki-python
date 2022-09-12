@@ -1,7 +1,7 @@
 from tuprolog.core import Clause
 from tuprolog.theory import Theory, mutable_theory
-from psyki.logic.datalog import DatalogFormula, Argument, DefinitionClause, Variable, Number
-from psyki.logic.datalog.grammar import Predication, Expression, Term, Boolean, Negation
+from psyki.logic.datalog import DatalogFormula, Argument, Variable, Number
+from psyki.logic.datalog.grammar import Predication, Expression, Term, Boolean, Negation, DefinitionClause
 
 mapping = {
     '<=': '≤',

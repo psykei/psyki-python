@@ -1,9 +1,10 @@
 from os.path import isdir
+from psyki.logic.datalog.grammar import DatalogFormula, Expression, DefinitionClause, Argument, Negation, Unary, Nary, \
+    Variable, Number, Predication
 from psyki.resources import PATH, create_antlr4_parser
 if not isdir(str(PATH / 'dist')):
     create_antlr4_parser(str(PATH / 'Datalog.g4'), str(PATH / 'dist'))
 from antlr4 import CommonTokenStream, InputStream
-from psyki.logic.datalog import *
 from psyki.resources.dist.DatalogLexer import DatalogLexer
 from psyki.resources.dist.DatalogParser import DatalogParser
 

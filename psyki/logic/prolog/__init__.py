@@ -4,7 +4,7 @@ import tuprolog.solve
 import tuprolog.theory.parsing
 from tuprolog.solve.prolog import prolog_solver
 from psyki.logic.prolog.grammar import PrologFormula
-from psyki.ski import Fuzzifier, Formula
+from psyki.logic import Formula, Fuzzifier
 
 
 class EnricherFuzzifier(Fuzzifier):

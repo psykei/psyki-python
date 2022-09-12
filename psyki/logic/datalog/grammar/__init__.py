@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC
 from typing import Iterable
-from psyki.ski import Formula
+from psyki.logic import Formula
 import psyki.logic.datalog as datalog
 
 
