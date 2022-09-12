@@ -3,6 +3,9 @@ from abc import ABC, abstractmethod
 from typing import Any, List
 from tensorflow.keras import Model
 from psyki.logic import Formula
+from pathlib import Path
+
+PATH = Path(__file__).parents[0]
 
 
 class Injector(ABC):

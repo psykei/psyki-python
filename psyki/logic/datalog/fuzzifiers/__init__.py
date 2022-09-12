@@ -3,6 +3,9 @@ from abc import ABC
 from typing import List, Any
 from psyki.logic.datalog import DatalogFuzzifier
 from psyki.logic import Formula
+from pathlib import Path
+
+PATH = Path(__file__).parents[0]
 
 
 class ConstrainingFuzzifier(DatalogFuzzifier, ABC):

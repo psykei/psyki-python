@@ -1,6 +1,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Any, Callable
+from pathlib import Path
+
+PATH = Path(__file__).parents[0]
 
 
 class Formula(ABC):
