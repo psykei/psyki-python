@@ -11,7 +11,7 @@ from psyki.logic.datalog.fuzzifiers import StructuringFuzzifier
 from psyki.utils import eta_one_abs, eta, eta_abs_one
 
 
-class SubNetworkBuilder(StructuringFuzzifier):
+class NetBuilder(StructuringFuzzifier):
     """
     Fuzzifier that implements a mapping from crispy logic rules into small neural networks which mimic the prior
     knowledge with a continuous interpretation. The resulting object is a list of modules (ad hoc layers) that can be

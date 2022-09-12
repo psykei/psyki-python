@@ -1,5 +1,5 @@
 from __future__ import annotations
-from tensorflow import minimum, maximum, abs
+from tensorflow import minimum, maximum, abs, sigmoid
 from tensorflow.keras import Model
 from tensorflow.keras.models import clone_model
 from tensorflow.python.types.core import Tensor
@@ -19,6 +19,14 @@ def eta_abs_one(x: Tensor) -> Tensor:
 
 def eta_one_abs(x: Tensor) -> Tensor:
     return eta(1. - abs(x))
+
+
+def towell_logistic_function(bias: Tensor):
+    return lambda x: _towell_logistic_function(x, bias)
+
+
+def _towell_logistic_function(x: Tensor, bias: Tensor):
+    return sigmoid(x - bias)
 
 
 def model_deep_copy(predictor: Model) -> Model:

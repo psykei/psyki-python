@@ -27,11 +27,11 @@ class Fuzzifier(ABC):
 
     @staticmethod
     def get(name: str) -> Callable:
-        from psyki.logic.datalog.fuzzifiers.netbuilder import SubNetworkBuilder
+        from psyki.logic.datalog.fuzzifiers.netbuilder import NetBuilder
         from psyki.logic.datalog.fuzzifiers.lukasciewicz import Lukasiewicz
         available_fuzzifiers: dict[str, Callable] = {
             'lukasiewicz': lambda x: Lukasiewicz(*x),
-            'netbuilder': lambda x: SubNetworkBuilder(*x)
+            'netbuilder': lambda x: NetBuilder(*x)
         }
         if name not in available_fuzzifiers.keys():
             valid_names = '\n - '.join(available_fuzzifiers.keys())
