@@ -18,7 +18,7 @@ class Formula(ABC):
 
 class Fuzzifier(ABC):
     """
-    A fuzzifier visits a list of formulae representing symbolic knowledge to build an injectable fuzzy knowledge object.
+    A fuzzifiers visits a list of formulae representing symbolic knowledge to build an injectable fuzzy knowledge object.
     """
 
     @abstractmethod
@@ -29,11 +29,13 @@ class Fuzzifier(ABC):
     def get(name: str) -> Callable:
         from psyki.logic.datalog.fuzzifiers.netbuilder import NetBuilder
         from psyki.logic.datalog.fuzzifiers.lukasciewicz import Lukasiewicz
+        from psyki.logic.datalog.fuzzifiers.towell import Towell
         available_fuzzifiers: dict[str, Callable] = {
             'lukasiewicz': lambda x: Lukasiewicz(*x),
-            'netbuilder': lambda x: NetBuilder(*x)
+            'netbuilder': lambda x: NetBuilder(*x),
+            'towell': lambda x: Towell(*x)
         }
         if name not in available_fuzzifiers.keys():
             valid_names = '\n - '.join(available_fuzzifiers.keys())
-            raise Exception('Fuzzifier ' + name + ' is not available\nAvailable fuzzifiers are:' + valid_names)
+            raise Exception('Fuzzifier ' + name + ' is not available\nAvailable fuzzifiers are:\n - ' + valid_names)
         return available_fuzzifiers[name]

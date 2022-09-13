@@ -55,7 +55,7 @@ def get_binary_datalog_rules(rules: Iterable[str]) -> Iterable[str]:
             matched_string = tmp_rule[start:end]
             ante = tmp_rule[:start]
             medio = matched_string[:re.search(variable_regex, matched_string).regs[0][1]] + \
-                    matched_string[re.search(term_regex, matched_string).regs[0][0]:] + ' = 1'
+                    matched_string[re.search(term_regex, matched_string).regs[0][0]:]  # + ' = 1'
             partial_result += ante + medio
             tmp_rule = tmp_rule[end:]
         partial_result += tmp_rule

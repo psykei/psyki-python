@@ -2,13 +2,14 @@ from __future__ import annotations
 from typing import Callable
 
 from psyki.logic.datalog.grammar import DatalogFormula, DefinitionClause, Clause, Expression, Variable, Boolean, Number, \
-    Unary, Negation
+    Unary, Negation, MofN
 from tensorflow import cast, SparseTensor, maximum, minimum, constant, reshape, reduce_max, tile
 from tensorflow.python.keras.backend import to_dense
 from tensorflow.python.ops.array_ops import shape
 from psyki.logic import Formula
 from psyki.logic.datalog.fuzzifiers import ConstrainingFuzzifier
 from psyki.utils import eta
+from psyki.utils.exceptions import SymbolicException
 
 
 class Lukasiewicz(ConstrainingFuzzifier):
@@ -119,3 +120,6 @@ class Lukasiewicz(ConstrainingFuzzifier):
 
     def _visit_negation(self, node: Negation, local_mapping: dict[str, int] = None):
         return lambda x: eta(constant(1.) - self._visit(node.predicate, local_mapping)(x))
+
+    def _visit_m_of_n(self, node: MofN, local_mapping: dict[str, int] = None):
+        raise SymbolicException.not_supported('m of n')

@@ -1,6 +1,6 @@
 from os.path import isdir
 from psyki.logic.datalog.grammar import DatalogFormula, Expression, DefinitionClause, Argument, Negation, Unary, Nary, \
-    Variable, Number, Predication
+    Variable, Number, Predication, MofN, ComplexArgument
 from psyki.resources import PATH, create_antlr4_parser
 if not isdir(str(PATH / 'dist')):
     create_antlr4_parser(str(PATH / 'Datalog.g4'), str(PATH / 'dist'))
@@ -56,6 +56,13 @@ def _get_arguments(node: DatalogParser.MoreArgsContext or DatalogParser.LastTerm
         return Argument(_get_term(node.name))
 
 
+def _get_complex_arguments(node: DatalogParser.MoreComplexArgsContext or DatalogParser.LastClauseContext):
+    if isinstance(node, DatalogParser.MoreComplexArgsContext):
+        return ComplexArgument(_get_clause(node.name), _get_complex_arguments(node.args))
+    elif isinstance(node, DatalogParser.LastClauseContext):
+        return ComplexArgument(_get_clause(node.name))
+
+
 def _get_clause(node: DatalogParser.ClauseExpressionContext or DatalogParser.ClauseExpressionNoParContext
                       or DatalogParser.ClauseLiteralContext or DatalogParser.ClauseClauseContext):
     if isinstance(node, DatalogParser.ClauseExpressionContext)\
@@ -80,6 +87,8 @@ def _get_predicate(node: DatalogParser.PredicateTermContext or DatalogParser.Pre
         return _get_term(node.name)
     elif isinstance(node, DatalogParser.PredicateUnaryContext):
         return Unary(node.pred.text)
+    elif isinstance(node, DatalogParser.MofNContext):
+        return MofN(node.pred.text, node.m.text, _get_complex_arguments(node.args))
     elif isinstance(node, DatalogParser.PredicateArgsContext):
         return Nary(node.pred.text, _get_arguments(node.args))
 

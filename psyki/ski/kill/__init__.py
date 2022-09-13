@@ -23,7 +23,7 @@ class LambdaLayer(Injector):
             - 'PW': 1,
             - 'SL': 2,
             - 'SW': 3.
-        @param fuzzifier: the fuzzifier used to map the knowledge.
+        @param fuzzifier: the fuzzifiers used to map the knowledge.
         """
         self._predictor: Model = model_deep_copy(predictor)
         self._class_mapping: dict[str, int] = class_mapping

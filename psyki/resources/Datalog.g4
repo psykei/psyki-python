@@ -34,13 +34,20 @@ predicate
     | '⊥' # PredicateFalse
     | name=term # PredicateTerm
     | pred=Predication # PredicateUnary
-    | pred=Predication '(' args=arguments ')' #PredicateArgs
+    | pred='m_of_n' '(' m=Number ',' args=complex_arguments ')' # MofN
+    | pred=Predication '(' args=arguments ')' # PredicateArgs
     ;
 
 arguments
-    : name=term #LastTerm
-    | name=term ',' args=arguments #MoreArgs
-    | #None
+    : name=term # LastTerm
+    | name=term ',' args=arguments # MoreArgs
+    | # None
+    ;
+
+complex_arguments
+    : name=clause # LastClause
+    | name=clause ',' args=complex_arguments # MoreComplexArgs
+    | # None2
     ;
 
 term

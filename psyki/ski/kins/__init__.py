@@ -13,9 +13,9 @@ from psyki.utils import eta, eta_one_abs, eta_abs_one, model_deep_copy
 
 class NetworkStructurer(Injector):
     """
-    This injector builds a set of moduls, aka ad-hoc layers, and inserts them into the predictor (a neural network).
+    This injectors builds a set of moduls, aka ad-hoc layers, and inserts them into the predictor (a neural network).
     In this way the predictor can exploit the knowledge via these modules which mimic the logic formulae.
-    With the default fuzzifier this is the implementation of KINS: Knowledge injection via network structuring.
+    With the default fuzzifiers this is the implementation of KINS: Knowledge injection via network structuring.
     """
 
     custom_objects: dict[str: Callable] = {'eta': eta, 'eta_one_abs': eta_one_abs, 'eta_abs_one': eta_abs_one}
@@ -29,7 +29,7 @@ class NetworkStructurer(Injector):
             - 'SL': 2,
             - 'SW': 3.
         @param layer: the level of the layer where to perform the injection.
-        @param fuzzifier: the fuzzifier used to map the knowledge (by default it is SubNetworkBuilder).
+        @param fuzzifier: the fuzzifiers used to map the knowledge (by default it is SubNetworkBuilder).
         """
         self._predictor: Model = model_deep_copy(predictor)
         # self.feature_mapping: dict[str, int] = feature_mapping
@@ -37,7 +37,7 @@ class NetworkStructurer(Injector):
             raise Exception('Cannot inject knowledge into layer ' + str(layer) +
                             '.\nYou can inject from layer 0 to ' + str(len(predictor.layers) - 2))
         self._layer = layer
-        # Use as default fuzzifier SubNetworkBuilder.
+        # Use as default fuzzifiers SubNetworkBuilder.
         self._fuzzifier = Fuzzifier.get(fuzzifier)([self._predictor.input, feature_mapping])
         self._fuzzy_functions: Iterable[Callable] = ()
 

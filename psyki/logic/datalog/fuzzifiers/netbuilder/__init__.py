@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any
 from psyki.logic.datalog.grammar import DatalogFormula, DefinitionClause, Clause, Expression, Variable, Boolean, Number, \
-    Unary, Negation
+    Unary, Negation, MofN
 from tensorflow import Tensor, maximum
 from tensorflow.keras.layers import Minimum, Maximum, Dense, Concatenate, Dot, Lambda
 from tensorflow.python.ops.array_ops import gather
@@ -9,6 +9,7 @@ from tensorflow.python.ops.init_ops import Ones, constant_initializer, Zeros
 from psyki.logic import Formula
 from psyki.logic.datalog.fuzzifiers import StructuringFuzzifier
 from psyki.utils import eta_one_abs, eta, eta_abs_one
+from psyki.utils.exceptions import SymbolicException
 
 
 class NetBuilder(StructuringFuzzifier):
@@ -125,3 +126,6 @@ class NetBuilder(StructuringFuzzifier):
     def _visit_negation(self, node: Negation, local_mapping: dict[str, int] = None):
         return Dense(1, kernel_initializer=Ones, activation=eta_abs_one, trainable=False) \
             (self._visit(node.predicate, local_mapping))
+
+    def _visit_m_of_n(self, node: MofN, local_mapping: dict[str, int] = None):
+        raise SymbolicException.not_supported('m of n')

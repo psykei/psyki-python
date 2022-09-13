@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Callable, List, Any
 from psyki.logic import Fuzzifier, Formula
 from psyki.logic.datalog.grammar import DatalogFormula, Expression, Negation, Variable, Boolean, Number, Unary, Nary, \
-    Argument, Predication
+    Argument, Predication, MofN
 
 
 class DatalogFuzzifier(Fuzzifier, ABC):
@@ -20,6 +20,7 @@ class DatalogFuzzifier(Fuzzifier, ABC):
             Boolean: self._visit_boolean,
             Number: self._visit_number,
             Unary: self._visit_unary,
+            MofN: self._visit_m_of_n,
             Nary: self._visit_nary
         }
 
@@ -56,6 +57,10 @@ class DatalogFuzzifier(Fuzzifier, ABC):
 
     @abstractmethod
     def _visit_unary(self, formula: Formula, _) -> Any:
+        pass
+
+    @abstractmethod
+    def _visit_m_of_n(self, node: MofN, local_mapping: dict[str, int] = None):
         pass
 
     def _visit_nary(self, node: Nary, local_mapping: dict[str, int] = None):

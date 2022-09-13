@@ -10,7 +10,7 @@ PATH = Path(__file__).parents[0]
 
 class ConstrainingFuzzifier(DatalogFuzzifier, ABC):
     """
-    A fuzzifier that encodes logic formulae into continuous functions (or something equivalent) to constrain the
+    A fuzzifiers that encodes logic formulae into continuous functions (or something equivalent) to constrain the
     behaviour of the predictor during the training in such a way that it is penalised when it violates the prior
     knowledge.
     """
@@ -24,7 +24,7 @@ class ConstrainingFuzzifier(DatalogFuzzifier, ABC):
 
 class StructuringFuzzifier(DatalogFuzzifier, ABC):
     """
-    A fuzzifier that encodes logic formulae into new sub parts of the predictors which mimic the logic formulae.
+    A fuzzifiers that encodes logic formulae into new sub parts of the predictors which mimic the logic formulae.
     """
 
     def visit(self, rules: List[Formula]) -> Any:

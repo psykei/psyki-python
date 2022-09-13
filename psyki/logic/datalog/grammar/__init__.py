@@ -72,7 +72,9 @@ class DefinitionClause(Formula):
 
 
 class Clause(Formula, ABC):
-    pass
+
+    def copy(self) -> Clause:
+        pass
 
 
 class Expression(Clause):
@@ -123,6 +125,19 @@ class Unary(Predicate):
 
     def copy(self) -> Formula:
         return Unary(self.name)
+
+
+class MofN(Predicate):
+    def __init__(self, name: str, m: Number, arg: ComplexArgument):
+        self.name: str = name
+        self.m: Number = m
+        self.arg: ComplexArgument = arg
+
+    def __str__(self) -> str:
+        return self.name + '(' + str(self.m) + ', ' + str(self.arg) + ')'
+
+    def copy(self) -> Formula:
+        return MofN(self.name, self.m, self.arg)
 
 
 class Nary(Predicate):
@@ -209,3 +224,23 @@ class Argument(Formula):
 
     def copy(self) -> Formula:
         return Argument(self.term.copy(), self.arg)
+
+
+class ComplexArgument(Formula):
+
+    def __init__(self, clause: Clause, arg: ComplexArgument = None):
+        self.clause: Clause = clause
+        self.arg: ComplexArgument = arg
+
+    def __str__(self) -> str:
+        return str(self.clause) + (',' + str(self.arg) if self.arg is not None else '')
+
+    def copy(self) -> Formula:
+        return ComplexArgument(self.clause.copy(), self.arg)
+
+    @property
+    def unfolded(self):
+        if self.arg is None:
+            return [self.clause]
+        else:
+            return [self.clause] + self.arg.unfolded

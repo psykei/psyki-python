@@ -34,9 +34,9 @@ def parse_clause(rest: str, rhs: str = '', aggregation: str = AND_SYMBOL) -> str
             new_clause = clause[n.regs[0][1]:]
             new_clause = re.sub('\(|\)', '', new_clause)
             inner_clause = parse_clause(new_clause, rhs, PLUS_SYMBOL)
-            inner_clause = '(' + (')' + PLUS_SYMBOL + '(').join(e for e in inner_clause.split(PLUS_SYMBOL)) + ')'
+            inner_clause = '(' + ('), (').join(e for e in inner_clause.split(PLUS_SYMBOL)) + ')'
             n = clause[n.regs[0][0]:n.regs[0][1] - 2]
-            rhs += n + LESS_EQUAL_SYMBOL + '(' + inner_clause + ')'
+            rhs += 'm_of_n(' + n + ', ' + inner_clause + ')'
         else:
             rhs += re.sub('-', '_', clause.lower()) + '()'
         if j < len(rest.split(',')) - 1:
