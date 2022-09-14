@@ -1,4 +1,5 @@
 from typing import Iterable, Callable, List
+from tensorflow.keras.layers import Concatenate
 from tensorflow import Tensor
 from psyki.logic.datalog.grammar import optimize_datalog_formula
 from tensorflow.python.keras.utils.generic_utils import get_custom_objects
@@ -39,6 +40,7 @@ class KBANN(Injector):
             optimize_datalog_formula(rule)
         predictor_input: Tensor = self._predictor.input
         modules = self._fuzzifier.visit(rules_copy)
-        new_predictor = Model(predictor_input, modules)
+        x = Concatenate(axis=1)(modules)
+        new_predictor = Model(predictor_input, x)
         get_custom_objects().update(self.custom_objects)
         return new_predictor

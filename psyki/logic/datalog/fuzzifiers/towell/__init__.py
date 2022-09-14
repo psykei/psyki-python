@@ -144,7 +144,7 @@ class Towell(StructuringFuzzifier):
                       trainable=self._trainable,
                       activation=towell_logistic_function(constant(int(node.m) - 0.5 * self.omega)),
                       use_bias=False)(Concatenate(axis=1)(previous_layers)),
-        return layer, self.omega
+        return layer[0], self.omega
 
     def _visit_nary(self, node: Nary, local_mapping: dict[str, int] = None):
         return super(Towell, self)._visit_nary(node, local_mapping), self.omega

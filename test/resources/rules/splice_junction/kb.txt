@@ -23,3 +23,5 @@ pyramidine-rich :- 6 of (@-15 'YYYYYYYYYY').
 EI :- @-3 'MAGGTRAGT', not(EI-stop).
 
 IE :- pyramidine-rich, @-3 'YAGG', not(IE-stop).
+
+N :- not(EI), not(IE).
