@@ -128,4 +128,6 @@ class NetBuilder(StructuringFuzzifier):
             (self._visit(node.predicate, local_mapping))
 
     def _visit_m_of_n(self, node: MofN, local_mapping: dict[str, int] = None):
-        raise SymbolicException.not_supported('m of n')
+        predicates = [self._visit(x, local_mapping) for x in node.arg.unfolded]
+        previous_layer = self._operation['+'](predicates)
+        return self._operation['≤']([self._visit(Number(node.m), local_mapping), previous_layer])

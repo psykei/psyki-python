@@ -14,13 +14,12 @@ from test.resources.rules import get_rules, get_splice_junction_datalog_rules, g
 from test.utils import get_mlp
 
 
-EPOCHS = 50
-BATCH_SIZE = 8
-VERBOSE = 0
-ACCEPTABLE_ACCURACY = 0.97
-
-
 class TestInjectionOnIris(unittest.TestCase):
+    EPOCHS = 50
+    BATCH_SIZE = 8
+    VERBOSE = 0
+    ACCEPTABLE_ACCURACY = 0.97
+
     set_random_seed(0)
     formulae = [get_formula_from_string(rule) for rule in get_rules('iris')]
     input_layer = Input((4,))
@@ -38,7 +37,7 @@ class TestInjectionOnIris(unittest.TestCase):
 
     def compile_and_train(self, model):
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        model.fit(self.train_x, self.train_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=VERBOSE)
+        model.fit(self.train_x, self.train_y, batch_size=self.BATCH_SIZE, epochs=self.EPOCHS, verbose=self.VERBOSE)
 
     def test_lambda_layer(self):
         injector = LambdaLayer(self.predictor, self.class_mapping, self.variable_mapping, 'lukasiewicz')
@@ -47,17 +46,22 @@ class TestInjectionOnIris(unittest.TestCase):
         model = model.remove_constraints()
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         accuracy = model.evaluate(self.test_x, self.test_y)[1]
-        self.assertTrue(accuracy > ACCEPTABLE_ACCURACY)
+        self.assertTrue(accuracy > self.ACCEPTABLE_ACCURACY)
 
     def test_kins(self):
         injector = NetworkStructurer(self.predictor, self.variable_mapping, 'netbuilder', 2)
         model = injector.inject(self.formulae)
         self.compile_and_train(model)
         accuracy = model.evaluate(self.test_x, self.test_y)[1]
-        self.assertTrue(accuracy > ACCEPTABLE_ACCURACY)
+        self.assertTrue(accuracy > self.ACCEPTABLE_ACCURACY)
 
 
 class TestInjectionOnSpliceJunction(unittest.TestCase):
+    EPOCHS = 100
+    BATCH_SIZE = 16
+    VERBOSE = 0
+    ACCEPTABLE_ACCURACY = 0.95
+
     set_random_seed(0)
     rules = get_rules('splice_junction')
     rules = get_splice_junction_datalog_rules(rules)
@@ -67,7 +71,7 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
     x = get_binary_data(data.iloc[:, :-1], AGGREGATE_FEATURE_MAPPING)
     y.columns = [x.shape[1]]
     data = x.join(y)
-    train, test = train_test_split(data, train_size=900, stratify=data.iloc[:, -1])
+    train, test = train_test_split(data, train_size=900, random_state=0, stratify=data.iloc[:, -1])
     train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1]
     test_x, test_y = test.iloc[:, :-1], test.iloc[:, -1]
     rules = [get_formula_from_string(rule) for rule in rules]
@@ -76,12 +80,12 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
     predictor = Model(input_layer, predictor)
 
     def test_kbann_on_splice_junction(self):
-        injector = KBANN(self.predictor, get_splice_junction_extended_feature_mapping(), 'towell')
+        injector = KBANN(self.predictor, get_splice_junction_extended_feature_mapping(), 'towell', 1)
         model = injector.inject(self.rules)
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        model.fit(self.train_x, self.train_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=VERBOSE)
+        model.fit(self.train_x, self.train_y, batch_size=self.BATCH_SIZE, epochs=self.EPOCHS, verbose=self.VERBOSE)
         accuracy = model.evaluate(self.test_x, self.test_y)[1]
-        # self.assertTrue(accuracy > ACCEPTABLE_ACCURACY)
+        self.assertTrue(accuracy > self.ACCEPTABLE_ACCURACY)
 
 
 if __name__ == '__main__':
