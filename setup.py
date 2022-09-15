@@ -4,7 +4,6 @@ import subprocess
 import distutils.cmd
 
 # current directory
-from utils import initialize_antlr4
 
 here = pathlib.Path(__file__).parent.resolve()
 
@@ -75,6 +74,7 @@ class GenerateAntlr4Parser(distutils.cmd.Command):
         pass
 
     def run(self):
+        from utils import initialize_antlr4
         initialize_antlr4(self.file)
 
 
