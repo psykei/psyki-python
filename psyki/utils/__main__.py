@@ -1,7 +1,7 @@
 import sys
 from typing import Callable
 from psyki.resources import PATH
-from utils import initialize_antlr4
+from psyki.utils import initialize_antlr4
 
 
 def commands() -> dict[str, Callable]:

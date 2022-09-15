@@ -2,7 +2,7 @@ import os
 from typing import Callable
 from psyki.ski import PATH as INJECTORS_PATH
 from psyki.logic import PATH as FUZZIFIERS_PATH
-from utils import execute_command
+from psyki.utils import execute_command
 
 
 def commands() -> dict[str, Callable]:

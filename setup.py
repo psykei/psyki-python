@@ -74,7 +74,7 @@ class GenerateAntlr4Parser(distutils.cmd.Command):
         pass
 
     def run(self):
-        from utils import initialize_antlr4
+        from psyki.utils import initialize_antlr4
         initialize_antlr4(self.file)
 
 
