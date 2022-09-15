@@ -4,6 +4,7 @@ import subprocess
 import distutils.cmd
 
 # current directory
+from utils import initialize_antlr4
 
 here = pathlib.Path(__file__).parent.resolve()
 
@@ -74,13 +75,7 @@ class GenerateAntlr4Parser(distutils.cmd.Command):
         pass
 
     def run(self):
-        import re
-        from os import system, popen
-        antlr4_version = re.split(r'=', popen('cat requirements.txt | grep antlr4').read())[1][:-1]
-        system('wget https://www.antlr.org/download/antlr-' + antlr4_version + '-complete.jar')
-        system('export CLASSPATH="./antlr-' + antlr4_version + '-complete.jar:$CLASSPATH"')
-        system('java -jar ./antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + self.file + ' -visitor -o psyki/resources/dist')
-        system('rm ./antlr-' + antlr4_version + '-complete.jar')
+        initialize_antlr4(self.file)
 
 
 setup(

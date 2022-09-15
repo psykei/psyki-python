@@ -1,8 +1,8 @@
 import os
-import sys
 from typing import Callable
 from psyki.ski import PATH as INJECTORS_PATH
 from psyki.logic import PATH as FUZZIFIERS_PATH
+from utils import execute_command
 
 
 def commands() -> dict[str, Callable]:
@@ -29,8 +29,4 @@ def elicit(what: str = 'injectors'):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        first_arg = sys.argv[1]
-        other_arguments = sys.argv[2:] if len(sys.argv) > 2 else []
-        command = commands()[first_arg]
-        command(*other_arguments)
+    execute_command(commands)
