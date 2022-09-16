@@ -158,4 +158,8 @@ class Towell(StructuringFuzzifier):
         return super(Towell, self)._visit_nary(node, local_mapping), self.omega
 
     def _clear(self):
-        pass
+        self.classes = {}
+        self._rhs = {}
+        self._rhs_predicates = {}
+        self._predicates = {}
+        self._trainable = False

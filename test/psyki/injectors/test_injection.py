@@ -52,9 +52,17 @@ class TestInjectionOnIris(unittest.TestCase):
     def test_kins(self):
         injector = NetworkStructurer(self.predictor, self.variable_mapping, 'netbuilder', 2)
         model = injector.inject(self.formulae)
+        # Test if clone is successful
+        cloned_model = clone_model(model)
+
         self.compile_and_train(model)
         accuracy = model.evaluate(self.test_x, self.test_y)[1]
+
+        self.compile_and_train(cloned_model)
+        accuracy_cm = cloned_model.evaluate(self.test_x, self.test_y)[1]
+
         self.assertTrue(accuracy > self.ACCEPTABLE_ACCURACY)
+        self.assertTrue(accuracy == accuracy_cm)
 
 
 class TestInjectionOnSpliceJunction(unittest.TestCase):

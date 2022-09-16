@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import Callable, Iterable, List
+from tensorflow.keras.utils import get_custom_objects, custom_object_scope
 from tensorflow import Tensor
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate
 from tensorflow.python.keras.saving.save import load_model
-from tensorflow.python.keras.utils.generic_utils import get_custom_objects
 from psyki.logic.datalog.grammar import optimize_datalog_formula
 from psyki.ski import Injector
 from psyki.logic import Formula, Fuzzifier
@@ -40,6 +40,7 @@ class NetworkStructurer(Injector):
         # Use as default fuzzifiers SubNetworkBuilder.
         self._fuzzifier = Fuzzifier.get(fuzzifier)([self._predictor.input, feature_mapping])
         self._fuzzy_functions: Iterable[Callable] = ()
+        self._latest_predictor = None
 
     def inject(self, rules: List[Formula]) -> Model:
         self._clear()
@@ -72,11 +73,16 @@ class NetworkStructurer(Injector):
         # TODO: clone all old weights into the same layers
 
         get_custom_objects().update(self.custom_objects)
-        return new_predictor
+        self._latest_predictor = new_predictor
+        return self.copy()
 
     @staticmethod
     def load(file: str):
         return load_model(file, custom_objects=NetworkStructurer.custom_objects)
+
+    def copy(self):
+        with custom_object_scope(self.custom_objects):
+            return model_deep_copy(self._latest_predictor)
 
     def _clear(self):
         self._fuzzy_functions = ()

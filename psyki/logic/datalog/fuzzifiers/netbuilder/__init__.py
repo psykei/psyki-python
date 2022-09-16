@@ -9,7 +9,6 @@ from tensorflow.python.ops.init_ops import Ones, constant_initializer, Zeros
 from psyki.logic import Formula
 from psyki.logic.datalog.fuzzifiers import StructuringFuzzifier
 from psyki.utils import eta_one_abs, eta, eta_abs_one
-from psyki.utils.exceptions import SymbolicException
 
 
 class NetBuilder(StructuringFuzzifier):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import sys
 from typing import Callable
-from tensorflow import minimum, maximum, abs, sigmoid
+from tensorflow import minimum, maximum, abs
 from tensorflow.keras import Model
 from tensorflow.keras.models import clone_model
 from tensorflow.python.types.core import Tensor
