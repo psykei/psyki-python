@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras import Input, Model
 from tensorflow.python.framework.random_seed import set_random_seed
+from tensorflow.keras.models import clone_model
 from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
 from psyki.ski.kbann import KBANN
 from psyki.ski.kill import LambdaLayer
@@ -82,10 +83,19 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
     def test_kbann_on_splice_junction(self):
         injector = KBANN(self.predictor, get_splice_junction_extended_feature_mapping(), 'towell', 1)
         model = injector.inject(self.rules)
+        # Test if clone is successful
+        cloned_model = clone_model(model)
+
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         model.fit(self.train_x, self.train_y, batch_size=self.BATCH_SIZE, epochs=self.EPOCHS, verbose=self.VERBOSE)
         accuracy = model.evaluate(self.test_x, self.test_y)[1]
+
+        cloned_model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        cloned_model.fit(self.train_x, self.train_y, batch_size=self.BATCH_SIZE, epochs=self.EPOCHS, verbose=self.VERBOSE)
+        accuracy_cm = cloned_model.evaluate(self.test_x, self.test_y)[1]
+
         self.assertTrue(accuracy > self.ACCEPTABLE_ACCURACY)
+        self.assertTrue(accuracy == accuracy_cm)
 
 
 if __name__ == '__main__':

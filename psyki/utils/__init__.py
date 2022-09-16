@@ -23,14 +23,6 @@ def eta_one_abs(x: Tensor) -> Tensor:
     return eta(1. - abs(x))
 
 
-def towell_logistic_function(bias: Tensor):
-    return lambda x: _towell_logistic_function(x, bias)
-
-
-def _towell_logistic_function(x: Tensor, bias: Tensor):
-    return sigmoid(x - bias)
-
-
 def model_deep_copy(predictor: Model) -> Model:
     """
     Return a copy of the original model with the same weights.

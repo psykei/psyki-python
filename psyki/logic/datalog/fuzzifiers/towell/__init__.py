@@ -3,10 +3,9 @@ from psyki.logic.datalog.grammar import DefinitionClause, Clause, DatalogFormula
     Variable, Expression, MofN, Nary
 from psyki.logic import Formula
 from tensorflow.keras.layers import Dense, Lambda, Concatenate
-from tensorflow import Tensor, constant
-from tensorflow.python.ops.init_ops import constant_initializer
+from tensorflow import Tensor, sigmoid, constant
+from tensorflow.python.ops.init_ops import constant_initializer, Constant
 from psyki.logic.datalog.fuzzifiers import StructuringFuzzifier
-from psyki.utils import towell_logistic_function
 from psyki.utils.exceptions import SymbolicException
 from tensorflow.python.ops.array_ops import gather
 
@@ -26,21 +25,31 @@ class Towell(StructuringFuzzifier):
         self._rhs_predicates: dict[str, tuple[dict[str, int], list[Callable]]] = {}
         self._trainable = False
         self._operation = {
-            '∧': lambda w: lambda l: Dense(units=1,
-                                           kernel_initializer=constant_initializer(w),
-                                           trainable=self._trainable,
-                                           activation=towell_logistic_function(self._compute_bias(w)),
-                                           use_bias=False)(Concatenate(axis=1)(l)),
-            '∨': lambda w: lambda l: Dense(units=1,
-                                           kernel_initializer=constant_initializer(w),
-                                           trainable=self._trainable,
-                                           activation=towell_logistic_function(constant(0.5 * self.omega)),
-                                           use_bias=False)(Concatenate(axis=1)(l)),
+            '∧': lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
+                                                        trainable=self._trainable,
+                                                        bias_initializer=self._compute_bias(w))(Concatenate(axis=1)(l)),
+            '∨': lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
+                                                        trainable=self._trainable,
+                                                        bias_initializer=constant_initializer(0.5 * self.omega))(Concatenate(axis=1)(l)),
         }
 
-    def _compute_bias(self, w: Iterable) -> Tensor:
+    class CustomDense(Dense):
+
+        def __init__(self, kernel_initializer, trainable, bias_initializer, **kwargs):
+            super().__init__(units=1,
+                             activation=self.logistic_function,
+                             kernel_initializer=kernel_initializer,
+                             bias_initializer=bias_initializer,
+                             trainable=trainable,
+                             use_bias=False,
+                             )
+
+        def logistic_function(self, x: Tensor):
+            return sigmoid(x - constant(self.bias_initializer.value))
+
+    def _compute_bias(self, w: Iterable) -> Constant:
         p = len([u for u in w if u > 0])
-        return constant((p - 0.5) * self.omega)
+        return constant_initializer((p - 0.5) * self.omega)
 
     def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
         return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
@@ -139,11 +148,10 @@ class Towell(StructuringFuzzifier):
     def _visit_m_of_n(self, node: MofN, local_mapping: dict[str, int] = None):
         previous_layers = [self._visit(arg, local_mapping) for arg in node.arg.unfolded]
         previous_layers, w = [x[0] for x in previous_layers], [x[1] for x in previous_layers]
-        layer = Dense(units=1,
-                      kernel_initializer=constant_initializer(w),
-                      trainable=self._trainable,
-                      activation=towell_logistic_function(constant(int(node.m) - 0.5 * self.omega)),
-                      use_bias=False)(Concatenate(axis=1)(previous_layers)),
+        bias_initializer = constant_initializer(int(node.m) - 0.5 * self.omega)
+        layer = Towell.CustomDense(kernel_initializer=constant_initializer(w),
+                                   trainable=self._trainable,
+                                   bias_initializer=bias_initializer)(Concatenate(axis=1)(previous_layers)),
         return layer[0], self.omega
 
     def _visit_nary(self, node: Nary, local_mapping: dict[str, int] = None):

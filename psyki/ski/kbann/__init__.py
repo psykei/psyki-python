@@ -2,19 +2,15 @@ from typing import Iterable, Callable, List
 from tensorflow.keras.layers import Concatenate
 from tensorflow import Tensor
 from psyki.logic.datalog.grammar import optimize_datalog_formula
-from tensorflow.python.keras.utils.generic_utils import get_custom_objects
 from psyki.logic import Fuzzifier, Formula
 from tensorflow.keras import Model
 from psyki.ski import Injector
-from psyki.utils import towell_logistic_function
 
 
 class KBANN(Injector):
     """
     Implementation of KBANN algorithm described by G. Towell in https://doi.org/10.1016/0004-3702(94)90105-8
     """
-
-    custom_objects: dict[str: Callable] = {'towell_logistic_function': towell_logistic_function}
 
     def __init__(self, predictor: Model, feature_mapping: dict[str, int], fuzzifier: str, omega: float = 4):
         """
@@ -42,5 +38,4 @@ class KBANN(Injector):
         modules = self._fuzzifier.visit(rules_copy)
         x = Concatenate(axis=1)(modules)
         new_predictor = Model(predictor_input, x)
-        get_custom_objects().update(self.custom_objects)
         return new_predictor
