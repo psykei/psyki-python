@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Callable
 
+from tensorflow.python.keras import Model
+
 from psyki.logic.datalog.grammar import DatalogFormula, DefinitionClause, Clause, Expression, Variable, Boolean, Number, \
     Unary, Negation, MofN
 from tensorflow import cast, SparseTensor, maximum, minimum, constant, reshape, reduce_max, tile
@@ -8,6 +10,7 @@ from tensorflow.python.keras.backend import to_dense
 from tensorflow.python.ops.array_ops import shape
 from psyki.logic import Formula
 from psyki.logic.datalog.fuzzifiers import ConstrainingFuzzifier
+from psyki.ski import EnrichedModel
 from psyki.utils import eta
 from psyki.utils.exceptions import SymbolicException
 
@@ -18,6 +21,7 @@ class Lukasiewicz(ConstrainingFuzzifier):
     mapping of Lukasiewicz. The resulting object is a list of continuous functions that can be used to constraint
     the predictor during its training. This is suitable for classification tasks.
     """
+    custom_objects: dict = {}
 
     def __init__(self, class_mapping: dict[str, int], feature_mapping: dict[str, int]):
         """
@@ -53,6 +57,10 @@ class Lukasiewicz(ConstrainingFuzzifier):
             '*': lambda l, r: lambda x: l(x) * r(x)
         }
         self._implication = ''
+
+    @staticmethod
+    def enriched_model(model: Model) -> EnrichedModel:
+        return EnrichedModel(model, Lukasiewicz.custom_objects)
 
     def _clear(self):
         self.classes = {}

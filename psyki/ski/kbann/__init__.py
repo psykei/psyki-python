@@ -38,4 +38,4 @@ class KBANN(Injector):
         modules = self._fuzzifier.visit(rules_copy)
         x = Concatenate(axis=1)(modules)
         new_predictor = Model(predictor_input, x)
-        return new_predictor
+        return self._fuzzifier.enriched_model(new_predictor)

@@ -1,4 +1,5 @@
 from typing import Any, Iterable, Callable
+from tensorflow.python.keras import Model
 from psyki.logic.datalog.grammar import DefinitionClause, Clause, DatalogFormula, Negation, Unary, Number, Boolean, \
     Variable, Expression, MofN, Nary
 from psyki.logic import Formula
@@ -6,6 +7,7 @@ from tensorflow.keras.layers import Dense, Lambda, Concatenate
 from tensorflow import Tensor, sigmoid, constant
 from tensorflow.python.ops.init_ops import constant_initializer, Constant
 from psyki.logic.datalog.fuzzifiers import StructuringFuzzifier
+from psyki.ski import EnrichedModel
 from psyki.utils.exceptions import SymbolicException
 from tensorflow.python.ops.array_ops import gather
 
@@ -14,6 +16,7 @@ class Towell(StructuringFuzzifier):
     """
     Fuzzifier that implements the mapping from crispy logic rules into neural networks proposed by Geoffrey Towell.
     """
+    custom_objects: dict = {}
 
     def __init__(self, predictor_input: Tensor, feature_mapping: dict[str, int], omega: float = 4):
         super().__init__()
@@ -47,6 +50,10 @@ class Towell(StructuringFuzzifier):
         def logistic_function(self, x: Tensor):
             return sigmoid(x - constant(self.bias_initializer.value))
 
+    @staticmethod
+    def enriched_model(model: Model) -> EnrichedModel:
+        return EnrichedModel(model, Towell.custom_objects)
+
     def _compute_bias(self, w: Iterable) -> Constant:
         p = len([u for u in w if u > 0])
         return constant_initializer((p - 0.5) * self.omega)
@@ -64,7 +71,7 @@ class Towell(StructuringFuzzifier):
         predication_name = self._get_predication_name(node.arg)
 
         if predication_name is not None:
-            net = self._visit(rhs, local_mapping)[0]
+            net: Tensor = self._visit(rhs, local_mapping)[0]
             if predication_name not in self.classes.keys():
                 # New predicate
                 self.classes[predication_name] = net

@@ -1,13 +1,15 @@
 from __future__ import annotations
+from collections.abc import Callable
 from typing import Any
-from psyki.logic.datalog.grammar import DatalogFormula, DefinitionClause, Clause, Expression, Variable, Boolean, Number, \
-    Unary, Negation, MofN
+from tensorflow.python.keras import Model
+from psyki.logic.datalog.grammar import *
 from tensorflow import Tensor, maximum
 from tensorflow.keras.layers import Minimum, Maximum, Dense, Concatenate, Dot, Lambda
 from tensorflow.python.ops.array_ops import gather
 from tensorflow.python.ops.init_ops import Ones, constant_initializer, Zeros
 from psyki.logic import Formula
 from psyki.logic.datalog.fuzzifiers import StructuringFuzzifier
+from psyki.ski import EnrichedModel
 from psyki.utils import eta_one_abs, eta, eta_abs_one
 
 
@@ -17,6 +19,8 @@ class NetBuilder(StructuringFuzzifier):
     knowledge with a continuous interpretation. The resulting object is a list of modules (ad hoc layers) that can be
     exploited by the predictor during and after its training. This is suitable for classification and regression tasks.
     """
+
+    custom_objects: dict[str: Callable] = {'eta': eta, 'eta_one_abs': eta_one_abs, 'eta_abs_one': eta_abs_one}
 
     def __init__(self, predictor_input: Tensor, feature_mapping: dict[str, int]):
         """
@@ -53,6 +57,10 @@ class NetBuilder(StructuringFuzzifier):
             'm': lambda l: Minimum()(l),
             '*': lambda l: Dot(axes=1)(l)
         }
+
+    @staticmethod
+    def enriched_model(model: Model) -> EnrichedModel:
+        return EnrichedModel(model, NetBuilder.custom_objects)
 
     def _clear(self):
         self.classes = {}

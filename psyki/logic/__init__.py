@@ -2,6 +2,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Any, Callable
 from pathlib import Path
+from tensorflow.keras import Model
+
 
 PATH = Path(__file__).parents[0]
 
@@ -39,3 +41,13 @@ class Fuzzifier(ABC):
             valid_names = '\n - '.join(available_fuzzifiers.keys())
             raise Exception('Fuzzifier ' + name + ' is not available\nAvailable fuzzifiers are:\n - ' + valid_names)
         return available_fuzzifiers[name]
+
+    @staticmethod
+    def enriched_model(model: Model) -> Model:
+        from psyki.ski import EnrichedModel
+        return EnrichedModel(model, {})
+
+    @staticmethod
+    @abstractmethod
+    def custom_objects() -> dict:
+        pass

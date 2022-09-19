@@ -43,17 +43,28 @@ class TestInjectionOnIris(unittest.TestCase):
     def test_lambda_layer(self):
         injector = LambdaLayer(self.predictor, self.class_mapping, self.variable_mapping, 'lukasiewicz')
         model = injector.inject(self.formulae)
+        # Test if clone is successful
+        cloned_model = model.copy()
+
         self.compile_and_train(model)
         model = model.remove_constraints()
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         accuracy = model.evaluate(self.test_x, self.test_y)[1]
+
+        self.compile_and_train(cloned_model)
+        cloned_model = cloned_model.remove_constraints()
+        cloned_model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        accuracy = cloned_model.evaluate(self.test_x, self.test_y)[1]
+        accuracy_cm = cloned_model.evaluate(self.test_x, self.test_y)[1]
+
         self.assertTrue(accuracy > self.ACCEPTABLE_ACCURACY)
+        self.assertTrue(accuracy == accuracy_cm)
 
     def test_kins(self):
         injector = NetworkStructurer(self.predictor, self.variable_mapping, 'netbuilder', 2)
         model = injector.inject(self.formulae)
         # Test if clone is successful
-        cloned_model = clone_model(model)
+        cloned_model = model.copy()
 
         self.compile_and_train(model)
         accuracy = model.evaluate(self.test_x, self.test_y)[1]
@@ -92,7 +103,7 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
         injector = KBANN(self.predictor, get_splice_junction_extended_feature_mapping(), 'towell', 1)
         model = injector.inject(self.rules)
         # Test if clone is successful
-        cloned_model = clone_model(model)
+        cloned_model = model.copy()
 
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         model.fit(self.train_x, self.train_y, batch_size=self.BATCH_SIZE, epochs=self.EPOCHS, verbose=self.VERBOSE)

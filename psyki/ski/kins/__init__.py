@@ -1,14 +1,12 @@
 from __future__ import annotations
 from typing import Callable, Iterable, List
-from tensorflow.keras.utils import get_custom_objects, custom_object_scope
 from tensorflow import Tensor
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate
-from tensorflow.python.keras.saving.save import load_model
 from psyki.logic.datalog.grammar import optimize_datalog_formula
 from psyki.ski import Injector
 from psyki.logic import Formula, Fuzzifier
-from psyki.utils import eta, eta_one_abs, eta_abs_one, model_deep_copy
+from psyki.utils import model_deep_copy
 
 
 class NetworkStructurer(Injector):
@@ -17,8 +15,6 @@ class NetworkStructurer(Injector):
     In this way the predictor can exploit the knowledge via these modules which mimic the logic formulae.
     With the default fuzzifiers this is the implementation of KINS: Knowledge injection via network structuring.
     """
-
-    custom_objects: dict[str: Callable] = {'eta': eta, 'eta_one_abs': eta_one_abs, 'eta_abs_one': eta_abs_one}
 
     def __init__(self, predictor: Model, feature_mapping: dict[str, int], fuzzifier: str, layer: int = 0):
         """
@@ -72,17 +68,7 @@ class NetworkStructurer(Injector):
         new_predictor = Model(predictor_input, x)
         # TODO: clone all old weights into the same layers
 
-        get_custom_objects().update(self.custom_objects)
-        self._latest_predictor = new_predictor
-        return self.copy()
-
-    @staticmethod
-    def load(file: str):
-        return load_model(file, custom_objects=NetworkStructurer.custom_objects)
-
-    def copy(self):
-        with custom_object_scope(self.custom_objects):
-            return model_deep_copy(self._latest_predictor)
+        return self._fuzzifier.enriched_model(new_predictor)
 
     def _clear(self):
         self._fuzzy_functions = ()

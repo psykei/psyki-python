@@ -3,7 +3,8 @@ from typing import Iterable, Callable, List
 from tensorflow import Tensor, stack
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Lambda
-from psyki.ski import Injector
+from tensorflow.keras.utils import custom_object_scope
+from psyki.ski import Injector, EnrichedModel
 from psyki.logic import Formula, Fuzzifier
 from psyki.utils import model_deep_copy
 
@@ -30,21 +31,16 @@ class LambdaLayer(Injector):
         self._fuzzifier = Fuzzifier.get(fuzzifier)([class_mapping, feature_mapping])
         self._fuzzy_functions: Iterable[Callable] = ()
 
-    class ConstrainedModel(Model):
+    class ConstrainedModel(EnrichedModel):
 
-        def __init__(self, original_predictor: Model, constraints: Iterable[Callable]):
+        def __init__(self, original_predictor: Model, constraints: Iterable[Callable], custom_objects: dict):
             self._constraints = constraints
             self._input_shape = original_predictor.input_shape
             predictor_output = original_predictor.layers[-1].output
             x = Concatenate(axis=1)([original_predictor.input, predictor_output])
             x = Lambda(self._cost, original_predictor.output.shape)(x)
-            super().__init__(original_predictor.inputs, x)
-
-        def call(self, inputs, training=None, mask=None):
-            return super().call(inputs, training, mask)
-
-        def get_config(self):
-            pass
+            model = Model(original_predictor.inputs, x)
+            super().__init__(model, custom_objects)
 
         def remove_constraints(self) -> Model:
             """
@@ -53,8 +49,12 @@ class LambdaLayer(Injector):
             # Layer -3 is the layer before the lambda layer (last original layer -> lambda -> output).
             return Model(self.input, self.layers[-3].output)
 
+        def copy(self) -> EnrichedModel:
+            with custom_object_scope(self.custom_objects):
+                model = model_deep_copy(self.remove_constraints())
+                return LambdaLayer.ConstrainedModel(model, self._constraints, self.custom_objects)
+
         def _cost(self, output_layer: Tensor) -> Tensor:
-            # Important! Changing the value of gamma will affect the knowledge cost.
             input_len = self._input_shape[1]
             x, y = output_layer[:, :input_len], output_layer[:, input_len:]
             cost = stack([function(x, 1 - y) for function in self._constraints], axis=1)
@@ -65,14 +65,9 @@ class LambdaLayer(Injector):
         # To ensure that every function refers to the right class we check the associated class name.
         self._fuzzy_functions = [dict_functions[name] for name, _ in
                                  sorted(self._class_mapping.items(), key=lambda i: i[1])]
-        return self.ConstrainedModel(model_deep_copy(self._predictor), self._fuzzy_functions)
+        return self.ConstrainedModel(model_deep_copy(self._predictor),
+                                     self._fuzzy_functions,
+                                     self._fuzzifier.custom_objects)
 
     def _clear(self):
         self._fuzzy_functions = ()
-
-    def load(self, file):
-        """
-        Use this function to load a trained model.
-        """
-        # return load_model(file, custom_objects={'_cost': self._cost})
-        raise Exception("Load of constrained model not implemented yet")
