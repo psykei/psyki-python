@@ -4,7 +4,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras import Input, Model
 from tensorflow.python.framework.random_seed import set_random_seed
-from tensorflow.keras.models import clone_model
 from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
 from psyki.ski.kbann import KBANN
 from psyki.ski.kill import LambdaLayer

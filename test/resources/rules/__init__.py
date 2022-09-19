@@ -23,7 +23,7 @@ RULES_REGISTER = {
 
 def get_rules(rule_domain: str = "poker", rule_name: str = "kb") -> list[str]:
     result = []
-    with open(str(RULES_REGISTER[rule_domain] / rule_name) + '.txt', mode="r") as file:
+    with open(str(RULES_REGISTER[rule_domain] / rule_name) + '.txt', mode="r", encoding="utf8") as file:
         reader = csv.reader(file, delimiter=';')
         for item in reader:
             result += item
