@@ -42,10 +42,18 @@ def execute_command(commands: Callable):
 
 def initialize_antlr4(file: str):
     import re
+    import os
     from os import system, popen
-    antlr4_version = re.split(r'=', popen('cat requirements.txt | grep antlr4').read())[1][:-1]
-    system('wget https://www.antlr.org/download/antlr-' + antlr4_version + '-complete.jar')
-    system('export CLASSPATH="./antlr-' + antlr4_version + '-complete.jar:$CLASSPATH"')
-    system(
-        'java -jar ./antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + file + ' -visitor -o psyki/resources/dist')
-    system('rm ./antlr-' + antlr4_version + '-complete.jar')
+
+    if os.name == 'nt':
+        antlr4_version = re.split(r'=', popen('type requirements.txt | find antlr4').read())[1][:-1]
+        system('curl https://www.antlr.org/download/antlr-' + antlr4_version + '-complete.jar')
+        system('SET CLASSPATH="./antlr-' + antlr4_version + '-complete.jar:%CLASSPATH%"')
+        system('java -jar ./antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + file + ' -visitor -o psyki/resources/dist')
+        system('del ./antlr-' + antlr4_version + '-complete.jar')
+    else:
+        antlr4_version = re.split(r'=', popen('cat requirements.txt | grep antlr4').read())[1][:-1]
+        system('wget https://www.antlr.org/download/antlr-' + antlr4_version + '-complete.jar')
+        system('export CLASSPATH="./antlr-' + antlr4_version + '-complete.jar:$CLASSPATH"')
+        system('java -jar ./antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + file + ' -visitor -o psyki/resources/dist')
+        system('rm ./antlr-' + antlr4_version + '-complete.jar')
