@@ -28,21 +28,14 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-run-unit-tests-${{ matrix.python-version }}-${{ matrix.os }}-${{ github.event.number || github.ref }}
       cancel-in-progress: true
-    needs:
-      - create-test-predictors-if-needed
     steps:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Restore Python dependencies
         run: |
@@ -57,4 +50,4 @@ jobs:
           wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data -O test/resources/data/poker/train.csv
 
       - name: Test
-        run: python -m unittest
+        run: python -m unittest discover -s test -t .
