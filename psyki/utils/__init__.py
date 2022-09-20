@@ -49,11 +49,11 @@ def initialize_antlr4(file: str):
         antlr4_version = re.split(r'=', popen('type requirements.txt | find "antlr4"').read())[1][:-1]
         system('curl -o antlr-' + antlr4_version + '-complete.jar --url https://www.antlr.org/download/antlr-' + antlr4_version + '-complete.jar')
         system(r'SET CLASSPATH=".\antlr-' + antlr4_version + '-complete.jar:%CLASSPATH%"')
-        system(r'java -jar .\antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + file + r' -visitor -o psyki\resources\dist')
+        system(r'java -jar .\antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + file + r' -visitor -o psyki\resources\dist -encoding utf-8')
         system(r'del .\antlr-' + antlr4_version + '-complete.jar')
     else:
         antlr4_version = re.split(r'=', popen('cat requirements.txt | grep antlr4').read())[1][:-1]
         system('wget https://www.antlr.org/download/antlr-' + antlr4_version + '-complete.jar')
         system('export CLASSPATH="./antlr-' + antlr4_version + '-complete.jar:$CLASSPATH"')
-        system('java -jar ./antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + file + ' -visitor -o psyki/resources/dist')
+        system('java -jar ./antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + file + ' -visitor -o psyki/resources/dist -encoding utf-8')
         system('rm ./antlr-' + antlr4_version + '-complete.jar')
