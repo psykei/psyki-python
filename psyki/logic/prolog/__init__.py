@@ -7,6 +7,7 @@ from psyki.logic.prolog.grammar import PrologFormula
 from psyki.logic import Formula, Fuzzifier
 
 
+# Not implemented yet
 class EnricherFuzzifier(Fuzzifier):
 
     def __init__(self, knowledge_base_file: str, mapping=None):
@@ -29,5 +30,3 @@ class EnricherFuzzifier(Fuzzifier):
             for row in f:
                 knowledge_base += row
         return tuprolog.theory.parsing.parse_theory(knowledge_base)
-
-

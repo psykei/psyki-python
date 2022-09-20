@@ -28,10 +28,10 @@ class Towell(StructuringFuzzifier):
         self._rhs_predicates: dict[str, tuple[dict[str, int], list[Callable]]] = {}
         self._trainable = False
         self._operation = {
-            '∧': lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
+            ',': lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
                                                         trainable=self._trainable,
                                                         bias_initializer=self._compute_bias(w))(Concatenate(axis=1)(l)),
-            '∨': lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
+            ';': lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
                                                         trainable=self._trainable,
                                                         bias_initializer=constant_initializer(0.5 * self.omega))(Concatenate(axis=1)(l)),
         }
@@ -62,8 +62,8 @@ class Towell(StructuringFuzzifier):
         return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
 
     def _visit_formula(self, node: DatalogFormula, local_mapping: dict[str, int] = None):
-        # if the implication symbol is a double left arrow '⇐', then the weights of the module are trainable.
-        self._trainable = node.op in ('⇐', '⇒', '⇔')
+        # if the implication symbol is a double left arrow '<--', then the weights of the module are trainable.
+        self._trainable = node.op == '<--'
         self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
 
     def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause, local_mapping: dict[str, int] = None):
@@ -104,7 +104,7 @@ class Towell(StructuringFuzzifier):
                 self._rhs_predicates[definition_name] = (local_mapping, nets)
                 w = len(self._rhs_predicates[definition_name][1]) * [self.omega]
                 self._predicates[definition_name] = (local_mapping,
-                                                     lambda m: self._operation.get('∨')(w)
+                                                     lambda m: self._operation.get(';')(w)
                                                      ([f(m) for f in self._rhs_predicates[definition_name][1]]))
 
     def _visit_expression(self, node: Expression, local_mapping: dict[str, int] = None) -> tuple[any, float]:

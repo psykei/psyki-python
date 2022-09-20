@@ -108,6 +108,7 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
         model = injector.inject(self.rules)
         del injector
         # Test if clone is successful
+        # model.summary()
         cloned_model = model.copy()
 
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])

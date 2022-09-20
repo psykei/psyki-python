@@ -11,7 +11,7 @@ def optimize_datalog_formula(formula: Formula):
         lhs = formula.lhs
         rhs = formula.rhs
         op = formula.op
-        if op in ('∧', '∨', '+') and len(formula.nary) == 0:
+        if op in (',', ';', '+') and len(formula.nary) == 0:
             if isinstance(lhs, datalog.grammar.Expression):
                 if lhs.op == op:
                     optimize_datalog_formula(lhs)
@@ -46,7 +46,7 @@ def optimize_datalog_formula(formula: Formula):
 
 class DatalogFormula(Formula):
 
-    def __init__(self, lhs: DefinitionClause, rhs: Clause, op: str = '←'):
+    def __init__(self, lhs: DefinitionClause, rhs: Clause, op: str = '<-'):
         self.lhs: DefinitionClause = lhs
         self.rhs: Clause = rhs
         self.op: str = op
@@ -87,9 +87,9 @@ class Expression(Clause):
 
     def __str__(self) -> str:
         if len(self.nary) == 0:
-            return '((' + str(self.lhs) + ')' + self.op + '(' + str(self.rhs) + '))'
+            return '(' + str(self.lhs) + ')' + self.op + '(' + str(self.rhs) + ')'
         else:
-            return '(' + self.op + '(' + ','.join(str(clause) for clause in self.nary) + ')'
+            return "'" + self.op + "'(" + ','.join(str(clause) for clause in self.nary) + ')'
 
     def copy(self) -> Formula:
         return Expression(self.lhs.copy(), self.rhs.copy(), self.op, [c.copy() for c in self.nary])

@@ -38,22 +38,20 @@ class NetBuilder(StructuringFuzzifier):
         self.__rhs: dict[str, Tensor] = {}
         self._trainable = False
         self._operation = {
-            '→': lambda l: None,
-            '↔': lambda l: None,
-            '∧': lambda l: Minimum()(l),
-            '∨': lambda l: Maximum()(l),
+            ',': lambda l: Minimum()(l),
+            ';': lambda l: Maximum()(l),
             '+': lambda l: Dense(1, kernel_initializer=Ones, activation='linear', trainable=self._trainable)
             (Concatenate(axis=1)(l)),
             '=': lambda l: Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
                                  activation=eta_one_abs)(Concatenate(axis=1)(l)),
             '<': lambda l: Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
                                  bias_initializer=constant_initializer([0.5]), activation=eta)(Concatenate(axis=1)(l)),
-            '≤': lambda l: Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
-                                 bias_initializer=constant_initializer([1.]), activation=eta)(Concatenate(axis=1)(l)),
+            '=<': lambda l: Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
+                                  bias_initializer=constant_initializer([1.]), activation=eta)(Concatenate(axis=1)(l)),
             '>': lambda l: Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
                                  bias_initializer=constant_initializer([0.5]), activation=eta)(Concatenate(axis=1)(l)),
-            '≥': lambda l: Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
-                                 bias_initializer=constant_initializer([1.]), activation=eta)(Concatenate(axis=1)(l)),
+            '>=': lambda l: Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
+                                  bias_initializer=constant_initializer([1.]), activation=eta)(Concatenate(axis=1)(l)),
             'm': lambda l: Minimum()(l),
             '*': lambda l: Dot(axes=1)(l)
         }
@@ -72,8 +70,8 @@ class NetBuilder(StructuringFuzzifier):
         return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
 
     def _visit_formula(self, node: DatalogFormula, local_mapping: dict[str, int] = None):
-        # if the implication symbol is a double left arrow '⇐', then the weights of the module are trainable.
-        self._trainable = node.op in ('⇐', '⇒', '⇔')
+        # if the implication symbol is a double left arrow '<--', then the weights of the module are trainable.
+        self._trainable = node.op == '<--'
         self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
 
     def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause, local_mapping: dict[str, int] = None):
@@ -137,4 +135,4 @@ class NetBuilder(StructuringFuzzifier):
     def _visit_m_of_n(self, node: MofN, local_mapping: dict[str, int] = None):
         predicates = [self._visit(x, local_mapping) for x in node.arg.unfolded]
         previous_layer = self._operation['+'](predicates)
-        return self._operation['≤']([self._visit(Number(node.m), local_mapping), previous_layer])
+        return self._operation['=<']([self._visit(Number(node.m), local_mapping), previous_layer])

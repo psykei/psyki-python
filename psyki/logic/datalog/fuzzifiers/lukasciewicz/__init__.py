@@ -43,15 +43,13 @@ class Lukasiewicz(ConstrainingFuzzifier):
         self.classes: dict[str, Callable] = {}
         self._rhs: dict[str, Callable] = {}
         self._operation = {
-            '∧': lambda l, r: lambda x: eta(maximum(l(x), r(x))),
-            '∨': lambda l, r: lambda x: eta(minimum(l(x), r(x))),
-            '→': lambda l, r: lambda x: eta(l(x) - r(x)),
-            '↔': lambda l, r: lambda x: eta(abs(l(x) - r(x))),
+            ',': lambda l, r: lambda x: eta(maximum(l(x), r(x))),
+            ';': lambda l, r: lambda x: eta(minimum(l(x), r(x))),
             '=': lambda l, r: lambda x: eta(abs(l(x) - r(x))),
             '<': lambda l, r: lambda x: eta(constant(.5) + l(x) - r(x)),
-            '≤': lambda l, r: lambda x: eta(l(x) - r(x)),
+            '=<': lambda l, r: lambda x: eta(l(x) - r(x)),
             '>': lambda l, r: lambda x: eta(constant(.5) - l(x) + r(x)),
-            '≥': lambda l, r: lambda x: eta(r(x) - l(x)),
+            '>=': lambda l, r: lambda x: eta(r(x) - l(x)),
             'm': lambda l, r: lambda x: minimum(l(x), r(x)),
             '+': lambda l, r: lambda x: l(x) + r(x),
             '*': lambda l, r: lambda x: l(x) * r(x)
