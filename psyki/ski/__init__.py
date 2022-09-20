@@ -46,8 +46,8 @@ class Injector(ABC):
               feature_mapping: dict[str, int],
               fuzzifier: str = 'towell',
               omega: int = 4) -> Injector:
-        from psyki.ski.kins import NetworkStructurer
-        return NetworkStructurer(model, feature_mapping, fuzzifier, omega)
+        from psyki.ski.kbann import KBANN
+        return KBANN(model, feature_mapping, fuzzifier, omega)
 
 
 class EnrichedModel(Model):
