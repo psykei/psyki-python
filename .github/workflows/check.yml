@@ -44,7 +44,14 @@ jobs:
       - name: Generate Datalog parser
         run: python setup.py generate_antlr4_parser
 
-      - name: Download dataset for test
+      - name: Download dataset for test in Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          curl -o test/resources/data/poker/test.csv --url https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data
+          curl -o test/resources/data/poker/train.csv --url https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data
+
+      - name: Download dataset for test no windows
+        if: matrix.os != 'windows-latest'
         run: |
           wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data -O test/resources/data/poker/test.csv
           wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data -O test/resources/data/poker/train.csv

@@ -43,7 +43,7 @@ def data_to_int(data: pd.DataFrame, mapping: dict[str: int]) -> pd.DataFrame:
 
 def _get_data(file: str) -> pd.DataFrame:
     x = []
-    with open(file) as f:
+    with open(file, encoding="utf8") as f:
         for row in f:
             row = re.sub('\n', '', row)
             label, _, features = row.split(',')

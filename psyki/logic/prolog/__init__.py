@@ -25,7 +25,7 @@ class EnricherFuzzifier(Fuzzifier):
     @staticmethod
     def _parse_file(file: str):
         knowledge_base: str = ''
-        with open(file) as f:
+        with open(file, encoding="utf8") as f:
             for row in f:
                 knowledge_base += row
         return tuprolog.theory.parsing.parse_theory(knowledge_base)

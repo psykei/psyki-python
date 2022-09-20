@@ -3,7 +3,7 @@ from tuprolog.theory.parsing import parse_theory
 
 
 def file_to_prolog(filename: str) -> Theory:
-    with open(filename, 'r') as file:
+    with open(filename, 'r', encoding="utf8") as file:
         textual_rule = file.read()
     return text_to_prolog(textual_rule)
 
