@@ -1,7 +1,7 @@
 grammar Datalog;
 
 formula
-    : lhs=def_clause op=('←' | '⇐') rhs=clause
+    : lhs=def_clause op=('<-' | '<--') rhs=clause
     ;
 
 def_clause
@@ -12,14 +12,12 @@ clause
     : lit=literal # ClauseLiteral
     | '(' left=clause op='*' right=clause ')' # ClauseExpression
     | '(' left=clause op='+' right=clause ')' # ClauseExpression
-    | '(' left=clause op=('=' | '<' | '≤' | '>' | '≥' | 'm') right=clause ')' # ClauseExpression
-    | '(' left=clause op=('∧' | '∨') right=clause ')' # ClauseExpression
-    | '(' left=clause op=('→' | '↔') right=clause ')' # ClauseExpression
+    | '(' left=clause op=('=' | '<' | '=<' | '>' | '>=' | 'm') right=clause ')' # ClauseExpression
+    | '(' left=clause op=(',' | ';') right=clause ')' # ClauseExpression
     | left=clause op='*' right=clause # ClauseExpressionNoPar
     | left=clause op='+' right=clause # ClauseExpressionNoPar
-    | left=clause op=('=' | '<' | '≤' | '>' | '≥' | 'm') right=clause # ClauseExpressionNoPar
-    | left=clause op=('∧' | '∨') right=clause # ClauseExpressionNoPar
-    | left=clause op=('→' | '↔') right=clause # ClauseExpressionNoPar
+    | left=clause op=('=' | '<' | '=<' | '>' | '>=' | 'm') right=clause # ClauseExpressionNoPar
+    | left=clause op=(',' | ';') right=clause # ClauseExpressionNoPar
     | '(' c=clause ')' #ClauseClause
     ;
 
@@ -30,8 +28,8 @@ literal
     ;
 
 predicate
-    : '⊤' # PredicateTrue
-    | '⊥' # PredicateFalse
+    : 'true' # PredicateTrue
+    | 'false' # PredicateFalse
     | name=term # PredicateTerm
     | pred=Predication # PredicateUnary
     | pred='m_of_n' '(' m=Number ',' args=complex_arguments ')' # MofN
@@ -62,8 +60,8 @@ constant
     ;
 
 boolean
-    : '⊤'
-    | '⊥'
+    : 'true'
+    | 'false'
     ;
 
 Predication: [a-z]([a-z]|[0-9]|[_])*;
