@@ -19,14 +19,6 @@ def get_formula(ast: DatalogParser.FormulaContext) -> DatalogFormula:
 
 def to_prolog_string(rule: DatalogFormula) -> str:
     # TODO: for now it works with just propositional rules without clauses except 'class'.
-    op_mapping = {
-        '≤': '=<',
-        '<': '<',
-        '≥': '>',
-        '>': '>',
-        '∧': ',',  # should not be necessary
-        '=': '=',
-    }
 
     def unfold_body(e: Expression, result=[]) -> list[str]:
         if isinstance(e.lhs, Expression):
@@ -34,7 +26,7 @@ def to_prolog_string(rule: DatalogFormula) -> str:
         if isinstance(e.rhs, Expression):
             result = result + unfold_body(e.rhs)
         if not isinstance(e.lhs, Expression) and not isinstance(e.rhs, Expression):
-            return ['\'' + op_mapping[e.op] + '\'(' + str(e.lhs) + ', ' + str(e.rhs) + ')']
+            return ['\'' + e.op + '\'(' + str(e.lhs) + ', ' + str(e.rhs) + ')']
         return result
 
     head = str(rule.lhs)

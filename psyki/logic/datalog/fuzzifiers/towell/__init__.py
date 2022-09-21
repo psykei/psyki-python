@@ -2,7 +2,7 @@ from typing import Any, Iterable, Callable
 from tensorflow.python.keras import Model
 from psyki.logic.datalog.grammar import DefinitionClause, Clause, DatalogFormula, Negation, Unary, Number, Boolean, \
     Variable, Expression, MofN, Nary
-from psyki.logic import Formula
+from psyki.logic import Formula, get_logic_symbols_with_short_name
 from tensorflow.keras.layers import Dense, Lambda, Concatenate
 from tensorflow import Tensor, sigmoid, constant
 from tensorflow.python.ops.init_ops import constant_initializer, Constant
@@ -10,6 +10,9 @@ from psyki.logic.datalog.fuzzifiers import StructuringFuzzifier
 from psyki.ski import EnrichedModel
 from psyki.utils.exceptions import SymbolicException
 from tensorflow.python.ops.array_ops import gather
+
+
+_logic_symbols = get_logic_symbols_with_short_name()
 
 
 class Towell(StructuringFuzzifier):
@@ -28,12 +31,15 @@ class Towell(StructuringFuzzifier):
         self._rhs_predicates: dict[str, tuple[dict[str, int], list[Callable]]] = {}
         self._trainable = False
         self._operation = {
-            ',': lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
-                                                        trainable=self._trainable,
-                                                        bias_initializer=self._compute_bias(w))(Concatenate(axis=1)(l)),
-            ';': lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
-                                                        trainable=self._trainable,
-                                                        bias_initializer=constant_initializer(0.5 * self.omega))(Concatenate(axis=1)(l)),
+            _logic_symbols('cj'):
+                lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
+                                                       trainable=self._trainable,
+                                                       bias_initializer=self._compute_bias(w))(Concatenate(axis=1)(l)),
+            _logic_symbols('dj'):
+                lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
+                                                       trainable=self._trainable,
+                                                       bias_initializer=constant_initializer(
+                                                           0.5 * self.omega))(Concatenate(axis=1)(l)),
         }
 
     class CustomDense(Dense):

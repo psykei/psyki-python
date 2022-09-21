@@ -7,10 +7,13 @@ from tensorflow import Tensor, maximum
 from tensorflow.keras.layers import Minimum, Maximum, Dense, Concatenate, Dot, Lambda
 from tensorflow.python.ops.array_ops import gather
 from tensorflow.python.ops.init_ops import Ones, constant_initializer, Zeros
-from psyki.logic import Formula
+from psyki.logic import Formula, get_logic_symbols_with_short_name
 from psyki.logic.datalog.fuzzifiers import StructuringFuzzifier
 from psyki.ski import EnrichedModel
 from psyki.utils import eta_one_abs, eta, eta_abs_one
+
+
+_logic_symbols = get_logic_symbols_with_short_name()
 
 
 class NetBuilder(StructuringFuzzifier):
@@ -38,20 +41,34 @@ class NetBuilder(StructuringFuzzifier):
         self.__rhs: dict[str, Tensor] = {}
         self._trainable = False
         self._operation = {
-            ',': lambda l: Minimum()(l),
-            ';': lambda l: Maximum()(l),
+            _logic_symbols('cj'): lambda l: Minimum()(l),
+            _logic_symbols('dj'): lambda l: Maximum()(l),
             '+': lambda l: Dense(1, kernel_initializer=Ones, activation='linear', trainable=self._trainable)
             (Concatenate(axis=1)(l)),
-            '=': lambda l: Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
-                                 activation=eta_one_abs)(Concatenate(axis=1)(l)),
-            '<': lambda l: Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
-                                 bias_initializer=constant_initializer([0.5]), activation=eta)(Concatenate(axis=1)(l)),
-            '=<': lambda l: Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
-                                  bias_initializer=constant_initializer([1.]), activation=eta)(Concatenate(axis=1)(l)),
-            '>': lambda l: Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
-                                 bias_initializer=constant_initializer([0.5]), activation=eta)(Concatenate(axis=1)(l)),
-            '>=': lambda l: Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
-                                  bias_initializer=constant_initializer([1.]), activation=eta)(Concatenate(axis=1)(l)),
+            _logic_symbols('e'): lambda l: Dense(units=1,
+                                                 kernel_initializer=constant_initializer([1, -1]),
+                                                 trainable=self._trainable,
+                                                 activation=eta_one_abs)(Concatenate(axis=1)(l)),
+            _logic_symbols('l'): lambda l: Dense(units=1,
+                                                 kernel_initializer=constant_initializer([-1, 1]),
+                                                 trainable=self._trainable,
+                                                 bias_initializer=constant_initializer([0.5]),
+                                                 activation=eta)(Concatenate(axis=1)(l)),
+            _logic_symbols('le'): lambda l: Dense(units=1,
+                                                  kernel_initializer=constant_initializer([-1, 1]),
+                                                  trainable=self._trainable,
+                                                  bias_initializer=constant_initializer([1.]),
+                                                  activation=eta)(Concatenate(axis=1)(l)),
+            _logic_symbols('g'): lambda l: Dense(units=1,
+                                                 kernel_initializer=constant_initializer([1, -1]),
+                                                 trainable=self._trainable,
+                                                 bias_initializer=constant_initializer([0.5]),
+                                                 activation=eta)(Concatenate(axis=1)(l)),
+            _logic_symbols('ge'): lambda l: Dense(units=1,
+                                                  kernel_initializer=constant_initializer([1, -1]),
+                                                  trainable=self._trainable,
+                                                  bias_initializer=constant_initializer([1.]),
+                                                  activation=eta)(Concatenate(axis=1)(l)),
             'm': lambda l: Minimum()(l),
             '*': lambda l: Dot(axes=1)(l)
         }
@@ -135,4 +152,4 @@ class NetBuilder(StructuringFuzzifier):
     def _visit_m_of_n(self, node: MofN, local_mapping: dict[str, int] = None):
         predicates = [self._visit(x, local_mapping) for x in node.arg.unfolded]
         previous_layer = self._operation['+'](predicates)
-        return self._operation['=<']([self._visit(Number(node.m), local_mapping), previous_layer])
+        return self._operation[_logic_symbols('le')]([self._visit(Number(node.m), local_mapping), previous_layer])

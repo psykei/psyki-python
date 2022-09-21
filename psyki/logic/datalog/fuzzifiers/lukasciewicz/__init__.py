@@ -1,18 +1,18 @@
 from __future__ import annotations
 from typing import Callable
-
 from tensorflow.python.keras import Model
-
-from psyki.logic.datalog.grammar import DatalogFormula, DefinitionClause, Clause, Expression, Variable, Boolean, Number, \
-    Unary, Negation, MofN
+from psyki.logic.datalog.grammar import *
 from tensorflow import cast, SparseTensor, maximum, minimum, constant, reshape, reduce_max, tile
 from tensorflow.python.keras.backend import to_dense
 from tensorflow.python.ops.array_ops import shape
-from psyki.logic import Formula
+from psyki.logic import Formula, get_logic_symbols_with_short_name
 from psyki.logic.datalog.fuzzifiers import ConstrainingFuzzifier
 from psyki.ski import EnrichedModel
 from psyki.utils import eta
 from psyki.utils.exceptions import SymbolicException
+
+
+_logic_symbols = get_logic_symbols_with_short_name()
 
 
 class Lukasiewicz(ConstrainingFuzzifier):
@@ -43,13 +43,13 @@ class Lukasiewicz(ConstrainingFuzzifier):
         self.classes: dict[str, Callable] = {}
         self._rhs: dict[str, Callable] = {}
         self._operation = {
-            ',': lambda l, r: lambda x: eta(maximum(l(x), r(x))),
-            ';': lambda l, r: lambda x: eta(minimum(l(x), r(x))),
-            '=': lambda l, r: lambda x: eta(abs(l(x) - r(x))),
-            '<': lambda l, r: lambda x: eta(constant(.5) + l(x) - r(x)),
-            '=<': lambda l, r: lambda x: eta(l(x) - r(x)),
-            '>': lambda l, r: lambda x: eta(constant(.5) - l(x) + r(x)),
-            '>=': lambda l, r: lambda x: eta(r(x) - l(x)),
+            _logic_symbols('cj'): lambda l, r: lambda x: eta(maximum(l(x), r(x))),
+            _logic_symbols('dj'): lambda l, r: lambda x: eta(minimum(l(x), r(x))),
+            _logic_symbols('e'): lambda l, r: lambda x: eta(abs(l(x) - r(x))),
+            _logic_symbols('l'): lambda l, r: lambda x: eta(constant(.5) + l(x) - r(x)),
+            _logic_symbols('le'): lambda l, r: lambda x: eta(l(x) - r(x)),
+            _logic_symbols('g'): lambda l, r: lambda x: eta(constant(.5) - l(x) + r(x)),
+            _logic_symbols('ge'): lambda l, r: lambda x: eta(r(x) - l(x)),
             'm': lambda l, r: lambda x: minimum(l(x), r(x)),
             '+': lambda l, r: lambda x: l(x) + r(x),
             '*': lambda l, r: lambda x: l(x) * r(x)

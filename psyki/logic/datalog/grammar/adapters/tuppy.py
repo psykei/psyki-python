@@ -1,18 +1,16 @@
 from tuprolog.core import Clause
 from tuprolog.theory import Theory, mutable_theory
+from psyki.logic import get_logic_symbols_with_short_name
 from psyki.logic.datalog import DatalogFormula, Argument, Variable, Number
 from psyki.logic.datalog.grammar import Predication, Expression, Term, Boolean, Negation, DefinitionClause
 
-mapping = {
-    '<=': '≤',
-    '=<': '≤',
-    '>=': '≥',
-    '=>': '≥',
-}
 
 in_functor = 'in'
 not_in_functor = 'not_in'
-special_functor = (in_functor, not_in_functor)
+not_functor = 'not'
+special_functor = (in_functor, not_in_functor, not_functor)
+
+_logic_symbols = get_logic_symbols_with_short_name()
 
 
 def prolog_to_datalog(t: Theory) -> list[DatalogFormula]:
@@ -40,19 +38,23 @@ def clause_to_formula(c: Clause) -> DatalogFormula:
             return Argument(arg)
 
     def get_standard_functor(functor: str) -> str:
-        return str(functor) if functor not in mapping else mapping[functor]
+        return str(functor)
 
     def create_body(terms: list) -> Clause:
         term = terms[0]
         if len(terms) > 1:
             if term.is_struct and not term.is_recursive:
-                return Expression(create_body([term]), create_body(terms[1:]), '∧')
+                return Expression(create_body([term]), create_body(terms[1:]), _logic_symbols('cj'))
             elif term.is_struct and term.is_recursive:
                 t1, t2 = split_term(term)
                 if term.functor == in_functor:
-                    return Expression(Expression(t1, t2, '∧'), create_body(terms[1:]), '∧')
+                    return Expression(Expression(t1, t2, _logic_symbols('cj')),
+                                      create_body(terms[1:]),
+                                      _logic_symbols('cj'))
                 elif term.functor == not_in_functor:
-                    return Expression(Negation(Expression(t1, t2, '∧')), create_body(terms[1:]), '∧')
+                    return Expression(Negation(Expression(t1, t2, _logic_symbols('cj'))),
+                                      create_body(terms[1:]),
+                                      _logic_symbols('cj'))
                 else:
                     raise Exception('Not expandable functor: ' + str(term.functor))
             else:
@@ -66,20 +68,23 @@ def clause_to_formula(c: Clause) -> DatalogFormula:
                                   prolog_atom_to_formula(args[1]),
                                   get_standard_functor(term.functor))
             elif term.is_struct and term.functor in special_functor:
-                t1, t2 = split_term(term)
-                if term.functor == in_functor:
-                    return Expression(t1, t2, '∧')
-                elif term.functor == not_in_functor:
-                    return Negation(Expression(t1, t2, '∧'))
+                if term.functor == not_functor:
+                    return Negation(prolog_atom_to_formula(term.args[0]))
                 else:
-                    raise Exception('Not expandable functor: ' + str(term.functor))
+                    t1, t2 = split_term(term)
+                    if term.functor == in_functor:
+                        return Expression(t1, t2, _logic_symbols('cj'))
+                    elif term.functor == not_in_functor:
+                        return Negation(Expression(t1, t2, _logic_symbols('cj')))
+                    else:
+                        raise Exception('Not expandable functor: ' + str(term.functor))
             else:
                 raise Exception('Not implemented error: only not recursive expressions in clause body')
 
     def split_term(t):
         args = list(t.args)
-        t1 = Expression(prolog_atom_to_formula(args[0]), prolog_atom_to_formula(args[1][0]), mapping['>='])
-        t2 = Expression(prolog_atom_to_formula(args[0]), prolog_atom_to_formula(args[1][1][0]), '<')
+        t1 = Expression(prolog_atom_to_formula(args[0]), prolog_atom_to_formula(args[1][0]), _logic_symbols('ge'))
+        t2 = Expression(prolog_atom_to_formula(args[0]), prolog_atom_to_formula(args[1][1][0]), _logic_symbols('l'))
         return t1, t2
 
     # LHS

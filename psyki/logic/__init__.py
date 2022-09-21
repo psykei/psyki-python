@@ -7,6 +7,44 @@ from tensorflow.keras import Model
 
 PATH = Path(__file__).parents[0]
 
+_SHORT_LOGIC_SYMBOLS_NAMES: dict[str: str] = {
+    'cj': 'conjunction',
+    'dj': 'disjunction',
+    'g': 'greater',
+    'ge': 'greater_equal',
+    'l': 'less',
+    'le': 'less_equal',
+    'e': 'equal',
+    'n': 'negation,'
+}
+
+_LOGIC_SYMBOLS: dict[str: str] = {
+    'conjunction': ',',
+    'disjunction': ';',
+    'greater': '>',
+    'greater_equal': '>=',
+    'less': '<',
+    'less_equal': '=<',
+    'equal': '=',
+    'negation': u'\\u170',  # ¬
+}
+
+
+def get_logic_symbols() -> dict[str, str]:
+    return _LOGIC_SYMBOLS
+
+
+def get_logic_symbols_with_short_name() -> Callable:
+    return lambda x: _LOGIC_SYMBOLS[_SHORT_LOGIC_SYMBOLS_NAMES[x]]
+
+
+def list_logic_symbols_names() -> list[str]:
+    return list(_LOGIC_SYMBOLS.keys())
+
+
+def list_logic_symbols_short_names() -> list[str]:
+    return list(_SHORT_LOGIC_SYMBOLS_NAMES.keys())
+
 
 class Formula(ABC):
     """
