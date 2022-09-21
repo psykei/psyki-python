@@ -88,7 +88,7 @@ class NetBuilder(StructuringFuzzifier):
 
     def _visit_formula(self, node: DatalogFormula, local_mapping: dict[str, int] = None):
         # if the implication symbol is a double left arrow '<--', then the weights of the module are trainable.
-        self._trainable = node.op == '<--'
+        self._trainable = False  # node.op == '<--'
         self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
 
     def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause, local_mapping: dict[str, int] = None):

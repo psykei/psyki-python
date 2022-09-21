@@ -89,7 +89,7 @@ class Towell(StructuringFuzzifier):
                 incomplete_function.append(net)
                 self._rhs[predication_name] = incomplete_function
                 w = len(self._rhs[predication_name]) * [self.omega]
-                self.classes[predication_name] = self._operation.get('∨')(w)(self._rhs[predication_name])
+                self.classes[predication_name] = self._operation.get(_logic_symbols('dj'))(w)(self._rhs[predication_name])
         else:
             # Substitute variables that are not matching features with mapping functions
             variables_names = self._get_variables_names(node.arg)
