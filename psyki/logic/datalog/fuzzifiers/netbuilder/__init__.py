@@ -1,7 +1,7 @@
 from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
-from tensorflow.python.keras import Model
+from tensorflow.keras import Model
 from psyki.logic.datalog.grammar import *
 from tensorflow import Tensor, maximum
 from tensorflow.keras.layers import Minimum, Maximum, Dense, Concatenate, Dot, Lambda

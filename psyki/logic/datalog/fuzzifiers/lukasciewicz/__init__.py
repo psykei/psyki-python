@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Callable
-from tensorflow.python.keras import Model
+from tensorflow.keras import Model
 from psyki.logic.datalog.grammar import *
 from tensorflow import cast, SparseTensor, maximum, minimum, constant, reshape, reduce_max, tile
 from tensorflow.python.keras.backend import to_dense

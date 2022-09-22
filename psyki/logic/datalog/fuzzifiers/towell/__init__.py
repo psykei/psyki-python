@@ -1,5 +1,5 @@
 from typing import Any, Iterable, Callable
-from tensorflow.python.keras import Model
+from tensorflow.keras import Model
 from psyki.logic.datalog.grammar import DefinitionClause, Clause, DatalogFormula, Negation, Unary, Number, Boolean, \
     Variable, Expression, MofN, Nary
 from psyki.logic import Formula, get_logic_symbols_with_short_name
