@@ -58,7 +58,7 @@ def clause_to_formula(c: Clause) -> DatalogFormula:
                 else:
                     raise Exception('Not expandable functor: ' + str(term.functor))
             elif term.is_var:
-                return prolog_atom_to_formula(term)
+                return Expression(prolog_atom_to_formula(term), create_body(terms[1:]), _logic_symbols('cj'))
             else:
                 raise Exception('Not implemented error: only expressions in clause body')
         else:
@@ -80,6 +80,8 @@ def clause_to_formula(c: Clause) -> DatalogFormula:
                         return Negation(Expression(t1, t2, _logic_symbols('cj')))
                     else:
                         raise Exception('Not expandable functor: ' + str(term.functor))
+            elif term.is_var:
+                return prolog_atom_to_formula(term)
             else:
                 raise Exception('Not implemented error: only not recursive expressions in clause body')
 
