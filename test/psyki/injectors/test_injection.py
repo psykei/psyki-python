@@ -108,10 +108,9 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
 
     def common_test_function(self, injector: Injector, batch_size: int, acceptable_accuracy: float):
         model = injector.inject(self.rules)
-        del injector
         # Test if clone is successful
-        # model.summary()
         cloned_model = model.copy()
+        del injector
 
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         model.fit(self.train_x, self.train_y, batch_size=batch_size, epochs=self.EPOCHS, verbose=self.VERBOSE, callbacks=self.early_stop)
@@ -132,8 +131,8 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
 
     def test_kins(self):
         injector = Injector.kins(self.predictor, get_splice_junction_extended_feature_mapping())
-        self.rules = self.rules[:-2]  # remove N class rule
-        self.common_test_function(injector, batch_size=32, acceptable_accuracy=0.935)
+        self.rules = self.rules[:-2]  # remove N class rules
+        self.common_test_function(injector, batch_size=32, acceptable_accuracy=0.93)
 
 
 if __name__ == '__main__':

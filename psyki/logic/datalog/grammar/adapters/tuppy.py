@@ -57,6 +57,8 @@ def clause_to_formula(c: Clause) -> DatalogFormula:
                                       _logic_symbols('cj'))
                 else:
                     raise Exception('Not expandable functor: ' + str(term.functor))
+            elif term.is_var:
+                return prolog_atom_to_formula(term)
             else:
                 raise Exception('Not implemented error: only expressions in clause body')
         else:
