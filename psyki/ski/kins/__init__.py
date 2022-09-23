@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Callable, Iterable, List
 import tensorflow as tf
+from numpy import eye
 from tensorflow import Tensor
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate
@@ -28,19 +29,23 @@ class NetworkStructurer(Injector):
         @param layer: the level of the layer where to perform the injection.
         @param fuzzifier: the fuzzifiers used to map the knowledge (by default it is SubNetworkBuilder).
         """
+        self._base = model_deep_copy(predictor)
         self._predictor: Model = model_deep_copy(predictor)
         # self.feature_mapping: dict[str, int] = feature_mapping
         if layer < 0 or layer > len(predictor.layers) - 2:
             raise Exception('Cannot inject knowledge into layer ' + str(layer) +
                             '.\nYou can inject from layer 0 to ' + str(len(predictor.layers) - 2))
         self._layer = layer
+        self._fuzzifier_name = fuzzifier
+        self._feature_mapping = feature_mapping
         # Use as default fuzzifiers SubNetworkBuilder.
-        self._fuzzifier = Fuzzifier.get(fuzzifier)([self._predictor.input, feature_mapping])
+        self._fuzzifier = Fuzzifier.get(fuzzifier)([self._predictor.input, self._feature_mapping])
         self._fuzzy_functions: Iterable[Callable] = ()
         self._latest_predictor = None
 
     def inject(self, rules: List[Formula]) -> Model:
         self._clear()
+        predictor = self._predictor
         # Prevent side effect on the original rules during optimization.
         rules_copy = [rule.copy() for rule in rules]
         for rule in rules_copy:
@@ -102,4 +107,6 @@ class NetworkStructurer(Injector):
                 return layer
 
     def _clear(self):
+        self._predictor: Model = model_deep_copy(self._base)
+        self._fuzzifier = Fuzzifier.get(self._fuzzifier_name)([self._predictor.input, self._feature_mapping])
         self._fuzzy_functions = ()

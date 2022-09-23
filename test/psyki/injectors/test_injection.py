@@ -132,7 +132,7 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
     def test_kins(self):
         injector = Injector.kins(self.predictor, get_splice_junction_extended_feature_mapping())
         self.rules = self.rules[:-2]  # remove N class rules
-        self.common_test_function(injector, batch_size=32, acceptable_accuracy=0.93)
+        self.common_test_function(injector, batch_size=32, acceptable_accuracy=0.935)
 
 
 if __name__ == '__main__':
