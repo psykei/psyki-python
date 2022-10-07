@@ -225,6 +225,17 @@ class Argument(Formula):
     def copy(self) -> Formula:
         return Argument(self.term.copy(), self.arg)
 
+    @property
+    def unfolded(self):
+        if self.arg is None:
+            return [self.term]
+        else:
+            return [self.term] + self.arg.unfolded
+
+    @property
+    def last(self):
+        return self.unfolded[-1]
+
 
 class ComplexArgument(Formula):
 
@@ -244,3 +255,7 @@ class ComplexArgument(Formula):
             return [self.clause]
         else:
             return [self.clause] + self.arg.unfolded
+
+    @property
+    def last(self):
+        return self.unfolded[-1]
