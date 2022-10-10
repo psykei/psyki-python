@@ -5,7 +5,7 @@ from psyki.ski import EnrichedModel
 import time
 
 
-class Timer:
+class LatencyQoS:
     def __init__(self,
                  predictor_1: Union[Model, EnrichedModel],
                  predictor_2: Union[Model, EnrichedModel],
@@ -20,7 +20,7 @@ class Timer:
         epochs = options['epochs']
         dataset = options['dataset']
 
-    def measure(self, fit=False):
+    def measure(self, fit: bool = False):
         if fit:
             print('Measuring times of model training. This can take a while as model.fit needs to run...')
             times = []
