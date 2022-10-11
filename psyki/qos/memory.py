@@ -26,6 +26,9 @@ class MemoryQoS:
 
 
 def get_flops(model: Union[Model, EnrichedModel]) -> int:
+    model_h5_path = 'tmp/tmp.h5'
+    # Store the given model in a temporary file
+    model.save(model_h5_path)
     # Redefine an empty session in order to avoid overlap of models in graph
     session = tf.compat.v1.Session()
     graph = tf.compat.v1.get_default_graph()
@@ -33,7 +36,7 @@ def get_flops(model: Union[Model, EnrichedModel]) -> int:
     with graph.as_default():
         with session.as_default():
             # Compile the given model for building its computational graph
-            model.compile()
+            model = tf.keras.models.load_model(model_h5_path)
             # Define profiler options
             run_meta = tf.compat.v1.RunMetadata()
             opts = tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()
@@ -44,4 +47,5 @@ def get_flops(model: Union[Model, EnrichedModel]) -> int:
                                                   options=opts)
     # Reset default graph to avoid multiple calls to end up in the same computation
     tf.compat.v1.reset_default_graph()
+    os.rmdir('tmp')
     return flops.total_float_ops
