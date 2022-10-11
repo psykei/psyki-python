@@ -1,16 +1,19 @@
 from __future__ import annotations
 from typing import Iterable, Callable, List
-from tensorflow.keras import Model, Optimizer, Loss, Dataset
+from tensorflow.keras import Model
+from tensorflow.data import Dataset
 from psyki.ski import EnrichedModel
-
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2_as_graph
+import tensorflow as tf
 
 class MemoryQoS:
     def __init__(self,
                  predictor_1: Union[Model, EnrichedModel],
-                 predictor_2: Union[Model, EnrichedModel]):
+                 predictor_2: Union[Model, EnrichedModel],
+                 options):
         # Setup predictor models
         self.predictor_1 = predictor_1
-        self.predictor_2 = predictor_2
+        self.predictor_2 = predictor_2.inject(options['formula'])
 
     def measure(self, mode: String = 'flops'):
         if mode == 'flops':
@@ -26,26 +29,12 @@ class MemoryQoS:
 
 
 def get_flops(model: Union[Model, EnrichedModel]) -> int:
-    model_h5_path = 'tmp/tmp.h5'
-    # Store the given model in a temporary file
-    model.save(model_h5_path)
-    # Redefine an empty session in order to avoid overlap of models in graph
-    session = tf.compat.v1.Session()
-    graph = tf.compat.v1.get_default_graph()
-    # Open session and default graph
-    with graph.as_default():
-        with session.as_default():
-            # Compile the given model for building its computational graph
-            model = tf.keras.models.load_model(model_h5_path)
-            # Define profiler options
-            run_meta = tf.compat.v1.RunMetadata()
-            opts = tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()
-            # Call the profiler
-            flops = tf.compat.v1.profiler.profile(graph=graph,
-                                                  run_meta=run_meta,
-                                                  cmd='op',
-                                                  options=opts)
-    # Reset default graph to avoid multiple calls to end up in the same computation
-    tf.compat.v1.reset_default_graph()
-    os.rmdir('tmp')
+    batch_size = 1
+    real_model = tf.function(model).get_concrete_function(tf.TensorSpec([batch_size] + model.inputs[0].shape[1:], model.inputs[0].dtype))
+    frozen_func, graph_def = convert_variables_to_constants_v2_as_graph(real_model)
+
+    run_meta = tf.compat.v1.RunMetadata()
+    opts = tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()
+    flops = tf.compat.v1.profiler.profile(graph=frozen_func.graph,
+                                            run_meta=run_meta, cmd='op', options=opts)
     return flops.total_float_ops
