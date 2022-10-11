@@ -16,7 +16,7 @@ class LatencyQoS:
                  options: dict):
         # Setup predictor models
         self.bare_model = model
-        self.inj_model = get_injector(injector)(model, injector_arguments).inject(formulae)
+        self.inj_model = get_injector(injector)(model, **injector_arguments).inject(formulae)
         # Read options from dictionary
         self.optimiser = options['optim']
         self.loss = options['loss']
@@ -28,7 +28,7 @@ class LatencyQoS:
         if fit:
             print('Measuring times of model training. This can take a while as model.fit needs to run...')
             times = []
-            for model in [self.predictor_1, self.predictor_2]:
+            for model in [self.bare_model, self.inj_model]:
                 times.append(measure_fit(model = model,
                                          optimiser = self.optimiser,
                                          loss = self.loss,
@@ -41,11 +41,10 @@ class LatencyQoS:
                                                                                        1] else 'slower'))
         else:
             pass
-        self.predictor_1 = self.predictor_1.remove_constraints()
-        self.predictor_2 = self.predictor_2.remove_constraints()
+        self.inj_model = self.inj_model.remove_constraints()
         print('Measuring times of model prediction. This may take a while depending on the model and dataset...')
         times = []
-        for model in [self.predictor_1, self.predictor_2]:
+        for model in [self.bare_model, self.inj_model]:
             times.append(measure_predict(model = model,
                                          dataset = self.dataset))
         # First model should be the bare model, Second one should be the injected one
