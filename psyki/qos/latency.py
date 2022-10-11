@@ -2,19 +2,21 @@ from __future__ import annotations
 from typing import Iterable, Callable, List
 from tensorflow.keras import Model
 from tensorflow.data import Dataset
-from psyki.ski import EnrichedModel
+from psyki.ski import EnrichedModel, Injector
 import time
-from utils import split_dataset
+from utils import split_dataset, get_injector
 
 
 class LatencyQoS:
     def __init__(self,
-                 predictor_1: Union[Model, EnrichedModel],
-                 predictor_2: Union[Model, EnrichedModel],
+                 model: Union[Model, EnrichedModel],
+                 injector: str,
+                 injector_arguments: Dict,
+                 formulae: List[Formula],
                  options: dict):
         # Setup predictor models
-        self.predictor_1 = predictor_1
-        self.predictor_2 = predictor_2.inject(options['formula'])
+        self.bare_model = model
+        self.inj_model = get_injector(injector)(model, injector_arguments).inject(formulae)
         # Read options from dictionary
         self.optimiser = options['optim']
         self.loss = options['loss']
@@ -39,6 +41,8 @@ class LatencyQoS:
                                                                                        1] else 'slower'))
         else:
             pass
+        self.predictor_1 = self.predictor_1.remove_constraints()
+        self.predictor_2 = self.predictor_2.remove_constraints()
         print('Measuring times of model prediction. This may take a while depending on the model and dataset...')
         times = []
         for model in [self.predictor_1, self.predictor_2]:
@@ -52,7 +56,7 @@ class LatencyQoS:
 
 def measure_fit(model: Union[Model, EnrichedModel],
                 optimiser: optimiser,
-                loss: Union[String, Loss],
+                loss: Union[str, Loss],
                 batch_size: int,
                 epochs: int,
                 dataset: Dataset) -> int:
