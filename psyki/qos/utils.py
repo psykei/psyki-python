@@ -1,13 +1,12 @@
 from __future__ import annotations
-from typing import Iterable, Callable, List, String
+from typing import Callable
 import tensorflow as tf
-from tensorflow.keras import Dataset
-from tensorflow.gfile import GFile
 from sklearn.model_selection import train_test_split
+from tensorflow.python.platform.gfile import GFile
 from psyki.ski import Injector
 
 
-def split_dataset(dataset: Dataset) -> List[tuples]:
+def split_dataset(dataset) -> tuple:
     # Split dataset into train and test
     train, test = train_test_split(dataset, test_size=0.3, random_state=0)
     train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1]
@@ -15,7 +14,7 @@ def split_dataset(dataset: Dataset) -> List[tuples]:
     return train_x, train_y, test_x, test_y
 
 
-def load_protobuf(file: String) -> tf.Graph:
+def load_protobuf(file: str) -> tf.Graph:
     # Open the protobuf file
     with GFile(file, "rb") as f:
         # Read graph definition
@@ -27,7 +26,7 @@ def load_protobuf(file: String) -> tf.Graph:
         return graph
 
 
-def get_injector(choice: str) -> function:
+def get_injector(choice: str) -> Callable:
     injectors = {'kill': Injector.kill,
                  'kins': Injector.kins,
                  'kbann': Injector.kbann}
