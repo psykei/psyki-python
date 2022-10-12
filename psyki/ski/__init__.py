@@ -45,9 +45,10 @@ class Injector(ABC):
     def kbann(model: Model,
               feature_mapping: dict[str, int],
               fuzzifier: str = 'towell',
-              omega: int = 4) -> Injector:
+              omega: float = 4.,
+              gamma: float = 10E-3) -> Injector:
         from psyki.ski.kbann import KBANN
-        return KBANN(model, feature_mapping, fuzzifier, omega)
+        return KBANN(model, feature_mapping, fuzzifier, omega, gamma)
 
 
 class EnrichedModel(Model):

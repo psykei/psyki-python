@@ -1,4 +1,5 @@
 import unittest
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from psyki.ski import Injector
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split, StratifiedKFold
@@ -93,7 +94,6 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
     x = get_binary_data(data.iloc[:, :-1], AGGREGATE_FEATURE_MAPPING)
     y.columns = [x.shape[1]]
     data = x.join(y)
-
     data, test = train_test_split(data, train_size=1000, random_state=0, stratify=data.iloc[:, -1])
     k_fold = StratifiedKFold(n_splits=10, shuffle=True, random_state=0)
     train_indices, _ = list(k_fold.split(data.iloc[:, :-1], data.iloc[:, -1:]))[0]
@@ -106,18 +106,28 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
     predictor = get_mlp(input_layer, 3, 3, [64, 32], 'relu', 'softmax', dropout=True)
     predictor = Model(input_layer, predictor)
 
-    def common_test_function(self, injector: Injector, batch_size: int, acceptable_accuracy: float):
+    def common_test_function(self, injector: Injector, batch_size: int, acceptable_accuracy: float, constrain=False):
         model = injector.inject(self.rules)
         # Test if clone is successful
         cloned_model = model.copy()
         del injector
 
-        model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        if constrain:
+            loss = model.loss_function(SparseCategoricalCrossentropy())
+        else:
+            loss = 'sparse_categorical_crossentropy'
+
+        model.compile('adam', loss=loss, metrics=['accuracy'])
         model.fit(self.train_x, self.train_y, batch_size=batch_size, epochs=self.EPOCHS, verbose=self.VERBOSE, callbacks=self.early_stop)
         accuracy = model.evaluate(self.test_x, self.test_y)[1]
         del model
 
-        cloned_model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        if constrain:
+            loss = cloned_model.loss_function(SparseCategoricalCrossentropy())
+        else:
+            loss = 'sparse_categorical_crossentropy'
+
+        cloned_model.compile('adam', loss=loss, metrics=['accuracy'])
         cloned_model.fit(self.train_x, self.train_y, batch_size=batch_size, epochs=self.EPOCHS, verbose=self.VERBOSE, callbacks=self.early_stop)
         accuracy_cm = cloned_model.evaluate(self.test_x, self.test_y)[1]
         del cloned_model
@@ -127,7 +137,11 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
 
     def test_kbann(self):
         injector = Injector.kbann(self.predictor, get_splice_junction_extended_feature_mapping(), 'towell', 1)
-        self.common_test_function(injector, batch_size=16, acceptable_accuracy=0.95)
+        self.common_test_function(injector, batch_size=16, acceptable_accuracy=0.957)
+
+    def test_kbann_with_constraining(self):
+        injector = Injector.kbann(self.predictor, get_splice_junction_extended_feature_mapping(), 'towell', 1, gamma=10E-5)
+        self.common_test_function(injector, batch_size=16, acceptable_accuracy=0.958, constrain=True)
 
     def test_kins(self):
         injector = Injector.kins(self.predictor, get_splice_junction_extended_feature_mapping())
