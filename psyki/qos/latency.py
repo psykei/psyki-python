@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import Iterable, Callable, List
+from typing import List
 from tensorflow.keras import Model
 from tensorflow.data import Dataset
-from psyki.ski import EnrichedModel, Injector
+from psyki.ski import EnrichedModel, Formula
 import time
 from psyki.qos.utils import split_dataset, get_injector
 

@@ -1,6 +1,5 @@
 import unittest
 import pandas as pd
-from psyki.ski import Injector, Formula
 from psyki.qos.energy import EnergyQoS
 from psyki.logic.datalog.grammar.adapters import antlr4
 from test.resources.data import get_dataset
