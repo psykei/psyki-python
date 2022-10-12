@@ -4,17 +4,19 @@ from tensorflow.keras import Model
 from tensorflow.data import Dataset
 from psyki.ski import EnrichedModel
 from codecarbon import OfflineEmissionsTracker
-from utils import split_dataset
+from utils import split_dataset, get_injector
 
 
 class EnergyQoS:
     def __init__(self,
-                 predictor_1: Union[Model, EnrichedModel],
-                 predictor_2: Union[Model, EnrichedModel],
+                 model: Union[Model, EnrichedModel],
+                 injector: str,
+                 injector_arguments: Dict,
+                 formulae: List[Formula],
                  options: dict):
         # Setup predictor models
-        self.predictor_1 = predictor_1
-        self.predictor_2 = predictor_2.inject(options['formula'])
+        self.bare_model = model
+        self.inj_model = get_injector(injector)(model, **injector_arguments).inject(formulae)
         # Read options from dictionary
         self.optimiser = options['optim']
         self.loss = options['loss']
@@ -27,7 +29,7 @@ class EnergyQoS:
         if fit:
             print('Calculating energy spent for model training. This can take a while as model.fit needs to run...')
             energy_train = []
-            for model in [self.predictor_1, self.predictor_2]:
+            for model in [self.bare_model, self.inj_model]:
                 tracker = OfflineEmissionsTracker(country_iso_code='ITA', log_level='error')
                 tracker.start()
                 measure_fit(model = model,
@@ -41,13 +43,15 @@ class EnergyQoS:
 
             # First model should be the bare model, Second one should be the injected one
             print('The injected model is {:.5f} kWh {} energy consuming during training'.format(abs(energy_train[0] - energy_train[1]),
-                                                                                'less' if energy_train[0] > energy_train[
-                                                                                    1] else 'more'))
+                                                                                'less' if energy_train[0] > energy_train[1] else 'more'))
+        else:
             pass
+
+        self.inj_model = self.inj_model.remove_constraints()
         print('Calculating energy spent for model prediction. This may take a while depending on the model and dataset...')
         energy_test = []
 
-        for model in [self.predictor_1, self.predictor_2]:
+        for model in [self.bare_model, self.inj_model]:
             tracker = OfflineEmissionsTracker(country_iso_code='ITA', log_level='error')
             tracker.start()
             measure_predict(model = model,
@@ -59,16 +63,17 @@ class EnergyQoS:
                                                                                 'less' if energy_test[0] > energy_test[
 
                                                                                     1] else 'more'))
-        metrics = energy_metrics(energy_train, energy_test, self.alpha)
+        train_value = (energy_train[1] + self.alpha * energy_test[1])
+        test_value = (energy_train[0] + self.alpha * energy_test[0])
+        metrics = abs(train_value - test_value)
 
         print('The injected model life-cycle is {} energy consuming. The total energy consumption metrics is equal to {}.'.format(
-                                                        ('less' if metrics < 0 else 'more'), round(metrics,3)))
-
+                                                        ('less' if test_value < train_value else 'more'), round(metrics, 3)))
 
 
 def measure_fit(model: Union[Model, EnrichedModel],
                 optimiser: optimiser,
-                loss: Union[String, Loss],
+                loss: Union[str, Loss],
                 batch_size: int,
                 epochs: int,
                 dataset: Dataset) -> int:
@@ -88,10 +93,5 @@ def measure_fit(model: Union[Model, EnrichedModel],
 def measure_predict(model: Union[Model, EnrichedModel],
                     dataset: Dataset) -> int:
     _, _, test_x, _ = split_dataset(dataset = dataset)
-
     # Train the model
     model.predict(test_x, verbose = False)
-
-def energy_metrics(train, test, alpha):
-    metrics = (train[1] + alpha * test[1]) - (train[0] + alpha * test[0])
-    return metrics
