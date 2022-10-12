@@ -1,8 +1,7 @@
 from __future__ import annotations
 from typing import List, Union
-from tensorflow.python.data import Dataset
-from tensorflow.python.keras import Model
-from tensorflow.python.keras.losses import Loss
+from tensorflow.keras import Model
+from tensorflow.keras.losses import Loss
 from psyki.logic import Formula
 from psyki.qos.utils import get_injector, split_dataset
 from psyki.ski import EnrichedModel
@@ -82,7 +81,7 @@ def measure_fit(model: Union[Model, EnrichedModel],
                 loss: Union[str, Loss],
                 batch_size: int,
                 epochs: int,
-                dataset: Dataset) -> int:
+                dataset) -> int:
     # Split dataset into train and test
     train_x, train_y, _, _ = split_dataset(dataset=dataset)
     # Compile the keras model or the enriched model
@@ -96,8 +95,7 @@ def measure_fit(model: Union[Model, EnrichedModel],
               verbose=False)
 
 
-def measure_predict(model: Union[Model, EnrichedModel],
-                    dataset: Dataset) -> int:
+def measure_predict(model: Union[Model, EnrichedModel], dataset) -> int:
     _, _, test_x, _ = split_dataset(dataset=dataset)
     # Train the model
     model.predict(test_x, verbose=False)

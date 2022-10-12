@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import List, Union
 from tensorflow.keras import Model
-from tensorflow.python.keras.losses import Loss
+from tensorflow.keras.losses import Loss
 from psyki.logic import Formula
 from psyki.qos.utils import get_injector, split_dataset
 from psyki.ski import EnrichedModel
