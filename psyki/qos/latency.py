@@ -4,7 +4,7 @@ from tensorflow.keras import Model
 from tensorflow.data import Dataset
 from psyki.ski import EnrichedModel, Injector
 import time
-from utils import split_dataset, get_injector
+from .utils import split_dataset, get_injector
 
 
 class LatencyQoS:

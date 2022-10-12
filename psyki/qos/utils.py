@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Iterable, Callable, List, String
+from typing import Iterable, Callable, List
 import tensorflow as tf
 from tensorflow.keras import Dataset
 from tensorflow.gfile import GFile
@@ -15,12 +15,12 @@ def split_dataset(dataset: Dataset) -> List[tuples]:
     return train_x, train_y, test_x, test_y
 
 
-def load_protobuf(file: String) -> tf.Graph:
+def load_protobuf(file: str) -> tf.Graph:
     # Open the protobuf file
     with GFile(file, "rb") as f:
         # Read graph definition
         graph_def = tf.GraphDef()
-        graph_def.ParseFromString(f.read())
+        graph_def.ParseFromstr(f.read())
     # Load graph in protobuf as the default graph
     with tf.Graph().as_default() as graph:
         tf.import_graph_def(graph_def, name='')

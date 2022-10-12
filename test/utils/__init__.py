@@ -5,6 +5,7 @@ from numpy import argmax
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from tensorflow import Tensor
+from tensorflow.keras import Input, Model
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.callbacks import Callback
 from test.resources.data import get_dataset

@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 from test.resources.data import get_dataset
 from test.utils import create_standard_fully_connected_nn
-from test.resources.rules import get_rules, FEATURE_MAPPING as POKER_FEATURE_MAPPING, CLASS_MAPPING as POKER_CLASS_MAPPING
+from test.resources.rules import get_rules, AGGREGATE_FEATURE_MAPPING as POKER_FEATURE_MAPPING, CLASS_MAPPING as POKER_CLASS_MAPPING
 from psyki.ski import Injector, Formula
 from psyki.qos import MemoryQoS
 from psyki.logic.datalog.grammar.adapters import antlr4
