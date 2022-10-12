@@ -25,7 +25,7 @@ class EnergyQoS:
         self.dataset = options['dataset']
         self.alpha = options['alpha']
 
-    def measure(self, fit: bool = False):
+    def test_measure(self, fit: bool = False):
         if fit:
             print('Calculating energy spent for model training. This can take a while as model.fit needs to run...')
             energy_train = []

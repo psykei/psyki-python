@@ -24,7 +24,7 @@ class LatencyQoS:
         self.epochs = options['epochs']
         self.dataset = options['dataset']
 
-    def measure(self, fit: bool = False):
+    def test_measure(self, fit: bool = False):
         if fit:
             print('Measuring times of model training. This can take a while as model.fit needs to run...')
             times = []

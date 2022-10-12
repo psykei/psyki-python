@@ -1,11 +1,12 @@
 import unittest
 import pandas as pd
-from resources.data import get_dataset
-from resources.execution import create_standard_fully_connected_nn
-from resources.rules import get_rules, FEATURE_MAPPING as POKER_FEATURE_MAPPING, CLASS_MAPPING as POKER_CLASS_MAPPING
 from psyki.ski import Injector, Formula
 from psyki.qos import EnergyQoS
 from psyki.logic.datalog.grammar.adapters import antlr4
+from test.resources.data import get_dataset
+from test.utils import create_standard_fully_connected_nn
+from test.resources.rules import get_rules, FEATURE_MAPPING as POKER_FEATURE_MAPPING, CLASS_MAPPING as POKER_CLASS_MAPPING
+
 
 
 class TestEnergy(unittest.TestCase):
@@ -27,4 +28,7 @@ class TestEnergy(unittest.TestCase):
                     'formula': self.formulae,
                     'alpha': 0.2}
         qos = EnergyQoS(self.model, self.injector, self.injector_arguments, self.formulae, options)
-        qos.measure(fit = True)
+        qos.test_measure(fit = True)
+
+if name == 'main':
+    unittest.main()
