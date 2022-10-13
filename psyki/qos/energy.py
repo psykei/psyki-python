@@ -33,42 +33,45 @@ class EnergyQoS:
                 tracker = OfflineEmissionsTracker(country_iso_code='ITA', log_level='error')
                 tracker.start()
                 measure_fit(model=model,
-                                         optimiser=self.optimiser,
-                                         loss=self.loss,
-                                         batch_size=self.batch_size,
-                                         epochs=self.epochs,
-                                         dataset=self.dataset)
+                            optimiser=self.optimiser,
+                            loss=self.loss,
+                            batch_size=self.batch_size,
+                            epochs=self.epochs,
+                            dataset=self.dataset)
                 emissions = tracker.stop()
-                energy_train.append(tracker._total_energy.kWh)
+                energy_train.append(tracker._total_energy.kWh * 1000)
 
             # First model should be the bare model, Second one should be the injected one
-            print('The injected model is {:.5f} kWh {} energy consuming during training'.format(abs(energy_train[0] - energy_train[1]),
-                                                                                'less' if energy_train[0] > energy_train[1] else 'more'))
+            print('The injected model is {:.5f} Wh {} energy consuming during training'.format(
+                abs(energy_train[0] - energy_train[1]),
+                'less' if energy_train[0] > energy_train[1] else 'more'))
         else:
             pass
 
         self.inj_model = self.inj_model.remove_constraints()
-        print('Calculating energy spent for model prediction. This may take a while depending on the model and dataset...')
+        print('Calculating energy spent for model prediction. '
+              'This may take a while depending on the model and dataset...')
         energy_test = []
 
         for model in [self.bare_model, self.inj_model]:
             tracker = OfflineEmissionsTracker(country_iso_code='ITA', log_level='error')
             tracker.start()
             measure_predict(model=model,
-                                     dataset=self.dataset)
+                            dataset=self.dataset)
             emissions = tracker.stop()
-            energy_test.append(tracker._total_energy.kWh)
+            energy_test.append(tracker._total_energy.kWh * 1000)
         # First model should be the bare model, Second one should be the injected one
-        print('The injected model is {:.5f} kWh {} energy consuming during inference'.format(abs(energy_test[0] - energy_test[1]),
-                                                                                'less' if energy_test[0] > energy_test[
+        print('The injected model is {:.5f} Wh {} energy consuming during inference'.format(
+            abs(energy_test[0] - energy_test[1]),
+            'less' if energy_test[0] > energy_test[1] else 'more'))
 
-                                                                                    1] else 'more'))
-        train_value = (energy_train[1] + self.alpha * energy_test[1])
-        test_value = (energy_train[0] + self.alpha * energy_test[0])
-        metrics = abs(train_value - test_value)
+        inj_value = ((1 - self.alpha) * energy_train[1] + self.alpha * energy_test[1])
+        bare_value = ((1 - self.alpha) * energy_train[0] + self.alpha * energy_test[0])
+        metrics = abs(inj_value - bare_value)
 
-        print('The injected model life-cycle is {} energy consuming. The total energy consumption metrics is equal to {}.'.format(
-                                                        ('less' if test_value < train_value else 'more'), round(metrics, 3)))
+        print('The injected model life-cycle is {} energy consuming.'
+              ' The total energy consumption metrics is equal to {:.5f}.'.format(
+            ('less' if inj_value < bare_value else 'more'), metrics))
 
 
 def measure_fit(model: Union[Model, EnrichedModel],
