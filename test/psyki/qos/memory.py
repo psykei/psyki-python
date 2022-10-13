@@ -18,7 +18,7 @@ class TestMemory(unittest.TestCase):
                                    'feature_mapping': POKER_FEATURE_MAPPING}
         self.formulae = [antlr4.get_formula_from_string(rule) for rule in get_rules()]
 
-    def measure_fit(self):
+    def test_memory_fit(self):
         qos = MemoryQoS(self.model, self.injector)
         qos.test_measure(mode='flops')
 

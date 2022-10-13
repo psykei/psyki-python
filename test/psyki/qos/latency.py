@@ -18,7 +18,7 @@ class TestLatency(unittest.TestCase):
                                    'feature_mapping': POKER_FEATURE_MAPPING}
         self.formulae = [antlr4.get_formula_from_string(rule) for rule in get_rules()]
 
-    def measure_fit(self):
+    def test_latency_fit(self):
         options = {'optim': 'adam',
                    'loss': 'sparse_categorical_crossentropy',
                    'batch': 32,
