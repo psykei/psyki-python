@@ -13,7 +13,7 @@ class MemoryQoS:
                  model: Union[Model, EnrichedModel],
                  injector: str,
                  injector_arguments: dict,
-                 formulae: list[Formula]):
+                 formulae: List[Formula]):
 
         # Setup predictor models
         self.bare_model = model
