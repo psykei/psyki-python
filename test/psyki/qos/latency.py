@@ -3,8 +3,6 @@ from sklearn.datasets import load_iris
 from sklearn.preprocessing import OneHotEncoder
 from test.utils import create_standard_fully_connected_nn
 from test.resources.rules import get_rules
-# from test.resources.rules.poker import FEATURE_MAPPING as POKER_FEATURE_MAPPING, \
-#     CLASS_MAPPING as POKER_CLASS_MAPPING
 from psyki.qos.latency import LatencyQoS
 from psyki.logic.datalog.grammar.adapters import antlr4
 
@@ -27,12 +25,14 @@ class TestLatency(unittest.TestCase):
     formulae = [antlr4.get_formula_from_string(rule) for rule in get_rules('iris')]
 
     def test_latency_fit(self):
-        options = {'optim': 'adam',
-                   'loss': 'sparse_categorical_crossentropy',
-                   'batch': 32,
-                   'epochs': 2,
-                   'dataset': self.dataset,
-                   'formula': self.formulae}
+        options = dict(optim='adam',
+                       loss='sparse_categorical_crossentropy',
+                       batch=16,
+                       epochs=300,
+                       dataset=self.dataset,
+                       threshold=0.97,
+                       formula=self.formulae)
+
         qos = LatencyQoS(self.model, self.injector, self.injector_arguments, self.formulae, options)
         qos.test_measure(fit=True)
 

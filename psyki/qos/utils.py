@@ -31,3 +31,14 @@ def get_injector(choice: str) -> Callable:
                  'kins': Injector.kins,
                  'kbann': Injector.kbann}
     return injectors[choice]
+
+
+class EarlyStopping(tf.keras.callbacks.Callback):
+    def __init__(self, threshold, model_name):
+        self.threshold = threshold
+        self.model_name = model_name
+
+    def on_epoch_end(self, epoch, logs={}):
+        if (logs.get('accuracy') > self.threshold):
+            print("\nAccuracy in model {} reached. Stopping training...".format(self.model_name))
+            self.model.stop_training = True
