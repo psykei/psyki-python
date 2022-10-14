@@ -1,10 +1,13 @@
 from __future__ import annotations
-from typing import List
+from typing import Union
 from tensorflow.keras import Model
-from tensorflow.data import Dataset
+from tensorflow.python.data import Dataset
+from tensorflow.python.keras.losses import Loss
+from tensorflow.python.keras.optimizer_v1 import Optimizer
+from codecarbon import OfflineEmissionsTracker, EmissionsTracker
+
 from psyki.ski import EnrichedModel, Formula
-from codecarbon import OfflineEmissionsTracker
-from psyki.qos.utils import split_dataset, get_injector
+from psyki.qos.utils import split_dataset, get_injector, EarlyStopping
 
 
 class EnergyQoS:
@@ -12,7 +15,7 @@ class EnergyQoS:
                  model: Union[Model, EnrichedModel],
                  injector: str,
                  injector_arguments: dict,
-                 formulae: List[Formula],
+                 formulae: list[Formula],
                  options: dict):
         # Setup predictor models
         self.bare_model = model
@@ -22,6 +25,7 @@ class EnergyQoS:
         self.loss = options['loss']
         self.batch_size = options['batch']
         self.epochs = options['epochs']
+        self.threshold = options['threshold']
         self.dataset = options['dataset']
         self.alpha = options['alpha']
 
@@ -29,17 +33,20 @@ class EnergyQoS:
         if fit:
             print('Calculating energy spent for model training. This can take a while as model.fit needs to run...')
             energy_train = []
-            for model in [self.bare_model, self.inj_model]:
-                tracker = OfflineEmissionsTracker(country_iso_code='ITA', log_level='error')
+            for index, model in enumerate([self.bare_model, self.inj_model]):
+                tracker = OfflineEmissionsTracker(country_iso_code='ITA',log_level='error', save_to_file=False)
                 tracker.start()
                 measure_fit(model=model,
                             optimiser=self.optimiser,
                             loss=self.loss,
                             batch_size=self.batch_size,
                             epochs=self.epochs,
+                            threshold=self.threshold,
+                            name=('bare' if index == 0 else 'injected'),
                             dataset=self.dataset)
-                emissions = tracker.stop()
+                tracker.stop()
                 energy_train.append(tracker._total_energy.kWh * 1000)
+
 
             # First model should be the bare model, Second one should be the injected one
             print('The injected model is {:.5f} Wh {} energy consuming during training'.format(
@@ -54,11 +61,11 @@ class EnergyQoS:
         energy_test = []
 
         for model in [self.bare_model, self.inj_model]:
-            tracker = OfflineEmissionsTracker(country_iso_code='ITA', log_level='error')
+            tracker = OfflineEmissionsTracker(country_iso_code='ITA', log_level='error', save_to_file=False)
             tracker.start()
             measure_predict(model=model,
                             dataset=self.dataset)
-            emissions = tracker.stop()
+            tracker.stop()
             energy_test.append(tracker._total_energy.kWh * 1000)
         # First model should be the bare model, Second one should be the injected one
         print('The injected model is {:.5f} Wh {} energy consuming during inference'.format(
@@ -75,22 +82,28 @@ class EnergyQoS:
 
 
 def measure_fit(model: Union[Model, EnrichedModel],
-                optimiser: optimiser,
+                optimiser: Optimizer,
                 loss: Union[str, Loss],
                 batch_size: int,
                 epochs: int,
+                threshold: float,
+                name: str,
                 dataset: Dataset) -> int:
     # Split dataset into train and test
     train_x, train_y, _, _ = split_dataset(dataset=dataset)
     # Compile the keras model or the enriched model
     model.compile(optimiser,
-                  loss=loss)
+                  loss=loss,
+                  metrics=['accuracy'])
+    # Train the model
+    callbacks = EarlyStopping(threshold=threshold, model_name=name)
     # Train the model
     model.fit(train_x,
               train_y,
               batch_size=batch_size,
               epochs=epochs,
-              verbose=False)
+              verbose=False,
+              callbacks=[callbacks])
 
 
 def measure_predict(model: Union[Model, EnrichedModel],

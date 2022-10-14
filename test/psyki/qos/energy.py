@@ -26,13 +26,15 @@ class TestEnergy(unittest.TestCase):
     formulae = [antlr4.get_formula_from_string(rule) for rule in get_rules('iris')]
 
     def test_energy_fit(self):
-        options = {'optim': 'adam',
-                   'loss': 'sparse_categorical_crossentropy',
-                   'batch': 32,
-                   'epochs': 2,
-                   'dataset': self.dataset,
-                   'formula': self.formulae,
-                   'alpha': 1}
+        options = dict(optim='adam',
+                       loss='sparse_categorical_crossentropy',
+                       batch=16,
+                       epochs=300,
+                       dataset=self.dataset,
+                       formula=self.formulae,
+                       threshold=0.97,
+                       alpha=0.8)
+
         qos = EnergyQoS(self.model, self.injector, self.injector_arguments, self.formulae, options)
         qos.test_measure(fit=True)
 
