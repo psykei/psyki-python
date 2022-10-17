@@ -1,7 +1,7 @@
 from tuprolog.core import Clause
 from tuprolog.theory import Theory, mutable_theory
 from psyki.logic import get_logic_symbols_with_short_name
-from psyki.logic.datalog import DatalogFormula, Argument, Variable, Number
+from psyki.logic.datalog import DatalogFormula, Argument, Variable, Number, Nary
 from psyki.logic.datalog.grammar import Predication, Expression, Term, Boolean, Negation, DefinitionClause
 
 
@@ -15,10 +15,15 @@ _logic_symbols = get_logic_symbols_with_short_name()
 
 def prolog_to_datalog(t: Theory) -> list[DatalogFormula]:
     mutable_t = mutable_theory(t)
-    return [clause_to_formula(c) for c in mutable_t.clauses]
+    result, predicates = [], set()
+    for c in mutable_t.clauses:
+        formula = clause_to_formula(c, predicates)
+        result.append(formula)
+        predicates.add(formula.lhs.predication)
+    return result
 
 
-def clause_to_formula(c: Clause) -> DatalogFormula:
+def clause_to_formula(c: Clause, predicates: set[str]) -> DatalogFormula:
     def prolog_atom_to_formula(arg) -> Term:
         if arg.is_var:
             arg = Variable(str(arg.name))
@@ -64,6 +69,8 @@ def clause_to_formula(c: Clause) -> DatalogFormula:
         else:
             if term.is_true:
                 return Boolean(term.is_true)
+            elif term.is_struct and term.functor in predicates:
+                return Nary(term.functor, build_args(list(term.args)))
             elif term.is_struct and term.functor not in special_functor:
                 args = list(term.args)
                 return Expression(prolog_atom_to_formula(args[0]),
