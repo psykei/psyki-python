@@ -4,7 +4,7 @@ from tensorflow.keras import Model
 from tensorflow.python.data import Dataset
 from tensorflow.python.keras.losses import Loss
 from tensorflow.python.keras.optimizer_v1 import Optimizer
-from codecarbon import OfflineEmissionsTracker, EmissionsTracker
+from codecarbon import OfflineEmissionsTracker
 
 from psyki.ski import EnrichedModel, Formula
 from psyki.qos.utils import split_dataset, get_injector, EarlyStopping
@@ -21,6 +21,7 @@ class EnergyQoS:
         self.bare_model = model
         self.inj_model = get_injector(injector)(model, **injector_arguments).inject(formulae)
         # Read options from dictionary
+        self.injector = options['injector']
         self.optimiser = options['optim']
         self.loss = options['loss']
         self.batch_size = options['batch']
@@ -34,7 +35,7 @@ class EnergyQoS:
             print('Calculating energy spent for model training. This can take a while as model.fit needs to run...')
             energy_train = []
             for index, model in enumerate([self.bare_model, self.inj_model]):
-                tracker = OfflineEmissionsTracker(country_iso_code='ITA',log_level='error', save_to_file=False)
+                tracker = OfflineEmissionsTracker(country_iso_code='ITA', log_level='error', save_to_file=False)
                 tracker.start()
                 measure_fit(model=model,
                             optimiser=self.optimiser,
@@ -47,15 +48,19 @@ class EnergyQoS:
                 tracker.stop()
                 energy_train.append(tracker._total_energy.kWh * 1000)
 
-
             # First model should be the bare model, Second one should be the injected one
+
             print('The injected model is {:.5f} Wh {} energy consuming during training'.format(
                 abs(energy_train[0] - energy_train[1]),
                 'less' if energy_train[0] > energy_train[1] else 'more'))
         else:
             pass
 
-        self.inj_model = self.inj_model.remove_constraints()
+        if self.injector == 'kill':
+            self.inj_model = self.inj_model.remove_constraints()
+        else:
+            pass
+
         print('Calculating energy spent for model prediction. '
               'This may take a while depending on the model and dataset...')
         energy_test = []
@@ -78,7 +83,7 @@ class EnergyQoS:
 
         print('The injected model life-cycle is {} energy consuming.'
               ' The total energy consumption metrics is equal to {:.5f}.'.format(
-            ('less' if inj_value < bare_value else 'more'), metrics))
+              ('less' if inj_value < bare_value else 'more'), metrics))
 
 
 def measure_fit(model: Union[Model, EnrichedModel],
