@@ -21,6 +21,7 @@ class LatencyQoS:
         self.bare_model = model
         self.inj_model = get_injector(injector)(model, **injector_arguments).inject(formulae)
         # Read options from dictionary
+        self.injector = options['injector']
         self.optimiser = options['optim']
         self.loss = options['loss']
         self.batch_size = options['batch']
@@ -47,7 +48,12 @@ class LatencyQoS:
                                                                                        1] else 'slower'))
         else:
             pass
-        self.inj_model = self.inj_model.remove_constraints()
+
+        if self.injector == 'kill':
+            self.inj_model = self.inj_model.remove_constraints()
+        else:
+            pass
+
         print('Measuring times of model prediction. This may take a while depending on the model and dataset...')
         times = []
         for model in [self.bare_model, self.inj_model]:
