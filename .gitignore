@@ -1,6 +1,7 @@
 VERSION
 
 psyki/utils/fuzzification/
+tmp/
 .idea/
 .vscode/
 .DS_Store
