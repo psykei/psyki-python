@@ -1,106 +1,82 @@
 from __future__ import annotations
 from typing import Union
 from tensorflow.keras import Model
-from tensorflow.python.data import Dataset
-from tensorflow.python.keras.losses import Loss
-from tensorflow.python.keras.optimizer_v1 import Optimizer
-
-from psyki.ski import EnrichedModel, Formula
-from psyki.qos.utils import split_dataset, get_injector, EarlyStopping
 import time
 
+from psyki.ski import EnrichedModel, Formula
+from psyki.qos.utils import measure_fit_with_tracker, measure_predict_with_tracker
+from psyki.qos.base import BaseQoS
 
-class LatencyQoS:
+
+class LatencyQoS(BaseQoS):
     def __init__(self,
                  model: Union[Model, EnrichedModel],
-                 injector: str,
-                 injector_arguments: dict,
-                 formulae: list[Formula],
-                 options: dict):
-        # Setup predictor models
-        self.bare_model = model
-        self.inj_model = get_injector(injector)(model, **injector_arguments).inject(formulae)
+                 injection: Union[str, Union[Model, EnrichedModel]],
+                 options: dict,
+                 injector_arguments: dict = {},
+                 formulae: list[Formula] = []):
+        super(LatencyQoS, self).__init__(model=model,
+                                         injection=injection,
+                                         injector_arguments=injector_arguments,
+                                         formulae=formulae)
         # Read options from dictionary
-        self.injector = options['injector']
         self.optimiser = options['optim']
         self.loss = options['loss']
-        self.batch_size = options['batch']
         self.epochs = options['epochs']
-        self.threshold = options['threshold']
+        self.batch_size = options['batch']
         self.dataset = options['dataset']
+        self.threshold = options['threshold']
+        self.metrics = options['metrics']
 
-    def test_measure(self, fit: bool = False):
+    def measure(self,
+                fit: bool = False,
+                verbose: bool = True):
         if fit:
-            print('Measuring times of model training. This can take a while as model.fit needs to run...')
-            times = []
-            for index, model in enumerate([self.bare_model, self.inj_model]):
-                times.append(measure_fit(model=model,
-                                         optimiser=self.optimiser,
-                                         loss=self.loss,
-                                         batch_size=self.batch_size,
-                                         epochs=self.epochs,
-                                         threshold=self.threshold,
-                                         name=('bare' if index == 0 else 'injected'),
-                                         dataset=self.dataset))
-            # First model should be the bare model, Second one should be the injected one
-            print('The injected model is {:.5f} seconds {} during training'.format(abs(times[0] - times[1]),
-                                                                                   'faster' if times[0] > times[
-                                                                                       1] else 'slower'))
+            if verbose:
+                print('Measuring times of model training. This can take a while as model.fit needs to run...')
+            times = measure_fit_with_tracker(models_list=[self.bare_model, self.inj_model],
+                                             names=['bare', 'injected'],
+                                             optimiser=self.optimiser,
+                                             loss=self.loss,
+                                             epochs=self.epochs,
+                                             batch_size=self.batch_size,
+                                             dataset=self.dataset,
+                                             threshold=self.threshold,
+                                             metrics=self.metrics,
+                                             tracker_class=TimeTracker)
+            if verbose:
+                print('The injected model is {:.5f} seconds {} during training'.format(abs(times[0] - times[1]),
+                                                                                       'faster' if times[0] > times[
+                                                                                           1] else 'slower'))
         else:
             pass
-
-        if self.injector == 'kill':
-            self.inj_model = self.inj_model.remove_constraints()
-        else:
-            pass
-
-        print('Measuring times of model prediction. This may take a while depending on the model and dataset...')
-        times = []
-        for model in [self.bare_model, self.inj_model]:
-            times.append(measure_predict(model=model,
-                                         dataset=self.dataset))
+        self.inj_model = self.inj_model.remove_constraints()
+        if verbose:
+            print('Measuring times of model prediction. This may take a while depending on the model and dataset...')
+        times = measure_predict_with_tracker(models_list=[self.bare_model, self.inj_model],
+                                             dataset=self.dataset,
+                                             tracker_class=TimeTracker)
         # First model should be the bare model, Second one should be the injected one
-        print('The injected model is {:.5f} seconds {} during inference'.format(abs(times[0] - times[1]),
-                                                                                'faster' if times[0] > times[
-                                                                                    1] else 'slower'))
+        if verbose:
+            print('The injected model is {:.5f} seconds {} during inference'.format(abs(times[0] - times[1]),
+                                                                                    'faster' if times[0] > times[
+                                                                                        1] else 'slower'))
+        metric = times[0] - times[1]
+        return metric
 
 
-def measure_fit(model: Union[Model, EnrichedModel],
-                optimiser: Optimizer,
-                loss: Union[str, Loss],
-                batch_size: int,
-                epochs: int,
-                threshold: float,
-                name: str,
-                dataset: Dataset) -> int:
-    # Split dataset into train and test
-    train_x, train_y, _, _ = split_dataset(dataset=dataset)
-    # Start the timer
-    start = time.time()
-    # Compile the keras model or the enriched model
-    model.compile(optimiser,
-                  loss=loss,
-                  metrics=['accuracy'])
-    # Train the model
-    callbacks = EarlyStopping(threshold=threshold, model_name=name)
-    model.fit(train_x,
-              train_y,
-              batch_size=batch_size,
-              epochs=epochs,
-              verbose=False,
-              callbacks=[callbacks])
-    # Stop the timer to get timings information
-    end = time.time()
-    return end - start
+class TimeTracker:
+    """Context manager to measure how much time did the target scope take."""
 
+    def __init__(self):
+        self.start_time = None
+        self.delta_time = None
 
-def measure_predict(model: Union[Model, EnrichedModel],
-                    dataset: Dataset) -> int:
-    _, _, test_x, _ = split_dataset(dataset=dataset)
-    # Start the timer
-    start = time.time()
-    # Train the model
-    model.predict(test_x, verbose=False)
-    # Stop the timer to get timings information
-    end = time.time()
-    return end - start
+    def __enter__(self):
+        self.start_time = time.perf_counter()
+
+    def __exit__(self, type=None, value=None, traceback=None):
+        self.delta_time = (time.perf_counter() - self.start_time)
+
+    def get_tracked_value(self):
+        return self.delta_time

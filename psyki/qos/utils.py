@@ -1,9 +1,61 @@
 from __future__ import annotations
-from typing import Callable
+from typing import Union, Callable
+from tensorflow.keras import Model
+from tensorflow.python.data import Dataset
+from tensorflow.python.keras.losses import Loss
+from tensorflow.python.keras.optimizer_v1 import Optimizer
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from tensorflow.python.platform.gfile import GFile
-from psyki.ski import Injector
+from psyki.ski import Injector, EnrichedModel
+
+
+def measure_fit_with_tracker(models_list: list[Union[Model, EnrichedModel]],
+                             names: list[str],
+                             optimiser: Optimizer,
+                             loss: Union[str, Loss],
+                             batch_size: int,
+                             epochs: int,
+                             dataset: Dataset,
+                             threshold: float,
+                             metrics: list[str],
+                             tracker_class: Callable) -> list[float]:
+    # Split dataset into train and test
+    train_x, train_y, _, _ = split_dataset(dataset=dataset)
+    tracked_values = []
+    for index, model in enumerate(models_list):
+        # Compile the keras model or the enriched model
+        model.compile(optimiser,
+                      loss=loss,
+                      metrics=metrics)
+        # Train the model
+        callbacks = EarlyStopping(threshold=threshold, model_name=names[index])
+        tracker = tracker_class()
+        with tracker:
+            model.fit(train_x,
+                      train_y,
+                      batch_size=batch_size,
+                      epochs=epochs,
+                      verbose=False,
+                      callbacks=[callbacks])
+        tracked_value = tracker.get_tracked_value()
+        tracked_values.append(tracked_value)
+    return tracked_values
+
+
+def measure_predict_with_tracker(models_list: list[Union[Model, EnrichedModel]],
+                                 dataset: Dataset,
+                                 tracker_class: Callable) -> list[float]:
+    _, _, test_x, _ = split_dataset(dataset=dataset)
+    tracked_values = []
+    for model in models_list:
+        # Run the model
+        tracker = tracker_class()
+        with tracker:
+            model.predict(test_x, verbose=False)
+        tracked_value = tracker.get_tracked_value()
+        tracked_values.append(tracked_value)
+    return tracked_values
 
 
 def split_dataset(dataset) -> tuple:
@@ -34,12 +86,16 @@ def get_injector(choice: str) -> Callable:
 
 
 class EarlyStopping(tf.keras.callbacks.Callback):
-    def __init__(self, threshold, model_name):
+    def __init__(self,
+                 threshold: float,
+                 model_name: str = '',
+                 verbose: bool = True):
         self.threshold = threshold
         self.model_name = model_name
+        self.verbose = verbose
 
     def on_epoch_end(self, epoch, logs={}):
         if logs.get('accuracy') > self.threshold:
-            print("\nAccuracy in model {} reached. Stopping training at epoch {}...".format(self.model_name, epoch))
-            assert(logs.get('accuracy') > self.threshold)
+            if self.verbose:
+                print("\nAccuracy in model {} reached. Stopping training at epoch {}...".format(self.model_name, epoch))
             self.model.stop_training = True

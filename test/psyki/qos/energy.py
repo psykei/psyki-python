@@ -33,15 +33,20 @@ class TestEnergyOnIris(unittest.TestCase):
         options = dict(injector=self.injector,
                        optim='adam',
                        loss='sparse_categorical_crossentropy',
-                       batch=16,
                        epochs=300,
+                       batch=16,
                        dataset=self.dataset,
-                       formula=self.formulae,
                        threshold=0.97,
+                       metrics=['accuracy'],
+                       formula=self.formulae,
                        alpha=0.8)
 
-        qos = EnergyQoS(self.model, self.injector, self.injector_arguments, self.formulae, options)
-        qos.test_measure(fit=True)
+        qos = EnergyQoS(model=self.model,
+                        injection=self.injector,
+                        injector_arguments=self.injector_arguments,
+                        formulae=self.formulae,
+                        options=options)
+        qos.measure()
 
 
 class TestEnergyOnSplice(unittest.TestCase):
@@ -68,15 +73,20 @@ class TestEnergyOnSplice(unittest.TestCase):
         options = dict(injector=self.injector,
                        optim='adam',
                        loss='sparse_categorical_crossentropy',
-                       batch=16,
                        epochs=300,
+                       batch=16,
                        dataset=self.dataset,
-                       formula=self.formulae,
                        threshold=0.97,
+                       metrics=['accuracy'],
+                       formula=self.formulae,
                        alpha=0.8)
 
-        qos = EnergyQoS(self.model, self.injector, self.injector_arguments, self.formulae, options)
-        qos.test_measure(fit=True)
+        qos = EnergyQoS(model=self.model,
+                        injection=self.injector,
+                        injector_arguments=self.injector_arguments,
+                        formulae=self.formulae,
+                        options=options)
+        qos.measure()
 
 
 if __name__ == '__main__':

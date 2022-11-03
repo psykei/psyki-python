@@ -5,31 +5,38 @@ from psyki.ski import EnrichedModel, Formula
 from tensorflow.python.profiler.model_analyzer import profile
 from tensorflow.python.profiler.option_builder import ProfileOptionBuilder
 import tensorflow as tf
-from psyki.qos.utils import get_injector
+
+from psyki.qos.base import BaseQoS
 
 
-class MemoryQoS:
+class MemoryQoS(BaseQoS):
     def __init__(self,
                  model: Union[Model, EnrichedModel],
-                 injector: str,
-                 injector_arguments: dict,
-                 formulae: list[Formula]):
+                 injection: Union[str, Union[Model, EnrichedModel]],
+                 injector_arguments: dict = {},
+                 formulae: list[Formula] = []):
+        super(MemoryQoS, self).__init__(model=model,
+                                        injection=injection,
+                                        injector_arguments=injector_arguments,
+                                        formulae=formulae)
 
-        # Setup predictor models
-        self.bare_model = model
-        self.inj_model = get_injector(injector)(model, **injector_arguments).inject(formulae)
-
-    def test_measure(self, mode: str = 'flops'):
+    def measure(self,
+                mode: str = 'flops',
+                verbose: bool = True) -> float:
+        self.inj_model = self.inj_model.remove_constraints()
         if mode == 'flops':
-            print('Measuring FLOPs of given models. This can take a while...')
+            if verbose:
+                print('Measuring FLOPs of given models. This can take a while...')
             mems = []
             for model in [self.bare_model, self.inj_model]:
                 mems.append(get_flops(model=model))
-            # First model should be the bare model, Second one should be the injected one
-            print('The injected model is {} FLOPs {}'.format(abs(mems[0] - mems[1]),
-                                                             'smaller' if mems[0] > mems[1] else 'bigger'))
+            if verbose:
+                print('The injected model is {} FLOPs {}'.format(abs(mems[0] - mems[1]),
+                                                                 'smaller' if mems[0] > mems[1] else 'bigger'))
+            metric = mems[0] - mems[1]
         else:
             raise ValueError('Mode {} is not supported yet!'.format(mode))
+        return metric
 
 
 def get_flops(model: Union[Model, EnrichedModel]) -> int:
