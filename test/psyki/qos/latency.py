@@ -27,14 +27,20 @@ class TestLatency(unittest.TestCase):
     def test_latency_fit(self):
         options = dict(optim='adam',
                        loss='sparse_categorical_crossentropy',
-                       batch=16,
                        epochs=300,
+                       batch=16,
                        dataset=self.dataset,
                        threshold=0.97,
-                       formula=self.formulae)
+                       metrics=['accuracy'],
+                       formula=self.formulae,
+                       alpha=0.8)
 
-        qos = LatencyQoS(self.model, self.injector, self.injector_arguments, self.formulae, options)
-        qos.test_measure(fit=True)
+        qos = LatencyQoS(model=self.model,
+                         injection=self.injector,
+                         injector_arguments=self.injector_arguments,
+                         formulae=self.formulae,
+                         options=options)
+        qos.measure(fit=True)
 
 
 if __name__ == '__main__':

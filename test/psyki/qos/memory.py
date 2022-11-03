@@ -3,8 +3,6 @@ from sklearn.datasets import load_iris
 from sklearn.preprocessing import OneHotEncoder
 from test.utils import create_standard_fully_connected_nn
 from test.resources.rules import get_rules
-from test.resources.rules.poker import FEATURE_MAPPING as POKER_FEATURE_MAPPING, \
-    CLASS_MAPPING as POKER_CLASS_MAPPING
 from psyki.qos.memory import MemoryQoS
 from psyki.logic.datalog.grammar.adapters import antlr4
 
@@ -27,8 +25,11 @@ class TestMemory(unittest.TestCase):
     formulae = [antlr4.get_formula_from_string(rule) for rule in get_rules('iris')]
 
     def test_memory_fit(self):
-        qos = MemoryQoS(self.model, self.injector, self.injector_arguments, self.formulae)
-        qos.test_measure(mode='flops')
+        qos = MemoryQoS(model=self.model,
+                        injection=self.injector,
+                        injector_arguments=self.injector_arguments,
+                        formulae=self.formulae)
+        qos.measure(mode='flops')
 
 
 if __name__ == '__main__':

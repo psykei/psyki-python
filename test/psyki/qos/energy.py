@@ -3,7 +3,6 @@ from sklearn.datasets import load_iris
 from sklearn.preprocessing import OneHotEncoder
 from psyki.qos.energy import EnergyQoS
 from psyki.logic.datalog.grammar.adapters import antlr4
-from test.resources.data import get_dataset
 from test.utils import create_standard_fully_connected_nn
 from test.resources.rules import get_rules
 
@@ -28,15 +27,20 @@ class TestEnergy(unittest.TestCase):
     def test_energy_fit(self):
         options = dict(optim='adam',
                        loss='sparse_categorical_crossentropy',
-                       batch=16,
                        epochs=300,
+                       batch=16,
                        dataset=self.dataset,
-                       formula=self.formulae,
                        threshold=0.97,
+                       metrics=['accuracy'],
+                       formula=self.formulae,
                        alpha=0.8)
 
-        qos = EnergyQoS(self.model, self.injector, self.injector_arguments, self.formulae, options)
-        qos.test_measure(fit=True)
+        qos = EnergyQoS(model=self.model,
+                        injection=self.injector,
+                        injector_arguments=self.injector_arguments,
+                        formulae=self.formulae,
+                        options=options)
+        qos.measure()
 
 
 if __name__ == '__main__':
