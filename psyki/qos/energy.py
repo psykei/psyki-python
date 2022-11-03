@@ -7,7 +7,8 @@ from tensorflow.python.keras.optimizer_v1 import Optimizer
 from codecarbon import OfflineEmissionsTracker, EmissionsTracker
 
 from psyki.ski import EnrichedModel, Formula
-from psyki.qos.utils import split_dataset, get_injector, EarlyStopping
+from psyki.qos.utils import measure_fit_with_tracker, measure_predict_with_tracker
+from psyki.qos.base import BaseQoS
 
 
 class EnergyQoS(BaseQoS):
@@ -33,23 +34,17 @@ class EnergyQoS(BaseQoS):
     def test_measure(self, fit: bool = False):
         if fit:
             print('Calculating energy spent for model training. This can take a while as model.fit needs to run...')
-            energy_train = []
-            for index, model in enumerate([self.bare_model, self.inj_model]):
-                tracker = OfflineEmissionsTracker(country_iso_code='ITA',log_level='error', save_to_file=False)
-                tracker.start()
-                measure_fit(model=model,
-                            optimiser=self.optimiser,
-                            loss=self.loss,
-                            batch_size=self.batch_size,
-                            epochs=self.epochs,
-                            threshold=self.threshold,
-                            name=('bare' if index == 0 else 'injected'),
-                            dataset=self.dataset)
-                tracker.stop()
-                energy_train.append(tracker._total_energy.kWh * 1000)
-
-
-            # First model should be the bare model, Second one should be the injected one
+        energy_train = measure_fit_with_tracker(models_list=[self.bare_model, self.inj_model],
+                                                names=['bare', 'injected'],
+                                                optimiser=self.optimiser,
+                                                loss=self.loss,
+                                                epochs=self.epochs,
+                                                batch_size=self.batch_size,
+                                                dataset=self.dataset,
+                                                threshold=self.threshold,
+                                                metrics=self.metrics,
+                                                tracker_class=EnergyTracker)
+        if verbose:
             print('The injected model is {:.5f} Wh {} energy consuming during training'.format(
                 abs(energy_train[0] - energy_train[1]),
                 'less' if energy_train[0] > energy_train[1] else 'more'))
@@ -57,17 +52,12 @@ class EnergyQoS(BaseQoS):
             pass
 
         self.inj_model = self.inj_model.remove_constraints()
-        print('Calculating energy spent for model prediction. '
-              'This may take a while depending on the model and dataset...')
-        energy_test = []
-
-        for model in [self.bare_model, self.inj_model]:
-            tracker = OfflineEmissionsTracker(country_iso_code='ITA', log_level='error', save_to_file=False)
-            tracker.start()
-            measure_predict(model=model,
-                            dataset=self.dataset)
-            tracker.stop()
-            energy_test.append(tracker._total_energy.kWh * 1000)
+        if verbose:
+            print('Calculating energy spent for model prediction. '
+                  'This may take a while depending on the model and dataset...')
+        energy_test = measure_predict_with_tracker(models_list=[self.bare_model, self.inj_model],
+                                                   dataset=self.dataset,
+                                                   tracker_class=EnergyTracker)
         # First model should be the bare model, Second one should be the injected one
         print('The injected model is {:.5f} Wh {} energy consuming during inference'.format(
             abs(energy_test[0] - energy_test[1]),

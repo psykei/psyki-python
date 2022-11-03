@@ -1,13 +1,11 @@
 from __future__ import annotations
 from typing import Union
 from tensorflow.keras import Model
-from tensorflow.python.data import Dataset
-from tensorflow.python.keras.losses import Loss
-from tensorflow.python.keras.optimizer_v1 import Optimizer
+import time
 
 from psyki.ski import EnrichedModel, Formula
-from psyki.qos.utils import split_dataset, get_injector, EarlyStopping
-import time
+from psyki.qos.utils import measure_fit_with_tracker, measure_predict_with_tracker
+from psyki.qos.base import BaseQoS
 
 
 class LatencyQoS(BaseQoS):
@@ -31,29 +29,30 @@ class LatencyQoS(BaseQoS):
 
     def test_measure(self, fit: bool = False):
         if fit:
-            print('Measuring times of model training. This can take a while as model.fit needs to run...')
-            times = []
-            for index, model in enumerate([self.bare_model, self.inj_model]):
-                times.append(measure_fit(model=model,
-                                         optimiser=self.optimiser,
-                                         loss=self.loss,
-                                         batch_size=self.batch_size,
-                                         epochs=self.epochs,
-                                         threshold=self.threshold,
-                                         name=('bare' if index == 0 else 'injected'),
-                                         dataset=self.dataset))
-            # First model should be the bare model, Second one should be the injected one
-            print('The injected model is {:.5f} seconds {} during training'.format(abs(times[0] - times[1]),
-                                                                                   'faster' if times[0] > times[
-                                                                                       1] else 'slower'))
+            if verbose:
+                print('Measuring times of model training. This can take a while as model.fit needs to run...')
+            times = measure_fit_with_tracker(models_list=[self.bare_model, self.inj_model],
+                                             names=['bare', 'injected'],
+                                             optimiser=self.optimiser,
+                                             loss=self.loss,
+                                             epochs=self.epochs,
+                                             batch_size=self.batch_size,
+                                             dataset=self.dataset,
+                                             threshold=self.threshold,
+                                             metrics=self.metrics,
+                                             tracker_class=TimeTracker)
+            if verbose:
+                print('The injected model is {:.5f} seconds {} during training'.format(abs(times[0] - times[1]),
+                                                                                       'faster' if times[0] > times[
+                                                                                           1] else 'slower'))
         else:
             pass
         self.inj_model = self.inj_model.remove_constraints()
-        print('Measuring times of model prediction. This may take a while depending on the model and dataset...')
-        times = []
-        for model in [self.bare_model, self.inj_model]:
-            times.append(measure_predict(model=model,
-                                         dataset=self.dataset))
+        if verbose:
+            print('Measuring times of model prediction. This may take a while depending on the model and dataset...')
+        times = measure_predict_with_tracker(models_list=[self.bare_model, self.inj_model],
+                                             dataset=self.dataset,
+                                             tracker_class=TimeTracker)
         # First model should be the bare model, Second one should be the injected one
         print('The injected model is {:.5f} seconds {} during inference'.format(abs(times[0] - times[1]),
                                                                                 'faster' if times[0] > times[
