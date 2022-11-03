@@ -59,43 +59,18 @@ class LatencyQoS(BaseQoS):
                                                                                 'faster' if times[0] > times[
                                                                                     1] else 'slower'))
 
+class TimeTracker:
+    """Context manager to measure how much time did the target scope take."""
 
-def measure_fit(model: Union[Model, EnrichedModel],
-                optimiser: Optimizer,
-                loss: Union[str, Loss],
-                batch_size: int,
-                epochs: int,
-                threshold: float,
-                name: str,
-                dataset: Dataset) -> int:
-    # Split dataset into train and test
-    train_x, train_y, _, _ = split_dataset(dataset=dataset)
-    # Start the timer
-    start = time.time()
-    # Compile the keras model or the enriched model
-    model.compile(optimiser,
-                  loss=loss,
-                  metrics=['accuracy'])
-    # Train the model
-    callbacks = EarlyStopping(threshold=threshold, model_name=name)
-    model.fit(train_x,
-              train_y,
-              batch_size=batch_size,
-              epochs=epochs,
-              verbose=False,
-              callbacks=[callbacks])
-    # Stop the timer to get timings information
-    end = time.time()
-    return end - start
+    def __init__(self):
+        self.start_time = None
+        self.delta_time = None
 
+    def __enter__(self):
+        self.start_time = time.perf_counter()
 
-def measure_predict(model: Union[Model, EnrichedModel],
-                    dataset: Dataset) -> int:
-    _, _, test_x, _ = split_dataset(dataset=dataset)
-    # Start the timer
-    start = time.time()
-    # Train the model
-    model.predict(test_x, verbose=False)
-    # Stop the timer to get timings information
-    end = time.time()
-    return end - start
+    def __exit__(self, type=None, value=None, traceback=None):
+        self.delta_time = (time.perf_counter() - self.start_time)
+
+    def get_tracked_value(self):
+        return self.delta_time
