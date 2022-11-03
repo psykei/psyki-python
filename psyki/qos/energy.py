@@ -81,34 +81,20 @@ class EnergyQoS(BaseQoS):
               ' The total energy consumption metrics is equal to {:.5f}.'.format(
             ('less' if inj_value < bare_value else 'more'), metrics))
 
+class EnergyTracker:
+    """Context manager to measure how much energy was spent in the target scope."""
 
-def measure_fit(model: Union[Model, EnrichedModel],
-                optimiser: Optimizer,
-                loss: Union[str, Loss],
-                batch_size: int,
-                epochs: int,
-                threshold: float,
-                name: str,
-                dataset: Dataset) -> int:
-    # Split dataset into train and test
-    train_x, train_y, _, _ = split_dataset(dataset=dataset)
-    # Compile the keras model or the enriched model
-    model.compile(optimiser,
-                  loss=loss,
-                  metrics=['accuracy'])
-    # Train the model
-    callbacks = EarlyStopping(threshold=threshold, model_name=name)
-    # Train the model
-    model.fit(train_x,
-              train_y,
-              batch_size=batch_size,
-              epochs=epochs,
-              verbose=False,
-              callbacks=[callbacks])
+    def __init__(self):
+        self.tracker = None
+        self.energy = None
 
+    def __enter__(self):
+        self.tracker = OfflineEmissionsTracker(country_iso_code='ITA', log_level='error', save_to_file=False)
+        self.tracker.start()
 
-def measure_predict(model: Union[Model, EnrichedModel],
-                    dataset: Dataset) -> int:
-    _, _, test_x, _ = split_dataset(dataset=dataset)
-    # Train the model
-    model.predict(test_x, verbose=False)
+    def __exit__(self, type=None, value=None, traceback=None):
+        self.tracker.stop()
+        self.energy = self.tracker._total_energy.kWh * 1000
+
+    def get_tracked_value(self):
+        return self.energy
