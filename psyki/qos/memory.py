@@ -7,13 +7,19 @@ from tensorflow.python.profiler.option_builder import ProfileOptionBuilder
 import tensorflow as tf
 from psyki.qos.utils import get_injector
 
+from psyki.qos.base import BaseQoS
 
-class MemoryQoS:
+
+class MemoryQoS(BaseQoS):
     def __init__(self,
                  model: Union[Model, EnrichedModel],
-                 injector: str,
-                 injector_arguments: dict,
-                 formulae: List[Formula]):
+                 injection: Union[str, Union[Model, EnrichedModel]],
+                 injector_arguments: dict = {},
+                 formulae: list[Formula] = []):
+        super(MemoryQoS, self).__init__(model=model,
+                                        injection=injection,
+                                        injector_arguments=injector_arguments,
+                                        formulae=formulae)
 
         # Setup predictor models
         self.bare_model = model

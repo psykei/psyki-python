@@ -10,16 +10,17 @@ from psyki.ski import EnrichedModel, Formula
 from psyki.qos.utils import split_dataset, get_injector, EarlyStopping
 
 
-class EnergyQoS:
+class EnergyQoS(BaseQoS):
     def __init__(self,
                  model: Union[Model, EnrichedModel],
-                 injector: str,
-                 injector_arguments: dict,
-                 formulae: list[Formula],
-                 options: dict):
-        # Setup predictor models
-        self.bare_model = model
-        self.inj_model = get_injector(injector)(model, **injector_arguments).inject(formulae)
+                 injection: Union[str, Union[Model, EnrichedModel]],
+                 options: dict,
+                 injector_arguments: dict = {},
+                 formulae: list[Formula] = []):
+        super(EnergyQoS, self).__init__(model=model,
+                                        injection=injection,
+                                        injector_arguments=injector_arguments,
+                                        formulae=formulae)
         # Read options from dictionary
         self.optimiser = options['optim']
         self.loss = options['loss']
