@@ -1,9 +1,6 @@
 from __future__ import annotations
 from typing import Union
 from tensorflow.keras import Model
-from tensorflow.python.data import Dataset
-from tensorflow.python.keras.losses import Loss
-from tensorflow.python.keras.optimizer_v1 import Optimizer
 from codecarbon import OfflineEmissionsTracker, EmissionsTracker
 
 from psyki.ski import EnrichedModel, Formula
@@ -25,14 +22,15 @@ class EnergyQoS(BaseQoS):
         # Read options from dictionary
         self.optimiser = options['optim']
         self.loss = options['loss']
-        self.batch_size = options['batch']
         self.epochs = options['epochs']
-        self.threshold = options['threshold']
+        self.batch_size = options['batch']
         self.dataset = options['dataset']
+        self.threshold = options['threshold']
+        self.metrics = options['metrics']
         self.alpha = options['alpha']
 
-    def test_measure(self, fit: bool = False):
-        if fit:
+    def measure(self, verbose: bool = True) -> float:
+        if verbose:
             print('Calculating energy spent for model training. This can take a while as model.fit needs to run...')
         energy_train = measure_fit_with_tracker(models_list=[self.bare_model, self.inj_model],
                                                 names=['bare', 'injected'],
@@ -48,9 +46,6 @@ class EnergyQoS(BaseQoS):
             print('The injected model is {:.5f} Wh {} energy consuming during training'.format(
                 abs(energy_train[0] - energy_train[1]),
                 'less' if energy_train[0] > energy_train[1] else 'more'))
-        else:
-            pass
-
         self.inj_model = self.inj_model.remove_constraints()
         if verbose:
             print('Calculating energy spent for model prediction. '
@@ -59,17 +54,20 @@ class EnergyQoS(BaseQoS):
                                                    dataset=self.dataset,
                                                    tracker_class=EnergyTracker)
         # First model should be the bare model, Second one should be the injected one
-        print('The injected model is {:.5f} Wh {} energy consuming during inference'.format(
-            abs(energy_test[0] - energy_test[1]),
-            'less' if energy_test[0] > energy_test[1] else 'more'))
+        if verbose:
+            print('The injected model is {:.5f} Wh {} energy consuming during inference'.format(
+                abs(energy_test[0] - energy_test[1]),
+                'less' if energy_test[0] > energy_test[1] else 'more'))
 
         inj_value = ((1 - self.alpha) * energy_train[1] + self.alpha * energy_test[1])
         bare_value = ((1 - self.alpha) * energy_train[0] + self.alpha * energy_test[0])
-        metrics = abs(inj_value - bare_value)
+        metrics = bare_value - inj_value
+        if verbose:
+            print('The injected model life-cycle is {} energy consuming.'
+                  ' The total energy consumption metrics is equal to {:.5f}.'.format(
+                ('less' if inj_value < bare_value else 'more'), metrics))
+        return metrics
 
-        print('The injected model life-cycle is {} energy consuming.'
-              ' The total energy consumption metrics is equal to {:.5f}.'.format(
-            ('less' if inj_value < bare_value else 'more'), metrics))
 
 class EnergyTracker:
     """Context manager to measure how much energy was spent in the target scope."""

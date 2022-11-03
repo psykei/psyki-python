@@ -22,12 +22,15 @@ class LatencyQoS(BaseQoS):
         # Read options from dictionary
         self.optimiser = options['optim']
         self.loss = options['loss']
-        self.batch_size = options['batch']
         self.epochs = options['epochs']
-        self.threshold = options['threshold']
+        self.batch_size = options['batch']
         self.dataset = options['dataset']
+        self.threshold = options['threshold']
+        self.metrics = options['metrics']
 
-    def test_measure(self, fit: bool = False):
+    def measure(self,
+                fit: bool = False,
+                verbose: bool = True):
         if fit:
             if verbose:
                 print('Measuring times of model training. This can take a while as model.fit needs to run...')
@@ -54,9 +57,13 @@ class LatencyQoS(BaseQoS):
                                              dataset=self.dataset,
                                              tracker_class=TimeTracker)
         # First model should be the bare model, Second one should be the injected one
-        print('The injected model is {:.5f} seconds {} during inference'.format(abs(times[0] - times[1]),
-                                                                                'faster' if times[0] > times[
-                                                                                    1] else 'slower'))
+        if verbose:
+            print('The injected model is {:.5f} seconds {} during inference'.format(abs(times[0] - times[1]),
+                                                                                    'faster' if times[0] > times[
+                                                                                        1] else 'slower'))
+        metric = times[0] - times[1]
+        return metric
+
 
 class TimeTracker:
     """Context manager to measure how much time did the target scope take."""
