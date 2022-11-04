@@ -29,6 +29,7 @@ class TestLatencyOnIris(unittest.TestCase):
     formulae = [antlr4.get_formula_from_string(rule) for rule in get_rules('iris')]
 
     def test_latency_fit(self):
+        print('TEST LATENCY FIT WITH {} ON IRIS'.format(self.injector.upper()))
         options = dict(injector=self.injector,
                        optim='adam',
                        loss='sparse_categorical_crossentropy',
@@ -67,7 +68,8 @@ class TestLatencyOnIris(unittest.TestCase):
         variable_mapping = get_splice_junction_extended_feature_mapping()
         injector_arguments = {'feature_mapping': variable_mapping}
 
-        def test_energy_fit(self):
+        def test_latency_fit(self):
+            print('TEST LATENCY FIT WITH {} ON SPLICE JUNCTION'.format(self.injector.upper()))
             options = dict(injector=self.injector,
                            optim='adam',
                            loss='sparse_categorical_crossentropy',

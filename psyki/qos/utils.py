@@ -89,7 +89,7 @@ class EarlyStopping(tf.keras.callbacks.Callback):
     def __init__(self,
                  threshold: float,
                  model_name: str = '',
-                 verbose: bool = True):
+                 verbose: bool = False):
         self.threshold = threshold
         self.model_name = model_name
         self.verbose = verbose
@@ -97,5 +97,5 @@ class EarlyStopping(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
         if logs.get('accuracy') > self.threshold:
             if self.verbose:
-                print("\nAccuracy in model {} reached. Stopping training at epoch {}...".format(self.model_name, epoch))
+                print("Accuracy in model {} reached. Stopping training at epoch {}...".format(self.model_name, epoch))
             self.model.stop_training = True
