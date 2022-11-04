@@ -23,7 +23,10 @@ class MemoryQoS(BaseQoS):
     def measure(self,
                 mode: str = 'flops',
                 verbose: bool = True) -> float:
-        self.inj_model = self.inj_model.remove_constraints()
+        try:
+            self.inj_model = self.inj_model.remove_constraints()
+        except AttributeError:
+            pass
         if mode == 'flops':
             if verbose:
                 print('Measuring FLOPs of given models. This can take a while...')

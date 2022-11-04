@@ -46,7 +46,10 @@ class EnergyQoS(BaseQoS):
             print('The injected model is {:.5f} Wh {} energy consuming during training'.format(
                 abs(energy_train[0] - energy_train[1]),
                 'less' if energy_train[0] > energy_train[1] else 'more'))
-        self.inj_model = self.inj_model.remove_constraints()
+        try:
+            self.inj_model = self.inj_model.remove_constraints()
+        except AttributeError:
+            pass
         if verbose:
             print('Calculating energy spent for model prediction. '
                   'This may take a while depending on the model and dataset...')

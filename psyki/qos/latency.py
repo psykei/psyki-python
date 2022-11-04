@@ -50,7 +50,10 @@ class LatencyQoS(BaseQoS):
                                                                                            1] else 'slower'))
         else:
             pass
-        self.inj_model = self.inj_model.remove_constraints()
+        try:
+            self.inj_model = self.inj_model.remove_constraints()
+        except AttributeError:
+            pass
         if verbose:
             print('Measuring times of model prediction. This may take a while depending on the model and dataset...')
         times = measure_predict_with_tracker(models_list=[self.bare_model, self.inj_model],
