@@ -130,6 +130,8 @@ class QoS:
                                                                           threshold,
                                                                           metrics))
                 break
+        if not smallest_model_setting:
+            raise ValueError('Not able to find a model getting over threshold {}!'.format(threshold))
         # Reconstruct model with the smallest number of neurons and returns it
         best_model = create_nn(neur=smallest_model_setting,
                                input_size=input_size,
