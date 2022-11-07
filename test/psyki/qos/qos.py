@@ -28,12 +28,12 @@ class TestQoS(unittest.TestCase):
         metric_arguments = dict(injection=self.injector,
                                 injector_arguments=self.injector_arguments,
                                 formulae=self.formulae,
-                                max_neurons=[100],
-                                grid_levels=40,
+                                max_neurons=[1000, 1000],
+                                grid_levels=100,
                                 optim='adam',
                                 loss='sparse_categorical_crossentropy',
                                 batch=16,
-                                epochs=300,
+                                epochs=10,
                                 metrics=['accuracy'],
                                 dataset=self.dataset,
                                 threshold=0.97,
@@ -45,7 +45,7 @@ class TestQoS(unittest.TestCase):
 
         qos = QoS(metric_arguments=metric_arguments,
                   flags=flags)
-        qos.compute()
+        qos.compute(verbose=False)
 
 
 if __name__ == '__main__':
