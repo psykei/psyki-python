@@ -103,6 +103,7 @@ class QoS:
         # Cycle through the given grid to find the smallest model
         smallest_model_setting = None
         for neurons in neurons_grid:
+            print('Searching grid. Model with neurons: {}'.format(neurons), end='\r')
             history = build_and_train_model(neurons=neurons,
                                             input_size=input_size,
                                             output_size=output_size,
