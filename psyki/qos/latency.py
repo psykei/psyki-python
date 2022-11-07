@@ -76,10 +76,10 @@ class TimeTracker:
         self.delta_time = None
 
     def __enter__(self):
-        self.start_time = time.perf_counter()
+        self.start_time = time.time()
 
     def __exit__(self, type=None, value=None, traceback=None):
-        self.delta_time = (time.perf_counter() - self.start_time)
+        self.delta_time = time.time() - self.start_time
 
     def get_tracked_value(self):
         return self.delta_time
