@@ -1,12 +1,9 @@
 from __future__ import annotations
 from typing import Union
 from tensorflow.keras import Model, Input
-from tensorflow.python.data import Dataset
 from tensorflow.python.keras.losses import Loss
 from tensorflow.python.keras.optimizer_v1 import Optimizer
-from sklearn.model_selection import GridSearchCV
 from tensorflow.keras.layers import Dense
-from scikeras.wrappers import KerasClassifier
 import numpy as np
 import math
 
@@ -31,6 +28,24 @@ class QoS:
         self.grid_search = flags['grid_search']
         # Setup dictionary containing the tracked metrics
         self.metrics_dictionary = {}
+        # Try loading training options from the dictionary of arguments
+        try:
+            self.metrics_options = {}
+            if self.track_memory:
+                pass
+            if self.track_latency:
+                self.metrics_options['dataset'] = metric_arguments['dataset']
+            if self.track_energy or self.grid_search:
+                self.metrics_options['optim'] = metric_arguments['optim']
+                self.metrics_options['loss'] = metric_arguments['loss']
+                self.metrics_options['batch'] = metric_arguments['batch']
+                self.metrics_options['epochs'] = metric_arguments['epochs']
+                self.metrics_options['metrics'] = metric_arguments['metrics']
+                self.metrics_options['threshold'] = metric_arguments['threshold']
+                self.metrics_options['dataset'] = metric_arguments['dataset']
+                self.metrics_options['alpha'] = metric_arguments['alpha']
+        except AttributeError:
+            raise ValueError('Metric arguments should contain all arguments to run the QoS metrics')
         # If the grid search flag is up then start the grid search
         if self.grid_search:
             # Try loading training options from the dictionary of arguments
@@ -40,36 +55,12 @@ class QoS:
                 neurons_grid = get_grid(max_neurons=max_neurons,
                                         grid_levels=grid_levels)
                 print('neurons_grid: {}'.format(neurons_grid))
-                optimiser = metric_arguments['optim']
-                loss = metric_arguments['loss']
-                batch_size = metric_arguments['batch']
-                epochs = metric_arguments['epochs']
-                metrics = metric_arguments['metrics']
-                threshold = metric_arguments['threshold']
-                dataset = metric_arguments['dataset']
-                self.metrics_options = {'optim': optimiser, 'loss': loss, 'epochs': epochs, 'batch': batch_size,
-                                        'dataset': dataset, 'metrics': metrics, 'threshold': threshold,
-                                        'alpha': metric_arguments['alpha']}
             except AttributeError:
                 raise ValueError('If setting the grid_search flag in QoS class, '
                                  'the training settings must be passed to the QoS class amongst its metric_arguments.')
             self.bare_model = self.search_in_grid(neurons_grid=neurons_grid,
-                                                  optimiser=optimiser,
-                                                  loss=loss,
-                                                  batch_size=batch_size,
-                                                  epochs=epochs,
-                                                  metrics=metrics,
-                                                  threshold=threshold,
-                                                  dataset=dataset,
                                                   inject=False)
             self.injected_model = self.search_in_grid(neurons_grid=neurons_grid,
-                                                      optimiser=optimiser,
-                                                      loss=loss,
-                                                      batch_size=batch_size,
-                                                      epochs=epochs,
-                                                      metrics=metrics,
-                                                      threshold=threshold,
-                                                      dataset=dataset,
                                                       inject=True)
         else:
             self.bare_model = metric_arguments['model']
@@ -85,16 +76,9 @@ class QoS:
 
     def search_in_grid(self,
                        neurons_grid: list[list[int]],
-                       optimiser: Optimizer,
-                       loss: Union[str, Loss],
-                       batch_size: int,
-                       epochs: int,
-                       metrics: Union[str, list[str]],
-                       threshold: float,
-                       dataset: Dataset,
                        inject: bool) -> Union[Model, EnrichedModel]:
         # Split dataset into train and test
-        train_x, train_y, _, _ = split_dataset(dataset=dataset)
+        train_x, train_y, _, _ = split_dataset(dataset=self.metrics_options['dataset'])
         # Get input and output size depending on the dataset
         input_size = train_x.shape[-1]
         output_size = np.max(train_y) + 1
@@ -108,30 +92,31 @@ class QoS:
                                             input_size=input_size,
                                             output_size=output_size,
                                             activation=activation,
-                                            threshold=threshold,
+                                            threshold=self.metrics_options['threshold'],
                                             train_x=train_x,
                                             train_y=train_y,
-                                            epochs=epochs,
-                                            batch_size=batch_size,
+                                            epochs=self.metrics_options['epochs'],
+                                            batch_size=self.metrics_options['batch'],
                                             inject=inject,
                                             injection=self.injection,
                                             injector_arguments=self.injector_arguments,
                                             formulae=self.formulae,
-                                            optimiser=optimiser,
-                                            loss=loss,
-                                            metrics=metrics)
-            if history['accuracy'][-1] >= threshold:
+                                            optimiser=self.metrics_options['optim'],
+                                            loss=self.metrics_options['loss'],
+                                            metrics=self.metrics_options['metrics'])
+            if history['accuracy'][-1] >= self.metrics_options['threshold']:
                 smallest_model_setting = neurons
                 # Print statistics concerning model training
                 print('{} model has best settings {}. '
                       'Its training took {} epochs to reach {} {}'.format('Bare' if not inject else 'Injected',
                                                                           smallest_model_setting,
                                                                           len(history['accuracy']),
-                                                                          threshold,
-                                                                          metrics))
+                                                                          self.metrics_options['threshold'],
+                                                                          self.metrics_options['metrics']))
                 break
         if not smallest_model_setting:
-            raise ValueError('Not able to find a model getting over threshold {}!'.format(threshold))
+            raise ValueError('Not able to find a model getting '
+                             'over threshold {}!'.format(self.metrics_options['threshold']))
         # Reconstruct model with the smallest number of neurons and returns it
         best_model = create_nn(neur=smallest_model_setting,
                                input_size=input_size,
