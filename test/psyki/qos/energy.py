@@ -22,11 +22,12 @@ class TestEnergyOnIris(unittest.TestCase):
                                                layers=3,
                                                neurons=128,
                                                activation='relu')
-    injector = 'kill'
+    injector = 'kins'
     class_mapping = {'setosa': 0, 'virginica': 1, 'versicolor': 2}
     variable_mapping = {'SL': 0, 'SW': 1, 'PL': 2, 'PW': 3}
-    injector_arguments = {'class_mapping': class_mapping,
-                          'feature_mapping': variable_mapping}
+    injector_arguments = {#'class_mapping': class_mapping,
+                          'feature_mapping': variable_mapping,
+                            'injection_layer': len(model.layers) - 2}
     formulae = [antlr4.get_formula_from_string(rule) for rule in get_rules('iris')]
 
     def test_energy_fit(self):
@@ -65,17 +66,18 @@ class TestEnergyOnSplice(unittest.TestCase):
                                                layers=3,
                                                neurons=128,
                                                activation='relu')
-    injector = 'kbann'
+    injector = 'kins'
     formulae = [get_formula_from_string(rule) for rule in rules]
     variable_mapping = get_splice_junction_extended_feature_mapping()
-    injector_arguments = {'feature_mapping': variable_mapping}
+    injector_arguments = {'feature_mapping': variable_mapping,
+                            'injection_layer': len(model.layers) - 2}
 
     def test_energy_fit(self):
         print('TEST ENERGY FIT WITH {} ON SPLICE JUNCTION'.format(self.injector.upper()))
         options = dict(injector=self.injector,
                        optim='adam',
                        loss='sparse_categorical_crossentropy',
-                       epochs=300,
+                       epochs=1,
                        batch=16,
                        dataset=self.dataset,
                        threshold=0.97,
