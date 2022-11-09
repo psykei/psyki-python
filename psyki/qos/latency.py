@@ -32,6 +32,7 @@ class LatencyQoS(BaseQoS):
                 fit: bool = False,
                 verbose: bool = True):
         if fit:
+            assert fit
             if verbose:
                 print('Measuring times of model training. This can take a while as model.fit needs to run...')
             times = measure_fit_with_tracker(models_list=[self.bare_model, self.inj_model],
@@ -65,6 +66,7 @@ class LatencyQoS(BaseQoS):
                                                                                     'faster' if times[0] > times[
                                                                                         1] else 'slower'))
         metric = times[0] - times[1]
+        assert metric is not None
         return metric
 
 
@@ -82,4 +84,5 @@ class TimeTracker:
         self.delta_time = time.time() - self.start_time
 
     def get_tracked_value(self):
+        assert self.delta_time is not None
         return self.delta_time

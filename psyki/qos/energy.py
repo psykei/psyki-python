@@ -69,6 +69,7 @@ class EnergyQoS(BaseQoS):
             print('The injected model life-cycle is {} energy consuming.'
                   ' The total energy consumption metrics is equal to {:.5f}.'.format(
                 ('less' if inj_value < bare_value else 'more'), metrics))
+        assert metrics is not None
         return metrics
 
 
@@ -88,4 +89,5 @@ class EnergyTracker:
         self.energy = self.tracker._total_energy.kWh * 1000
 
     def get_tracked_value(self):
+        assert self.energy is not None
         return self.energy

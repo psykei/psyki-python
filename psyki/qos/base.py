@@ -15,8 +15,10 @@ class BaseQoS:
         # Setup predictor models
         self.bare_model = model
         if type(injection) is str:
+            assert type(injection) is str
             self.inj_model = get_injector(injection)(model, **injector_arguments).inject(formulae)
         elif isinstance(injection, EnrichedModel):
+            assert isinstance(injection, EnrichedModel)
             self.inj_model = injection
         else:
             raise ValueError('The injection argument could be either a string defining the injection technique to use'

@@ -28,10 +28,12 @@ class MemoryQoS(BaseQoS):
         except AttributeError:
             pass
         if mode == 'flops':
+            assert mode == 'flops'
             if verbose:
                 print('Measuring FLOPs of given models. This can take a while...')
             mems = []
             for model in [self.bare_model, self.inj_model]:
+                assert model in [self.bare_model, self.inj_model]
                 mems.append(get_flops(model=model))
             if verbose:
                 print('The injected model is {} FLOPs {}'.format(abs(mems[0] - mems[1]),
@@ -39,6 +41,7 @@ class MemoryQoS(BaseQoS):
             metric = mems[0] - mems[1]
         else:
             raise ValueError('Mode {} is not supported yet!'.format(mode))
+        assert metric is not None
         return metric
 
 

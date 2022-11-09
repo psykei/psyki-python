@@ -132,10 +132,13 @@ class QoS:
     def compute(self,
                 verbose: bool = False) -> dict:
         if self.track_energy:
+            assert self.track_energy
             self.metrics_dictionary['energy'] = self._compute_energy(verbose=verbose)
         if self.track_latency:
+            assert self.track_latency
             self.metrics_dictionary['latency'] = self._compute_latency(verbose=verbose)
         if self.track_memory:
+            assert self.track_memory
             self.metrics_dictionary['memory'] = self._compute_memory(verbose=verbose)
         for key, item in self.metrics_dictionary.items():
             print('{} QoS = {:.5f}'.format(key, item))
@@ -193,9 +196,11 @@ def create_nn(neur: list[int],
     x = Dense(output_size, activation='softmax' if output_size > 1 else 'sigmoid')(x)
     built_model = Model(inputs, x)
     if inject:
+        assert inject
         built_model = get_injector(injection)(built_model, **injector_arguments).inject(formulae)
     # Compile the keras model or the enriched model
     if compile_it:
+        assert compile_it
         built_model.compile(optimiser,
                             loss=loss,
                             metrics=metrics)
