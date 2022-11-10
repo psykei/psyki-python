@@ -226,14 +226,14 @@ class Argument(Formula):
         return Argument(self.term.copy(), self.arg)
 
     @property
-    def unfolded(self):
+    def unfolded(self) -> list[Term]:
         if self.arg is None:
             return [self.term]
         else:
             return [self.term] + self.arg.unfolded
 
     @property
-    def last(self):
+    def last(self) -> Term:
         return self.unfolded[-1]
 
 

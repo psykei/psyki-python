@@ -1,9 +1,12 @@
 from __future__ import annotations
+
+import csv
 from abc import ABC, abstractmethod
 from typing import Callable, List, Any
 from psyki.logic import Fuzzifier, Formula
 from psyki.logic.datalog.grammar import DatalogFormula, Expression, Negation, Variable, Boolean, Number, Unary, Nary, \
     Argument, Predication, MofN
+from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
 
 
 class DatalogFuzzifier(Fuzzifier, ABC):
@@ -83,13 +86,25 @@ class DatalogFuzzifier(Fuzzifier, ABC):
             return []
 
     def _get_predication_name(self, node: Argument):
-        if node is not None and node.arg is not None:
-            return self._get_predication_name(node.arg)
-        elif node is not None and isinstance(node.term, Predication):
-            return node.term.name
-        else:
-            return None
+        if node is not None:
+            last = node.last
+            if isinstance(last, Predication):
+                return last.name
+            elif isinstance(last, Number):
+                return str(last.value)
+            else:
+                return None
+        return None
 
     @abstractmethod
     def _clear(self):
         pass
+
+
+def load_knowledge_from_file(file: str) -> list[DatalogFormula]:
+    result = []
+    with open(str(file), mode="r", encoding="utf8") as file:
+        reader = csv.reader(file, delimiter=';')
+        for item in reader:
+            result += item
+    return [get_formula_from_string(rule) for rule in result]
