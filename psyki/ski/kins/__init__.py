@@ -45,7 +45,6 @@ class NetworkStructurer(Injector):
 
     def inject(self, rules: List[Formula]) -> Model:
         self._clear()
-        predictor = self._predictor
         # Prevent side effect on the original rules during optimization.
         rules_copy = [rule.copy() for rule in rules]
         for rule in rules_copy:
@@ -72,23 +71,28 @@ class NetworkStructurer(Injector):
                     layer.build(x.shape)
                 x = layer(x)
         new_predictor = Model(predictor_input, x)
-        layer_diff = len(new_predictor.layers) - len(self._predictor.layers)
-        injection_layer_weights_shape = self._predictor.layers[self._layer + 1].weights[0].shape
-        x, _ = injection_layer_weights_shape
-        if self._layer == 0:
-            weights = self._get_weights_and_bias(self._predictor.layers[self._layer + 1], new_predictor.layers[layer_diff + self._layer + 1], x)
-            new_predictor.layers[layer_diff + self._layer + 1].set_weights(weights)
-            for i, layer in enumerate(self._predictor.layers[2:]):
-                new_predictor.layers[layer_diff+self._layer+i+2].set_weights(layer.weights)
-        else:
-            for layer in self._predictor.layers[1:self._layer + 1]:
-                other_layer = self._match_layer(layer.name, new_predictor.layers)
-                other_layer.set_weights(layer.weights)
-            weights = self._get_weights_and_bias(self._predictor.layers[self._layer + 1], new_predictor.layers[layer_diff + self._layer + 1], x)
-            new_predictor.layers[layer_diff + self._layer + 1].set_weights(weights)
-            for layer in self._predictor.layers[self._layer + 2:]:
-                other_layer = self._match_layer(layer.name, new_predictor.layers)
-                other_layer.set_weights(layer.weights)
+        try:
+            layer_diff = len(new_predictor.layers) - len(self._predictor.layers)
+            injection_layer_weights_shape = self._predictor.layers[self._layer + 1].weights[0].shape
+            x, _ = injection_layer_weights_shape
+            if self._layer == 0:
+                weights = self._get_weights_and_bias(self._predictor.layers[self._layer + 1],
+                                                     new_predictor.layers[layer_diff + self._layer + 1], x)
+                new_predictor.layers[layer_diff + self._layer + 1].set_weights(weights)
+                for i, layer in enumerate(self._predictor.layers[2:]):
+                    new_predictor.layers[layer_diff + self._layer + i + 2].set_weights(layer.weights)
+            else:
+                for layer in self._predictor.layers[1:self._layer + 1]:
+                    other_layer = self._match_layer(layer.name, new_predictor.layers)
+                    other_layer.set_weights(layer.weights)
+                weights = self._get_weights_and_bias(self._predictor.layers[self._layer + 1],
+                                                     new_predictor.layers[layer_diff + self._layer + 1], x)
+                new_predictor.layers[layer_diff + self._layer + 1].set_weights(weights)
+                for layer in self._predictor.layers[self._layer + 2:]:
+                    other_layer = self._match_layer(layer.name, new_predictor.layers)
+                    other_layer.set_weights(layer.weights)
+        except NameError:
+            print("[WARNING]: fail to keep the original weights. This can be ignored if the base NN is not trained.")
 
         return self._fuzzifier.enriched_model(new_predictor)
 
