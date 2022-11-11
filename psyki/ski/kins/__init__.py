@@ -91,7 +91,7 @@ class NetworkStructurer(Injector):
                 for layer in self._predictor.layers[self._layer + 2:]:
                     other_layer = self._match_layer(layer.name, new_predictor.layers)
                     other_layer.set_weights(layer.weights)
-        except NameError:
+        except NameError or ValueError:
             print("[WARNING]: fail to keep the original weights. This can be ignored if the base NN is not trained.")
 
         return self._fuzzifier.enriched_model(new_predictor)
