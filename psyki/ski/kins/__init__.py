@@ -71,6 +71,8 @@ class NetworkStructurer(Injector):
                     layer.build(x.shape)
                 x = layer(x)
         new_predictor = Model(predictor_input, x)
+        # TODO: this stub needs to be debugged because right now it could rise errors. This is an optional feature.
+        """
         try:
             layer_diff = len(new_predictor.layers) - len(self._predictor.layers)
             injection_layer_weights_shape = self._predictor.layers[self._layer + 1].weights[0].shape
@@ -93,6 +95,7 @@ class NetworkStructurer(Injector):
                     other_layer.set_weights(layer.weights)
         except NameError or ValueError:
             print("[WARNING]: fail to keep the original weights. This can be ignored if the base NN is not trained.")
+        """
 
         return self._fuzzifier.enriched_model(new_predictor)
 
