@@ -1,8 +1,10 @@
 from __future__ import annotations
 from typing import Callable
 from tensorflow.keras import Model
+from tensorflow.python.framework.ops import convert_to_tensor
+
 from psyki.logic.datalog.grammar import *
-from tensorflow import cast, SparseTensor, maximum, minimum, constant, reshape, reduce_max, tile
+from tensorflow import cast, SparseTensor, maximum, minimum, constant, reshape, reduce_max, tile, reduce_min
 from tensorflow.python.keras.backend import to_dense
 from tensorflow.python.ops.array_ops import shape
 from psyki.logic import Formula, get_logic_symbols_with_short_name
@@ -54,6 +56,10 @@ class Lukasiewicz(ConstrainingFuzzifier):
             '+': lambda l, r: lambda x: l(x) + r(x),
             '*': lambda l, r: lambda x: l(x) * r(x)
         }
+        self._aggregate_operation = {
+            _logic_symbols('cj'): lambda args: lambda x: eta(reduce_max(convert_to_tensor([arg(x) for arg in args]), axis=0)),
+            _logic_symbols('dj'): lambda args: lambda x: eta(reduce_min(convert_to_tensor([arg(x) for arg in args]), axis=0)),
+        }
         self._implication = ''
 
     @staticmethod
@@ -104,8 +110,12 @@ class Lukasiewicz(ConstrainingFuzzifier):
                                                                                      self._visit(rhs, m)(x))))
 
     def _visit_expression(self, node: Expression, local_mapping: dict[str, int] = None) -> Callable:
-        l, r = self._visit(node.lhs, local_mapping), self._visit(node.rhs, local_mapping)
-        return self._operation.get(node.op)(l, r)
+        if len(node.nary) <= 2:
+            l, r = self._visit(node.lhs, local_mapping), self._visit(node.rhs, local_mapping)
+            return self._operation.get(node.op)(l, r)
+        else:
+            previous_layer = [self._visit(clause, local_mapping) for clause in node.nary]
+            return self._aggregate_operation.get(node.op)(previous_layer)
 
     def _visit_variable(self, node: Variable, local_mapping: dict[str, int] = None):
         if node.name in self.feature_mapping.keys():

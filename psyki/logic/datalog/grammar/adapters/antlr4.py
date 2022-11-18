@@ -1,6 +1,6 @@
 from os.path import isdir
 from psyki.logic.datalog.grammar import DatalogFormula, Expression, DefinitionClause, Argument, Negation, Unary, Nary, \
-    Variable, Number, Predication, MofN, ComplexArgument
+    Variable, Number, Predication, MofN, ComplexArgument, optimize_datalog_formula
 from psyki.resources import PATH, create_antlr4_parser
 if not isdir(str(PATH / 'dist')):
     create_antlr4_parser(str(PATH / 'Datalog.g4'), str(PATH / 'dist'))
@@ -14,7 +14,9 @@ def get_formula_from_string(rule: str) -> DatalogFormula:
 
 
 def get_formula(ast: DatalogParser.FormulaContext) -> DatalogFormula:
-    return DatalogFormula(_get_definition_clause(ast.lhs), _get_clause(ast.rhs), ast.op.text)
+    formula: DatalogFormula = DatalogFormula(_get_definition_clause(ast.lhs), _get_clause(ast.rhs), ast.op.text)
+    optimize_datalog_formula(formula)
+    return formula
 
 
 def to_prolog_string(rule: DatalogFormula) -> str:

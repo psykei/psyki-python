@@ -10,9 +10,9 @@ class TestConversion(unittest.TestCase):
 
     def test_prolog_from_text_to_datalog(self):
         common_head = 'iris(PetalLength,PetalWidth,SepalLength,SepalWidth'
-        expected_result = [common_head + ',virginica)<-neg(((PetalWidth)>=(0.664341)),((PetalWidth)<(1.651423)))',
-                           common_head + ',setosa)<-(PetalWidth)=<(1.651423)',
-                           common_head + ',versicolor)<-True']
+        expected_result = [common_head + ',virginica) <- not(PetalWidth >= 0.664341, PetalWidth < 1.651423)',
+                           common_head + ',setosa) <- PetalWidth =< 1.651423',
+                           common_head + ',versicolor) <- True']
         prolog_theory = file_to_prolog(PATH / self.iris_kb)
         datalog_formulae = prolog_to_datalog(prolog_theory)
         for i, formula in enumerate(datalog_formulae):
