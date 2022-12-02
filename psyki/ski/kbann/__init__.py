@@ -37,6 +37,9 @@ class KBANN(Injector):
         # Use as default fuzzifiers SubNetworkBuilder.
         # TODO: analyse this warning that sometimes comes out, this should not be armful.
         tf.get_logger().setLevel('ERROR')
+        self._fuzzifier_name = fuzzifier
+        self._feature_mapping = feature_mapping
+        self._omega = omega
         self._predictor = predictor
         self._fuzzifier = Fuzzifier.get(fuzzifier)([self._predictor.input, feature_mapping, omega])
         self._fuzzy_functions: Iterable[Callable] = ()
@@ -59,13 +62,15 @@ class KBANN(Injector):
                 super().__init__()
 
             def call(self, y_true, y_pred):
-                return self.original_loss(y_true, y_pred) + self.gamma * self._cost_factor()
+                if self.gamma is None or self.gamma == 0:
+                    return self.original_loss(y_true, y_pred)
+                else:
+                    return self.original_loss(y_true, y_pred) + self.gamma * self._cost_factor()
 
             def _cost_factor(self):
                 weights_quadratic_diff = 0
                 for init_weight, current_weight in zip(self.init_weights, self.model.weights):
                     weights_quadratic_diff += tf.math.reduce_sum((init_weight - current_weight) ** 2)
-                # weights_quadratic_diff = tf.math.reduce_sum((tf.ragged.constant(self.init_weights) - tf.ragged.constant(self.weights)) ** 2)
                 return weights_quadratic_diff / (1 + weights_quadratic_diff)
 
         def copy(self) -> EnrichedModel:
@@ -77,6 +82,7 @@ class KBANN(Injector):
             return self.CustomLoss(original_function, self, self.init_weights, self.gamma)
 
     def inject(self, rules: List[Formula]) -> Model:
+        self._clear()
         # Prevent side effect on the original rules during optimization.
         rules_copy = [rule.copy() for rule in rules]
         for rule in rules_copy:
@@ -86,3 +92,8 @@ class KBANN(Injector):
         x = Concatenate(axis=1)(modules)
         #return self._fuzzifier.enriched_model(Model(predictor_input, x))
         return self.ConstrainedModel(Model(predictor_input, x), self.gamma, self._fuzzifier.custom_objects)
+
+    def _clear(self):
+        self._predictor: Model = model_deep_copy(self._predictor)
+        self._fuzzifier = Fuzzifier.get(self._fuzzifier_name)([self._predictor.input, self._feature_mapping, self._omega])
+        self._fuzzy_functions = ()
