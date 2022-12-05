@@ -13,17 +13,17 @@ special_functor = (in_functor, not_in_functor, not_functor)
 _logic_symbols = get_logic_symbols_with_short_name()
 
 
-def prolog_to_datalog(t: Theory) -> list[DatalogFormula]:
+def prolog_to_datalog(t: Theory, trainable: bool = False) -> list[DatalogFormula]:
     mutable_t = mutable_theory(t)
     result, predicates = [], set()
     for c in mutable_t.clauses:
-        formula = clause_to_formula(c, predicates)
+        formula = clause_to_formula(c, predicates, trainable)
         result.append(formula)
         predicates.add(formula.lhs.predication)
     return result
 
 
-def clause_to_formula(c: Clause, predicates: set[str]) -> DatalogFormula:
+def clause_to_formula(c: Clause, predicates: set[str], trainable: bool = False) -> DatalogFormula:
     def prolog_atom_to_formula(arg) -> Term:
         if arg.is_var:
             arg = Variable(str(arg.name))
@@ -103,4 +103,4 @@ def clause_to_formula(c: Clause, predicates: set[str]) -> DatalogFormula:
     # RHS
     terms = list(c.body.unfolded) if c.body_size > 1 else [c.body]
     rhs = create_body(terms)
-    return DatalogFormula(lhs, rhs)
+    return DatalogFormula(lhs, rhs, '<--' if trainable else '<-')
