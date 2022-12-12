@@ -22,7 +22,7 @@ class TestQoS(unittest.TestCase):
     variable_mapping = {'SL': 0, 'SW': 1, 'PL': 2, 'PW': 3}
     injector_arguments = {#'class_mapping': class_mapping,
                           'feature_mapping': variable_mapping,
-                            'injection_layer': len(model.layers) - 2}
+                          'injection_layer': len(model.layers) - 2}
     formulae = [antlr4.get_formula_from_string(rule) for rule in get_rules('iris')]
 
     def test_qos(self):
@@ -36,20 +36,22 @@ class TestQoS(unittest.TestCase):
                                 epochs=10,
                                 metrics=['accuracy'],
                                 dataset=self.dataset,
-                                threshold=0.97,
+                                threshold=0.7,
                                 alpha=0.8)
-        flags = dict(energy=False,
+        flags = dict(energy=True,
                      latency=False,
-                     memory=True,
+                     memory=False,
                      grid_search=False)
 
         qos = QoS(metric_arguments=metric_arguments,
                   flags=flags)
         qos.compute(verbose=False)
 
-        metric_arguments['max_neurons'] = [1000, 1000]
-        metric_arguments['grid_levels'] = 100
-        metric_arguments['injector_arguments']['injection_layer'] = len(metric_arguments['max_neurons'])
+        metric_arguments['max_neurons_width'] = [1417, 739, 1417, 739, 1417, 739]
+        metric_arguments['max_neurons_depth'] = 1000
+        metric_arguments['max_layers'] = 5
+        metric_arguments['grid_levels'] = 5
+        metric_arguments['injector_arguments']['injection_layer'] = len(metric_arguments['max_neurons_width'])
         flags['grid_search'] = True
 
         qos = QoS(metric_arguments=metric_arguments,

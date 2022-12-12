@@ -28,44 +28,74 @@ class QoS:
         self.grid_search = flags['grid_search']
         # Setup dictionary containing the tracked metrics
         self.metrics_dictionary = {}
+        # Setup dictionaries containing models
+        self.bare_model_dict = {}
+        self.injected_model_dict = {}
         # Try loading training options from the dictionary of arguments
         try:
             self.metrics_options = {}
             if self.track_memory:
                 pass
             if self.track_latency:
-                self.metrics_options['dataset'] = metric_arguments['dataset']
+                #self.metrics_options['dataset'] = metric_arguments['dataset']
+                self.metrics_options = metric_arguments
             if self.track_energy or self.grid_search:
-                self.metrics_options['optim'] = metric_arguments['optim']
-                self.metrics_options['loss'] = metric_arguments['loss']
-                self.metrics_options['batch'] = metric_arguments['batch']
-                self.metrics_options['epochs'] = metric_arguments['epochs']
-                self.metrics_options['metrics'] = metric_arguments['metrics']
-                self.metrics_options['threshold'] = metric_arguments['threshold']
-                self.metrics_options['dataset'] = metric_arguments['dataset']
-                self.metrics_options['alpha'] = metric_arguments['alpha']
+                self.metrics_options = metric_arguments
         except AttributeError:
             raise ValueError('Metric arguments should contain all arguments to run the QoS metrics')
         # If the grid search flag is up then start the grid search
         if self.grid_search:
             # Try loading training options from the dictionary of arguments
+
             try:
-                max_neurons = metric_arguments['max_neurons']
-                grid_levels = metric_arguments['grid_levels']
-                neurons_grid = get_grid(max_neurons=max_neurons,
-                                        grid_levels=grid_levels)
-                print('neurons_grid: {}'.format(neurons_grid))
+                if self.track_memory:
+                    max_neurons_width = metric_arguments['max_neurons_width']
+                    grid_levels = metric_arguments['grid_levels']
+                    neurons_grid = get_grid_neurons(max_neurons=max_neurons_width,
+                                                    grid_levels=grid_levels)
+                    print('neurons_grid: {}'.format(neurons_grid))
+
+                    self.bare_model_dict['memory'] = self.search_in_grid(neurons_grid=neurons_grid,
+                                                                         inject=False)
+                    self.injected_model_dict['memory'] = self.search_in_grid(neurons_grid=neurons_grid,
+                                                                             inject=True)
+
+                if self.track_latency:
+                    max_layers = metric_arguments['max_layers']
+                    grid_levels = metric_arguments['grid_levels']
+                    layers_grid = get_grid_layers(max_layers=max_layers,
+                                                  neurons= metric_arguments['max_neurons_depth'],
+                                                  grid_levels=grid_levels)
+                    print('layers_grid: {}'.format(layers_grid))
+
+                    self.bare_model_dict['latency'] = self.search_in_grid(neurons_grid=layers_grid,
+                                                                          inject=False)
+                    self.injected_model_dict['latency'] = self.search_in_grid(neurons_grid=layers_grid,
+                                                                              inject=True)
+
+                if self.track_energy:  # DA RIVEDERE
+                    max_layers = metric_arguments['max_layers']
+                    grid_levels = metric_arguments['grid_levels']
+                    layers_grid = get_grid_layers(max_layers=max_layers,
+                                                  neurons=metric_arguments['max_neurons_depth'],
+                                                  grid_levels=grid_levels)
+                    print('layers_grid: {}'.format(layers_grid))
+
+                    self.bare_model_dict['energy'] = self.search_in_grid(neurons_grid=layers_grid,
+                                                                         inject=False)
+                    self.injected_model_dict['energy'] = self.search_in_grid(neurons_grid=layers_grid,
+                                                                             inject=True)
             except AttributeError:
                 raise ValueError('If setting the grid_search flag in QoS class, '
                                  'the training settings must be passed to the QoS class amongst its metric_arguments.')
-            self.bare_model = self.search_in_grid(neurons_grid=neurons_grid,
-                                                  inject=False)
-            self.injected_model = self.search_in_grid(neurons_grid=neurons_grid,
-                                                      inject=True)
+
         else:
-            self.bare_model = metric_arguments['model']
+            self.bare_model_dict['memory'] = metric_arguments['model']
+            self.bare_model_dict['latency'] = metric_arguments['model']
+            self.bare_model_dict['energy'] = metric_arguments['model']
+
             if type(self.injection) is str:
-                self.injected_model = get_injector(self.injection)(self.bare_model,
+                self.injected_model = get_injector(self.injection)(metric_arguments['model'],
                                                                    **self.injector_arguments).inject(self.formulae)
             elif type(self.injection) in [Model, EnrichedModel]:
                 self.injected_model = self.injection
@@ -73,6 +103,10 @@ class QoS:
                 raise ValueError(
                     'The injection argument could be either a string defining the injection technique to use'
                     ' or a Model/EnrichedModel object defining the model with injection already applied.')
+
+            self.injected_model_dict['memory'] = self.injected_model
+            self.injected_model_dict['latency'] = self.injected_model
+            self.injected_model_dict['energy'] = self.injected_model
 
     def search_in_grid(self,
                        neurons_grid: list[list[int]],
@@ -118,7 +152,7 @@ class QoS:
             raise ValueError('Not able to find a model getting '
                              'over threshold {}!'.format(self.metrics_options['threshold']))
         # Reconstruct model with the smallest number of neurons and returns it
-        best_model = create_nn(neur=smallest_model_setting,
+        best_model = create_nn(neurons=smallest_model_setting,
                                input_size=input_size,
                                output_size=output_size,
                                activation=activation,
@@ -146,16 +180,16 @@ class QoS:
 
     def _compute_energy(self,
                         verbose: bool = False) -> float:
-        return EnergyQoS(model=self.bare_model,
-                         injection=self.injected_model,
+        return EnergyQoS(model=self.bare_model_dict['energy'],
+                         injection=self.injected_model_dict['energy'],
                          injector_arguments=self.injector_arguments,
                          formulae=self.formulae,
                          options=self.metrics_options).measure(verbose=verbose)
 
     def _compute_latency(self,
                          verbose: bool = False) -> float:
-        return LatencyQoS(model=self.bare_model,
-                          injection=self.injected_model,
+        return LatencyQoS(model=self.bare_model_dict['latency'],
+                          injection=self.injected_model_dict['latency'],
                           injector_arguments=self.injector_arguments,
                           formulae=self.formulae,
                           options=self.metrics_options).measure(fit=False,
@@ -163,22 +197,35 @@ class QoS:
 
     def _compute_memory(self,
                         verbose: bool = False) -> float:
-        return MemoryQoS(model=self.bare_model,
-                         injection=self.injected_model,
+        return MemoryQoS(model=self.bare_model_dict['memory'],
+                         injection=self.injected_model_dict['memory'],
                          injector_arguments=self.injector_arguments,
                          formulae=self.formulae).measure(verbose=verbose)
 
 
-def get_grid(max_neurons: list[int],
-             grid_levels: int = 10) -> list[list[int]]:
+def get_grid_neurons(max_neurons: list[int],
+                     grid_levels: int = 10) -> list[list[int]]:
     grid = []
     for level in range(grid_levels):
         grid.append([math.floor(elem / float(grid_levels) * (level + 1)) for elem in max_neurons])
     return grid
 
 
+def get_grid_layers(max_layers: int,
+                    neurons: int,
+                    grid_levels: int = 10) -> list[int]:
+    grid = []
+    for level in range(grid_levels):
+        layers = math.floor(max_layers / float(grid_levels) * (level + 1))
+        central_index = (layers - 1) / 2.
+        layer_neuron = [math.ceil(neurons / (1 + math.floor(abs(i - central_index)))) for i in range(layers)]
+        grid.append(layer_neuron)
+
+    return grid
+
+
 # Create model
-def create_nn(neur: list[int],
+def create_nn(neurons: list[int],
               input_size: int,
               output_size: int,
               activation: str,
@@ -191,12 +238,16 @@ def create_nn(neur: list[int],
               loss: Union[str, Loss] = None,
               metrics: list[str] = None) -> Union[Model, EnrichedModel]:
     inputs = Input((input_size,))
-    for index, neurons_i in enumerate(neur):
+    for index, neurons_i in enumerate(neurons):
         x = Dense(neurons_i, activation=activation)(inputs if index == 0 else x)
     x = Dense(output_size, activation='softmax' if output_size > 1 else 'sigmoid')(x)
     built_model = Model(inputs, x)
     if inject:
         assert inject
+
+        if injection == 'kins': #provvisorio
+            injector_arguments['injection_layer'] = len(built_model.layers) -2
+
         built_model = get_injector(injection)(built_model, **injector_arguments).inject(formulae)
     # Compile the keras model or the enriched model
     if compile_it:
@@ -223,7 +274,7 @@ def build_and_train_model(neurons: list[int],
                           optimiser: Union[str, Optimizer] = None,
                           loss: Union[str, Loss] = None,
                           metrics: list[str] = None) -> dict[str, list[float]]:
-    model = create_nn(neur=neurons,
+    model = create_nn(neurons=neurons,
                       input_size=input_size,
                       output_size=output_size,
                       activation=activation,
