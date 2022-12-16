@@ -34,13 +34,8 @@ class QoS:
         # Try loading training options from the dictionary of arguments
         try:
             self.metrics_options = {}
-            if self.track_memory:
-                pass
-            if self.track_latency:
-                #self.metrics_options['dataset'] = metric_arguments['dataset']
-                self.metrics_options = metric_arguments
-            if self.track_energy or self.grid_search:
-                self.metrics_options = metric_arguments
+            self.metrics_options = metric_arguments
+
         except AttributeError:
             raise ValueError('Metric arguments should contain all arguments to run the QoS metrics')
         # If the grid search flag is up then start the grid search
@@ -73,7 +68,7 @@ class QoS:
                     self.injected_model_dict['latency'] = self.search_in_grid(neurons_grid=layers_grid,
                                                                               inject=True)
 
-                if self.track_energy:  # DA RIVEDERE
+                if self.track_energy:  # focus on depth -> same as latency
                     max_layers = metric_arguments['max_layers']
                     grid_levels = metric_arguments['grid_levels']
                     layers_grid = get_grid_layers(max_layers=max_layers,
@@ -217,8 +212,8 @@ def get_grid_layers(max_layers: int,
     grid = []
     for level in range(grid_levels):
         layers = math.floor(max_layers / float(grid_levels) * (level + 1))
-        central_index = (layers - 1) / 2.
-        layer_neuron = [math.ceil(neurons / (1 + math.floor(abs(i - central_index)))) for i in range(layers)]
+        n_per_layer = neurons // layers
+        layer_neuron = [neurons - n_per_layer * i for i in range(layers)]
         grid.append(layer_neuron)
 
     return grid

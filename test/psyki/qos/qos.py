@@ -38,9 +38,9 @@ class TestQoS(unittest.TestCase):
                                 dataset=self.dataset,
                                 threshold=0.7,
                                 alpha=0.8)
-        flags = dict(energy=True,
+        flags = dict(energy=False,
                      latency=False,
-                     memory=False,
+                     memory=True,
                      grid_search=False)
 
         qos = QoS(metric_arguments=metric_arguments,
@@ -48,7 +48,7 @@ class TestQoS(unittest.TestCase):
         qos.compute(verbose=False)
 
         metric_arguments['max_neurons_width'] = [1417, 739, 1417, 739, 1417, 739]
-        metric_arguments['max_neurons_depth'] = 1000
+        metric_arguments['max_neurons_depth'] = 100
         metric_arguments['max_layers'] = 5
         metric_arguments['grid_levels'] = 5
         metric_arguments['injector_arguments']['injection_layer'] = len(metric_arguments['max_neurons_width'])
