@@ -58,8 +58,9 @@ class QoS:
                 if self.track_latency:
                     max_layers = metric_arguments['max_layers']
                     grid_levels = metric_arguments['grid_levels']
+                    max_neurons = metric_arguments['max_neurons_depth']
                     layers_grid = get_grid_layers(max_layers=max_layers,
-                                                  neurons= metric_arguments['max_neurons_depth'],
+                                                  neurons=max_neurons,
                                                   grid_levels=grid_levels)
                     print('layers_grid: {}'.format(layers_grid))
 
