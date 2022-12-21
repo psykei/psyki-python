@@ -16,12 +16,11 @@ def measure_fit_with_tracker(models_list: list[Union[Model, EnrichedModel]],
                              loss: Union[str, Loss],
                              batch_size: int,
                              epochs: int,
-                             dataset: Dataset,
+                             dataset: dict,
                              threshold: float,
                              metrics: list[str],
                              tracker_class: Callable) -> list[float]:
     # Split dataset into train and test
-    train_x, train_y, _, _ = split_dataset(dataset=dataset)
     tracked_values = []
     for index, model in enumerate(models_list):
         # Compile the keras model or the enriched model
@@ -32,8 +31,8 @@ def measure_fit_with_tracker(models_list: list[Union[Model, EnrichedModel]],
         callbacks = EarlyStopping(threshold=threshold, model_name=names[index])
         tracker = tracker_class()
         with tracker:
-            model.fit(train_x,
-                      train_y,
+            model.fit(dataset['train_x'],
+                      dataset['train_y'],
                       batch_size=batch_size,
                       epochs=epochs,
                       verbose=False,
@@ -44,15 +43,14 @@ def measure_fit_with_tracker(models_list: list[Union[Model, EnrichedModel]],
 
 
 def measure_predict_with_tracker(models_list: list[Union[Model, EnrichedModel]],
-                                 dataset: Dataset,
+                                 dataset: dict,
                                  tracker_class: Callable) -> list[float]:
-    _, _, test_x, _ = split_dataset(dataset=dataset)
     tracked_values = []
     for model in models_list:
         # Run the model
         tracker = tracker_class()
         with tracker:
-            model.predict(test_x, verbose=False)
+            model.predict(dataset['test_x'], verbose=False)
         tracked_value = tracker.get_tracked_value()
         tracked_values.append(tracked_value)
     return tracked_values

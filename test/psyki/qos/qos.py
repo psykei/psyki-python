@@ -1,10 +1,10 @@
 import unittest
-from sklearn.datasets import load_iris
-from sklearn.preprocessing import OneHotEncoder
 
 from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
 from psyki.qos import QoS
-from psyki.logic.datalog.grammar.adapters import antlr4
+import numpy as np
+from psyki.qos.utils import split_dataset
+
 from test.resources.data import get_dataset_dataframe, data_to_int, CLASS_MAPPING, get_binary_data, \
     AGGREGATE_FEATURE_MAPPING, get_splice_junction_extended_feature_mapping
 from test.utils import create_standard_fully_connected_nn
@@ -20,9 +20,17 @@ class TestQoSKins(unittest.TestCase):
     x = get_binary_data(dataset.iloc[:, :-1], AGGREGATE_FEATURE_MAPPING)
     y.columns = [x.shape[1]]
     dataset = x.join(y)
+    train_x, train_y, test_x, test_y = split_dataset(dataset=dataset)
+    dataset_split = {'train_x': train_x,
+                     'train_y': train_y,
+                     'test_x': test_x,
+                     'test_y': test_y}
+    # Get input and output size depending on the dataset
+    input_size = train_x.shape[-1]
+    output_size = np.max(train_y) + 1
 
-    model = create_standard_fully_connected_nn(input_size=4 * 60,
-                                               output_size=3,
+    model = create_standard_fully_connected_nn(input_size=input_size,  # 4 * 60,
+                                               output_size=output_size,  # 3,
                                                layers=3,
                                                neurons=128,
                                                activation='relu')
@@ -42,12 +50,12 @@ class TestQoSKins(unittest.TestCase):
                                 batch=16,
                                 epochs=10,
                                 metrics=['accuracy'],
-                                dataset=self.dataset,
+                                dataset=self.dataset_split,
                                 threshold=0.9,
                                 alpha=0.8)
         flags = dict(energy=False,
-                     latency=True,
-                     memory=False,
+                     latency=False,
+                     memory=True,
                      grid_search=False)
 
         qos = QoS(metric_arguments=metric_arguments,
@@ -65,6 +73,7 @@ class TestQoSKins(unittest.TestCase):
                   flags=flags)
         qos.compute(verbose=False)
 
+
 class TestQoSKbann(unittest.TestCase):
     rules = get_rules('splice_junction')
     rules = get_splice_junction_datalog_rules(rules)
@@ -74,9 +83,17 @@ class TestQoSKbann(unittest.TestCase):
     x = get_binary_data(dataset.iloc[:, :-1], AGGREGATE_FEATURE_MAPPING)
     y.columns = [x.shape[1]]
     dataset = x.join(y)
+    train_x, train_y, test_x, test_y = split_dataset(dataset=dataset)
+    dataset_split = {'train_x': train_x,
+                     'train_y': train_y,
+                     'test_x': test_x,
+                     'test_y': test_y}
+    # Get input and output size depending on the dataset
+    input_size = train_x.shape[-1]
+    output_size = np.max(train_y) + 1
 
-    model = create_standard_fully_connected_nn(input_size=4 * 60,
-                                               output_size=3,
+    model = create_standard_fully_connected_nn(input_size=input_size,
+                                               output_size=output_size,
                                                layers=3,
                                                neurons=128,
                                                activation='relu')
@@ -92,10 +109,10 @@ class TestQoSKbann(unittest.TestCase):
                                 formulae=self.formulae,
                                 optim='adam',
                                 loss='sparse_categorical_crossentropy',
-                                batch=16,
+                                batch=8,
                                 epochs=10,
                                 metrics=['accuracy'],
-                                dataset=self.dataset,
+                                dataset=self.dataset_split,
                                 threshold=0.9,
                                 alpha=0.8)
         flags = dict(energy=False,
@@ -105,9 +122,9 @@ class TestQoSKbann(unittest.TestCase):
 
         qos = QoS(metric_arguments=metric_arguments,
                   flags=flags)
-        qos.compute(verbose=False)
+        qos.compute(verbose=True)
 
-        metric_arguments['max_neurons_width'] = [1000, 1500]
+        metric_arguments['max_neurons_width'] = [500, 200, 100]
         metric_arguments['max_neurons_depth'] = 100
         metric_arguments['max_layers'] = 10
         metric_arguments['grid_levels'] = 5

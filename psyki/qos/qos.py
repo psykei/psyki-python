@@ -16,7 +16,7 @@ class QoS:
     def __init__(self,
                  metric_arguments: dict,
                  flags: dict):
-        # self.metric_arguments = metric_arguments
+        self.dataset = metric_arguments['dataset']
         # Get injection method from the metric arguments
         self.injection = metric_arguments['injection']
         self.injector_arguments = metric_arguments['injector_arguments']
@@ -86,6 +86,7 @@ class QoS:
                                  'the training settings must be passed to the QoS class amongst its metric_arguments.')
 
         else:
+
             self.bare_model_dict['memory'] = metric_arguments['model']
             self.bare_model_dict['latency'] = metric_arguments['model']
             self.bare_model_dict['energy'] = metric_arguments['model']
@@ -107,11 +108,9 @@ class QoS:
     def search_in_grid(self,
                        neurons_grid: list[list[int]],
                        inject: bool) -> Union[Model, EnrichedModel]:
-        # Split dataset into train and test
-        train_x, train_y, _, _ = split_dataset(dataset=self.metrics_options['dataset'])
-        # Get input and output size depending on the dataset
-        input_size = train_x.shape[-1]
-        output_size = np.max(train_y) + 1
+
+        input_size = self.dataset['train_x'].shape[-1]
+        output_size = np.max(self.dataset['train_y']) + 1
         # Define activation
         activation = 'relu'
         # Cycle through the given grid to find the smallest model
@@ -123,8 +122,7 @@ class QoS:
                                             output_size=output_size,
                                             activation=activation,
                                             threshold=self.metrics_options['threshold'],
-                                            train_x=train_x,
-                                            train_y=train_y,
+                                            dataset = self.dataset,
                                             epochs=self.metrics_options['epochs'],
                                             batch_size=self.metrics_options['batch'],
                                             inject=inject,
@@ -259,8 +257,7 @@ def build_and_train_model(neurons: list[int],
                           output_size: int,
                           activation: str,
                           threshold: float,
-                          train_x,
-                          train_y,
+                          dataset,
                           epochs: int = 100,
                           batch_size: int = 16,
                           inject: bool = False,
@@ -285,8 +282,8 @@ def build_and_train_model(neurons: list[int],
     # Train the model
     callbacks = EarlyStopping(threshold=threshold,
                               verbose=False)
-    history = model.fit(train_x,
-                        train_y,
+    history = model.fit(dataset['train_x'],
+                        dataset['train_y'],
                         epochs=epochs,
                         batch_size=batch_size,
                         verbose=0,
