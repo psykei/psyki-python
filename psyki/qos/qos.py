@@ -207,7 +207,7 @@ def get_grid_neurons(max_neurons: list[int],
 
 def get_grid_layers(max_layers: int,
                     neurons: int,
-                    grid_levels: int = 10) -> list[int]:
+                    grid_levels: int = 10) -> list[list[int]]:
     grid = []
     for level in range(grid_levels):
         layers = math.floor(max_layers / float(grid_levels) * (level + 1))
