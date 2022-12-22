@@ -86,7 +86,7 @@ def get_injector(choice: str) -> Callable:
 class EarlyStopping(tf.keras.callbacks.Callback):
     def __init__(self,
                  threshold: float,
-                 patience: int = 5,
+                 patience: int = 1,
                  model_name: str = '',
                  verbose: bool = False):
         self.threshold = threshold
@@ -95,10 +95,16 @@ class EarlyStopping(tf.keras.callbacks.Callback):
         self.verbose = verbose
         self.wait = 0
 
-    def on_epoch_end(self, epoch, logs={}):
-        if logs.get('accuracy') > self.threshold:
+    def on_epoch_end(self, epoch, logs=None):
+        if logs is None:
+            logs = {}
+        if self.verbose:
+            print('Epoch {} ==> Logs: {}'.format(epoch, logs))
+        if logs.get('val_accuracy') > self.threshold:
             self.wait += 1
             if self.wait >= self.patience:
                 if self.verbose:
-                    print("Accuracy in model {} reached. Stopping training at epoch {}...".format(self.model_name, epoch))
+                    print("Accuracy in model {} reached over the test set."
+                          " Stopping training at epoch {}...".format(self.model_name,
+                                                                     epoch))
                 self.model.stop_training = True

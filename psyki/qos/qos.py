@@ -122,7 +122,7 @@ class QoS:
                                             output_size=output_size,
                                             activation=activation,
                                             threshold=self.metrics_options['threshold'],
-                                            dataset = self.dataset,
+                                            dataset=self.dataset,
                                             epochs=self.metrics_options['epochs'],
                                             batch_size=self.metrics_options['batch'],
                                             inject=inject,
@@ -239,8 +239,8 @@ def create_nn(neurons: list[int],
     if inject:
         assert inject
 
-        if injection == 'kins': #provvisorio
-            injector_arguments['injection_layer'] = len(built_model.layers) -2
+        if injection == 'kins':  # provvisorio
+            injector_arguments['injection_layer'] = len(built_model.layers) - 2
 
         built_model = get_injector(injection)(built_model, **injector_arguments).inject(formulae)
     # Compile the keras model or the enriched model
@@ -286,6 +286,7 @@ def build_and_train_model(neurons: list[int],
                         dataset['train_y'],
                         epochs=epochs,
                         batch_size=batch_size,
+                        validation_data=(dataset['test_x'], dataset['test_y']),
                         verbose=0,
                         callbacks=[callbacks])
     return history.history
