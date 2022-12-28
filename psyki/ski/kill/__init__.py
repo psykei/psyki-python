@@ -5,7 +5,8 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Lambda
 from tensorflow.keras.utils import custom_object_scope
 from psyki.ski import Injector, EnrichedModel
-from psyki.logic import Formula, Fuzzifier
+from psyki.logic import Formula
+from psyki.fuzzifiers import Fuzzifier
 from psyki.utils import model_deep_copy
 
 
@@ -44,7 +45,7 @@ class LambdaLayer(Injector):
 
         def remove_constraints(self) -> Model:
             """
-            Remove the lambda layer obtained by the injected rules.
+            Remove the lambda layer obtained by the injected knowledge.
             """
             # Layer -3 is the layer before the lambda layer (last original layer -> lambda -> output).
             return Model(self.input, self.layers[-3].output)

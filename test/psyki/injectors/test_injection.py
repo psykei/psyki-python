@@ -1,17 +1,17 @@
 import unittest
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
+from psyki.logic.prolog import TuProlog
 from psyki.ski import Injector
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras import Input, Model
 from tensorflow.python.framework.random_seed import set_seed
-from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
 from psyki.ski.kill import LambdaLayer
 from psyki.ski.kins import NetworkStructurer
 from test.resources.data import get_dataset_dataframe, data_to_int, CLASS_MAPPING, AGGREGATE_FEATURE_MAPPING, \
     get_binary_data, get_splice_junction_extended_feature_mapping
-from test.resources.rules import get_rules, get_splice_junction_datalog_rules, get_binary_datalog_rules
+from test.resources.knowledge import PATH
 from test.utils import get_mlp, Conditions
 
 
@@ -22,7 +22,8 @@ class TestInjectionOnIris(unittest.TestCase):
     ACCEPTABLE_ACCURACY = 0.97
 
     set_seed(0)
-    formulae = [get_formula_from_string(rule) for rule in get_rules('iris')]
+    # formulae = [get_formula_from_string(rule) for rule in get_rules('iris')]
+    formulae = TuProlog.from_file(PATH / 'iris.pl').formulae
     input_layer = Input((4,))
     predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
     predictor = Model(input_layer, predictor)
@@ -34,7 +35,7 @@ class TestInjectionOnIris(unittest.TestCase):
     train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1]
     test_x, test_y = test.iloc[:, :-1], test.iloc[:, -1]
     class_mapping = {'setosa': 0, 'virginica': 1, 'versicolor': 2}
-    variable_mapping = {'SL': 0, 'SW': 1, 'PL': 2, 'PW': 3}
+    variable_mapping = {'SepalLength': 0, 'SepalWidth': 1, 'PetalLength': 2, 'PetalWidth': 3}
 
     def compile_and_train(self, model):
         model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
@@ -86,9 +87,7 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
     VERBOSE = 0
 
     set_seed(0)
-    rules = get_rules('splice_junction')
-    rules = get_splice_junction_datalog_rules(rules)
-    rules = get_binary_datalog_rules(rules)
+    rules = TuProlog.from_file(PATH / 'splice-junction.pl').formulae
     data = get_dataset_dataframe('splice_junction')
     y = data_to_int(data.iloc[:, -1:], CLASS_MAPPING)
     x = get_binary_data(data.iloc[:, :-1], AGGREGATE_FEATURE_MAPPING)
@@ -101,7 +100,8 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
     train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1:]
     early_stop = Conditions(train_x, train_y)
     test_x, test_y = test.iloc[:, :-1], test.iloc[:, -1:]
-    rules = [get_formula_from_string(rule) for rule in rules]
+    # knowledge = [get_formula_from_string(rule) for rule in knowledge]
+    rules = []
     input_layer = Input((4*60,))
     predictor = get_mlp(input_layer, 3, 3, [64, 32], 'relu', 'softmax', dropout=True)
     predictor = Model(input_layer, predictor)
@@ -145,7 +145,7 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
 
     def test_kins(self):
         injector = Injector.kins(self.predictor, get_splice_junction_extended_feature_mapping())
-        self.rules = self.rules[:-2]  # remove N class rules
+        self.rules = self.rules[:-2]  # remove N class knowledge
         self.common_test_function(injector, batch_size=32, acceptable_accuracy=0.935)
 
 

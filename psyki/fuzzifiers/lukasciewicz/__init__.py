@@ -2,24 +2,19 @@ from __future__ import annotations
 from typing import Callable
 from tensorflow.keras import Model
 from tensorflow.python.framework.ops import convert_to_tensor
-
-from psyki.logic.datalog.grammar import *
+from psyki.logic import *
 from tensorflow import cast, SparseTensor, maximum, minimum, constant, reshape, reduce_max, tile, reduce_min
 from tensorflow.python.keras.backend import to_dense
 from tensorflow.python.ops.array_ops import shape
-from psyki.logic import Formula, get_logic_symbols_with_short_name
-from psyki.logic.datalog.fuzzifiers import ConstrainingFuzzifier
+from psyki.fuzzifiers import ConstrainingFuzzifier
+from psyki.logic.operators import *
 from psyki.ski import EnrichedModel
 from psyki.utils import eta
-from psyki.utils.exceptions import SymbolicException
-
-
-_logic_symbols = get_logic_symbols_with_short_name()
 
 
 class Lukasiewicz(ConstrainingFuzzifier):
     """
-    Fuzzifier that implements a mapping from crispy logic rules into a continuous interpretation inspired by the
+    Fuzzifier that implements a mapping from crispy logic knowledge into a continuous interpretation inspired by the
     mapping of Lukasiewicz. The resulting object is a list of continuous functions that can be used to constraint
     the predictor during its training. This is suitable for classification tasks.
     """
@@ -45,20 +40,21 @@ class Lukasiewicz(ConstrainingFuzzifier):
         self.classes: dict[str, Callable] = {}
         self._rhs: dict[str, Callable] = {}
         self._operation = {
-            _logic_symbols('cj'): lambda l, r: lambda x: eta(maximum(l(x), r(x))),
-            _logic_symbols('dj'): lambda l, r: lambda x: eta(minimum(l(x), r(x))),
-            _logic_symbols('e'): lambda l, r: lambda x: eta(abs(l(x) - r(x))),
-            _logic_symbols('l'): lambda l, r: lambda x: eta(constant(.5) + l(x) - r(x)),
-            _logic_symbols('le'): lambda l, r: lambda x: eta(l(x) - r(x)),
-            _logic_symbols('g'): lambda l, r: lambda x: eta(constant(.5) - l(x) + r(x)),
-            _logic_symbols('ge'): lambda l, r: lambda x: eta(r(x) - l(x)),
-            'm': lambda l, r: lambda x: minimum(l(x), r(x)),
-            '+': lambda l, r: lambda x: l(x) + r(x),
-            '*': lambda l, r: lambda x: l(x) * r(x)
+            Conjunction.symbol: lambda l, r: lambda x: eta(maximum(l(x), r(x))),
+            Disjunction.symbol: lambda l, r: lambda x: eta(minimum(l(x), r(x))),
+            Assignment.symbol: lambda l, r: lambda x: r(x),
+            Equal.symbol: lambda l, r: lambda x: eta(abs(l(x) - r(x))),
+            Less.symbol: lambda l, r: lambda x: eta(constant(.5) + l(x) - r(x)),
+            LessEqual.symbol: lambda l, r: lambda x: eta(l(x) - r(x)),
+            Greater.symbol: lambda l, r: lambda x: eta(constant(.5) - l(x) + r(x)),
+            GreaterEqual.symbol: lambda l, r: lambda x: eta(r(x) - l(x)),
+            # 'm': lambda l, r: lambda x: minimum(l(x), r(x)),
+            Plus.symbol: lambda l, r: lambda x: l(x) + r(x),
+            Multiplication.symbol: lambda l, r: lambda x: l(x) * r(x)
         }
         self._aggregate_operation = {
-            _logic_symbols('cj'): lambda args: lambda x: eta(reduce_max(convert_to_tensor([arg(x) for arg in args]), axis=0)),
-            _logic_symbols('dj'): lambda args: lambda x: eta(reduce_min(convert_to_tensor([arg(x) for arg in args]), axis=0)),
+            Conjunction.symbol: lambda args: lambda x: eta(reduce_max(convert_to_tensor([arg(x) for arg in args]), axis=0)),
+            Disjunction.symbol: lambda args: lambda x: eta(reduce_min(convert_to_tensor([arg(x) for arg in args]), axis=0)),
         }
         self._implication = ''
 
@@ -74,14 +70,13 @@ class Lukasiewicz(ConstrainingFuzzifier):
     def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Callable:
         return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
 
-    def _visit_formula(self, node: DatalogFormula, local_mapping: dict[str, int] = None) -> None:
-        self._implication = node.op
+    def _visit_formula(self, node: DefinitionFormula, local_mapping: dict[str, int] = None) -> None:
         self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
 
     def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause,
                                  local_mapping: dict[str, int] = None) -> None:
         definition_name = node.predication
-        predication_name = self._get_predication_name(node.arg)
+        predication_name = self._get_predication_name(node.args)
 
         if predication_name is not None:
             class_tensor = reshape(self.class_mapping[predication_name], (1, len(self.class_mapping)))
@@ -96,7 +91,7 @@ class Lukasiewicz(ConstrainingFuzzifier):
                 self._rhs[predication_name] = lambda x: minimum(incomplete_function(x), r(x))
         else:
             # Substitute variables that are not matching features with mapping functions
-            variables_names = self._get_variables_names(node.arg)
+            variables_names = self._get_variables_names(node.args)
             for i, variable in enumerate(variables_names):
                 if variable not in self.feature_mapping.keys():
                     local_mapping[variable] = i
@@ -110,12 +105,12 @@ class Lukasiewicz(ConstrainingFuzzifier):
                                                                                      self._visit(rhs, m)(x))))
 
     def _visit_expression(self, node: Expression, local_mapping: dict[str, int] = None) -> Callable:
-        if len(node.nary) <= 2:
-            l, r = self._visit(node.lhs, local_mapping), self._visit(node.rhs, local_mapping)
-            return self._operation.get(node.op)(l, r)
-        else:
-            previous_layer = [self._visit(clause, local_mapping) for clause in node.nary]
-            return self._aggregate_operation.get(node.op)(previous_layer)
+        # TODO
+        if node.op.symbol == Assignment.symbol:
+            assert(isinstance(node.lhs, Variable))
+            local_mapping[node.lhs.name] = None
+        l, r = self._visit(node.lhs, local_mapping), self._visit(node.rhs, local_mapping)
+        return self._operation.get(node.op.symbol)(l, r)
 
     def _visit_variable(self, node: Variable, local_mapping: dict[str, int] = None):
         if node.name in self.feature_mapping.keys():
@@ -132,10 +127,7 @@ class Lukasiewicz(ConstrainingFuzzifier):
         return lambda _: node.value
 
     def _visit_unary(self, node: Unary, _):
-        return self._predicates[node.name][1]({})
+        return self._predicates[node.predicate][1]({})
 
-    def _visit_negation(self, node: Negation, local_mapping: dict[str, int] = None):
-        return lambda x: eta(constant(1.) - self._visit(node.predicate, local_mapping)(x))
-
-    def _visit_m_of_n(self, node: MofN, local_mapping: dict[str, int] = None):
-        raise SymbolicException.not_supported('m of n')
+    def _visit_negation(self, node: LogicNegation, local_mapping: dict[str, int] = None):
+        return lambda x: eta(constant(1.) - self._visit(node.name, local_mapping)(x))

@@ -2,13 +2,12 @@ import csv
 import re
 from pathlib import Path
 from typing import Iterable, Callable
-from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
 from psyki.logic import Formula
-from test.resources.rules.utils import VARIABLE_BASE_NAME, RULE_DEFINITION_SYMBOLS_REGEX, STATIC_IMPLICATION_SYMBOL, \
+from test.resources.knowledge.utils import VARIABLE_BASE_NAME, RULE_DEFINITION_SYMBOLS_REGEX, STATIC_IMPLICATION_SYMBOL, \
     STATIC_RULE_SYMBOL, MUTABLE_IMPLICATION_SYMBOL
-from test.resources.rules.iris import PATH as IRIS_PATH
-from test.resources.rules.poker import PATH as POKER_PATH
-from test.resources.rules.splice_junction import PATH as SJ_PATH, parse_clause as parse_splice_junction_clause
+from test.resources.knowledge.iris import PATH as IRIS_PATH
+from test.resources.knowledge.poker import PATH as POKER_PATH
+from test.resources.knowledge.splice_junction import PATH as SJ_PATH, parse_clause as parse_splice_junction_clause
 
 
 PATH = Path(__file__).parents[0]
@@ -21,24 +20,22 @@ RULES_REGISTER = {
 }
 
 
-def get_rules(rule_domain: str = "poker", rule_name: str = "kb") -> list[str]:
-    result = []
-    with open(str(RULES_REGISTER[rule_domain] / rule_name) + '.txt', mode="r", encoding="utf8") as file:
-        reader = csv.reader(file, delimiter=';')
-        for item in reader:
-            result += item
-    return result
+def textual_knowledge_from_file(filename: str) -> str:
+    with open(PATH / filename, mode="r", encoding="utf8") as file:
+        textual_rule = file.read()
+    return textual_rule
 
 
 def get_splice_junction_formulae(filename: str) -> Iterable[Formula]:
     rules = get_splice_junction_rules(filename)
     rules = get_splice_junction_datalog_rules(rules)
     rules = get_binary_datalog_rules(rules)
-    return [get_formula_from_string(rule) for rule in rules]
+    # return [get_formula_from_string(rule) for rule in knowledge]
+    return []
 
 
 def get_splice_junction_rules(filename: str) -> list[str]:
-    return get_rules("splice_junction", filename)
+    return textual_knowledge_from_file("splice_junction", filename)
 
 
 def get_binary_datalog_rules(rules: Iterable[str]) -> Iterable[str]:

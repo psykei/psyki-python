@@ -6,7 +6,8 @@ from tensorflow import Tensor
 from tensorflow.keras.losses import Loss
 from tensorflow.python.keras.utils.generic_utils import custom_object_scope
 from psyki.logic.datalog.grammar import optimize_datalog_formula
-from psyki.logic import Fuzzifier, Formula
+from psyki.logic import Formula
+from psyki.fuzzifiers import Fuzzifier
 from tensorflow.keras import Model
 from psyki.ski import Injector, EnrichedModel
 from psyki.utils import model_deep_copy
@@ -83,7 +84,7 @@ class KBANN(Injector):
 
     def inject(self, rules: List[Formula]) -> Model:
         self._clear()
-        # Prevent side effect on the original rules during optimization.
+        # Prevent side effect on the original knowledge during optimization.
         rules_copy = [rule.copy() for rule in rules]
         for rule in rules_copy:
             optimize_datalog_formula(rule)

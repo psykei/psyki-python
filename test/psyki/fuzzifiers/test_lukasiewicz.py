@@ -1,21 +1,20 @@
 import unittest
 import numpy as np
-from psyki.logic import Fuzzifier
+from psyki.fuzzifiers import Fuzzifier
 from tensorflow.python.ops.numpy_ops import argmax
 from tensorflow import constant, float32, reshape, cast, stack, assert_equal, tile
 from tensorflow.python.ops.array_ops import gather_nd
-from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
+from test.resources.knowledge import PATH as KNOWLEDGE_PATH
+from psyki.logic.prolog import TuProlog
 from test.resources.data import get_dataset
-from test.resources.rules import get_rules
-from test.resources.rules.poker import FEATURE_MAPPING as POKER_FEATURE_MAPPING, CLASS_MAPPING as POKER_CLASS_MAPPING
+from test.resources.knowledge.poker import FEATURE_MAPPING as POKER_FEATURE_MAPPING, CLASS_MAPPING as POKER_CLASS_MAPPING
 
 
 class TestLukasiewicz(unittest.TestCase):
 
-    rules = list(get_rules('poker'))
-    formulae = [get_formula_from_string(rule) for rule in rules]
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'poker.pl').formulae
     fuzzifier = Fuzzifier.get('lukasiewicz')([POKER_CLASS_MAPPING, POKER_FEATURE_MAPPING])
-    functions = fuzzifier.visit(formulae)
+    functions = fuzzifier.visit(knowledge)
     true = tile(reshape(constant(0.), [1, 1]), [1, 1])
     false = tile(reshape(constant(1.), [1, 1]), [1, 1])
     

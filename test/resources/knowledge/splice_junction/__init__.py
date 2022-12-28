@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Iterable, Callable
 import numpy as np
 from test.resources.data.splice_junction import get_indices
-from test.resources.rules.utils import *
+from test.resources.knowledge.utils import *
 
 PATH = Path(__file__).parents[0]
 INDEX_IDENTIFIER = '@'

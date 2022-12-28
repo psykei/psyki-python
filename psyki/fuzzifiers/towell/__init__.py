@@ -1,23 +1,19 @@
-from typing import Any, Iterable, Callable
+from typing import Iterable, Callable
 from tensorflow.keras import Model
-from psyki.logic.datalog.grammar import DefinitionClause, Clause, DatalogFormula, Negation, Unary, Number, Boolean, \
-    Variable, Expression, MofN, Nary
-from psyki.logic import Formula, get_logic_symbols_with_short_name
+from psyki.logic import *
 from tensorflow.keras.layers import Dense, Lambda, Concatenate
 from tensorflow import Tensor, sigmoid, constant
 from tensorflow.python.ops.init_ops import constant_initializer, Constant
-from psyki.logic.datalog.fuzzifiers import StructuringFuzzifier
+from psyki.fuzzifiers import StructuringFuzzifier
+from psyki.logic.operators import *
 from psyki.ski import EnrichedModel
 from psyki.utils.exceptions import SymbolicException
 from tensorflow.python.ops.array_ops import gather
 
 
-_logic_symbols = get_logic_symbols_with_short_name()
-
-
 class Towell(StructuringFuzzifier):
     """
-    Fuzzifier that implements the mapping from crispy logic rules into neural networks proposed by Geoffrey Towell.
+    Fuzzifier that implements the mapping from crispy logic knowledge into neural networks proposed by Geoffrey Towell.
     """
     custom_objects: dict = {}
 
@@ -31,11 +27,11 @@ class Towell(StructuringFuzzifier):
         self._rhs_predicates: dict[str, tuple[dict[str, int], list[Callable]]] = {}
         self._trainable = False
         self._operation = {
-            _logic_symbols('cj'):
+            Conjunction.symbol:
                 lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
                                                        trainable=self._trainable,
                                                        bias_initializer=self._compute_bias(w))(Concatenate(axis=1)(l)),
-            _logic_symbols('dj'):
+            Disjunction.symbol:
                 lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
                                                        trainable=self._trainable,
                                                        bias_initializer=constant_initializer(
@@ -67,14 +63,13 @@ class Towell(StructuringFuzzifier):
     def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
         return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
 
-    def _visit_formula(self, node: DatalogFormula, local_mapping: dict[str, int] = None):
-        # if the implication symbol is a double left arrow '<--', then the weights of the module are trainable.
-        self._trainable = node.op == '<--'
+    def _visit_formula(self, node: DefinitionFormula, local_mapping: dict[str, int] = None):
+        self._trainable = node.trainable
         self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
 
     def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause, local_mapping: dict[str, int] = None):
         definition_name = node.predication
-        predication_name = self._get_predication_name(node.arg)
+        predication_name = self._get_predication_name(node.args)
 
         if predication_name is not None:
             net: Tensor = self._visit(rhs, local_mapping)[0]
@@ -89,10 +84,10 @@ class Towell(StructuringFuzzifier):
                 incomplete_function.append(net)
                 self._rhs[predication_name] = incomplete_function
                 w = len(self._rhs[predication_name]) * [self.omega]
-                self.classes[predication_name] = self._operation.get(_logic_symbols('dj'))(w)(self._rhs[predication_name])
+                self.classes[predication_name] = self._operation.get(Disjunction.symbol)(w)(self._rhs[predication_name])
         else:
             # Substitute variables that are not matching features with mapping functions
-            variables_names = self._get_variables_names(node.arg)
+            variables_names = self._get_variables_names(node.args)
             for i, variable in enumerate(variables_names):
                 if variable not in self.feature_mapping.keys():
                     local_mapping[variable] = i
@@ -117,14 +112,10 @@ class Towell(StructuringFuzzifier):
         """
         @return the corresponding antecedent network and the omega weight
         """
-        if len(node.nary) < 1:
-            lhs, lhs_w = self._visit(node.lhs, local_mapping)
-            rhs, rhs_w = self._visit(node.rhs, local_mapping)
-            previous_layer = [lhs, rhs]
-            w = [lhs_w, rhs_w]
-        else:
-            layer_and_w = [self._visit(clause, local_mapping) for clause in node.nary]
-            previous_layer, w = [x[0] for x in layer_and_w], [x[1] for x in layer_and_w]
+        lhs, lhs_w = self._visit(node.lhs, local_mapping)
+        rhs, rhs_w = self._visit(node.rhs, local_mapping)
+        previous_layer = [lhs, rhs]
+        w = [lhs_w, rhs_w]
         return self._operation.get(node.op)(w)(previous_layer), self.omega
 
     def _visit_variable(self, node: Variable, local_mapping: dict[str, int] = None) -> tuple[any, float]:
@@ -149,23 +140,14 @@ class Towell(StructuringFuzzifier):
         """
         @return the corresponding antecedent network and the omega weight
         """
-        return self._predicates[node.name][1]({}), self.omega
+        return self._predicates[node.predicate][1]({}), self.omega
 
-    def _visit_negation(self, node: Negation, local_mapping: dict[str, int] = None) -> tuple[any, float]:
+    def _visit_negation(self, node: LogicNegation, local_mapping: dict[str, int] = None) -> tuple[any, float]:
         """
         @return the corresponding antecedent network and minus its weight
         """
-        layer, w = self._visit(node.predicate, local_mapping)
+        layer, w = self._visit(node.name, local_mapping)
         return layer, - w
-
-    def _visit_m_of_n(self, node: MofN, local_mapping: dict[str, int] = None):
-        previous_layers = [self._visit(arg, local_mapping) for arg in node.arg.unfolded]
-        previous_layers, w = [x[0] for x in previous_layers], [x[1] for x in previous_layers]
-        bias_initializer = constant_initializer(int(node.m) - 0.5 * self.omega)
-        layer = Towell.CustomDense(kernel_initializer=constant_initializer(w),
-                                   trainable=self._trainable,
-                                   bias_initializer=bias_initializer)(Concatenate(axis=1)(previous_layers)),
-        return layer[0], self.omega
 
     def _visit_nary(self, node: Nary, local_mapping: dict[str, int] = None):
         return super(Towell, self)._visit_nary(node, local_mapping), self.omega

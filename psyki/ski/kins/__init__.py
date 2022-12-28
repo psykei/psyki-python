@@ -1,13 +1,12 @@
 from __future__ import annotations
 from typing import Callable, Iterable, List
 import tensorflow as tf
-from numpy import eye
 from tensorflow import Tensor
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate
-from psyki.logic.datalog.grammar import optimize_datalog_formula
 from psyki.ski import Injector
-from psyki.logic import Formula, Fuzzifier
+from psyki.logic import Formula
+from psyki.fuzzifiers import Fuzzifier
 from psyki.utils import model_deep_copy
 
 
@@ -45,10 +44,10 @@ class NetworkStructurer(Injector):
 
     def inject(self, rules: List[Formula]) -> Model:
         self._clear()
-        # Prevent side effect on the original rules during optimization.
+        # Prevent side effect on the original knowledge during optimization.
         rules_copy = [rule.copy() for rule in rules]
-        for rule in rules_copy:
-            optimize_datalog_formula(rule)
+        # for rule in rules_copy:
+        #     optimize_datalog_formula(rule)
         predictor_input: Tensor = self._predictor.input
         modules = self._fuzzifier.visit(rules_copy)
         if self._layer == 0:
@@ -110,7 +109,7 @@ class NetworkStructurer(Injector):
 
     def _match_layer(self, name, layers):
         for layer in layers:
-            if name == layer.name:
+            if name == layer.predicate:
                 return layer
 
     def _clear(self):

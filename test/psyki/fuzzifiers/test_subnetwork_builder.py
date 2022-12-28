@@ -1,16 +1,15 @@
 import unittest
-from psyki.logic import Fuzzifier
-from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
+from psyki.fuzzifiers import Fuzzifier
 from tensorflow.keras import Input, Model
 from test.resources.data import data_to_int, get_binary_data, get_dataset_dataframe, \
     get_splice_junction_extended_feature_mapping
-from test.resources.rules import get_rules
+from test.resources.knowledge import textual_knowledge_from_file
 from test.resources.data.splice_junction import CLASS_MAPPING, AGGREGATE_FEATURE_MAPPING
-from test.resources.rules.splice_junction import get_splice_junction_datalog_rules, get_binary_datalog_rules
+from test.resources.knowledge.splice_junction import get_splice_junction_datalog_rules, get_binary_datalog_rules
 
 
 class TestSubnetworkBuilder(unittest.TestCase):
-    rules = get_rules('splice_junction')
+    rules = textual_knowledge_from_file('splice_junction')
     rules = get_splice_junction_datalog_rules(rules)
     rules = get_binary_datalog_rules(rules)
     data = get_dataset_dataframe('splice_junction')

@@ -1,12 +1,46 @@
 from __future__ import annotations
+from typing import List, Callable
+from tensorflow.python.keras import Model
+from psyki.logic import *
+from pathlib import Path
 
-import csv
-from abc import ABC, abstractmethod
-from typing import Callable, List, Any
-from psyki.logic import Fuzzifier, Formula
-from psyki.logic.datalog.grammar import DatalogFormula, Expression, Negation, Variable, Boolean, Number, Unary, Nary, \
-    Argument, Predication, MofN
-from psyki.logic.datalog.grammar.adapters.antlr4 import get_formula_from_string
+PATH = Path(__file__).parents[0]
+
+
+class Fuzzifier(ABC):
+    """
+    A fuzzifier transforms a theory (list of formulae) representing symbolic knowledge into an injectable object.
+    Usually layers of a neural network or cost functions.
+    """
+
+    @abstractmethod
+    def visit(self, rules: List[Formula]) -> Any:
+        pass
+
+    @staticmethod
+    def get(name: str) -> Callable:
+        from psyki.fuzzifiers.netbuilder import NetBuilder
+        from psyki.fuzzifiers.lukasciewicz import Lukasiewicz
+        from psyki.fuzzifiers.towell import Towell
+        available_fuzzifiers: dict[str, Callable] = {
+            'lukasiewicz': lambda x: Lukasiewicz(*x),
+            'netbuilder': lambda x: NetBuilder(*x),
+            'towell': lambda x: Towell(*x)
+        }
+        if name not in available_fuzzifiers.keys():
+            valid_names = '\n - '.join(available_fuzzifiers.keys())
+            raise Exception('Fuzzifier ' + name + ' is not available\nAvailable fuzzifiers are:\n - ' + valid_names)
+        return available_fuzzifiers[name]
+
+    @staticmethod
+    def enriched_model(model: Model) -> Model:
+        from psyki.ski import EnrichedModel
+        return EnrichedModel(model, {})
+
+    @staticmethod
+    @abstractmethod
+    def custom_objects() -> dict:
+        pass
 
 
 class DatalogFuzzifier(Fuzzifier, ABC):
@@ -16,14 +50,13 @@ class DatalogFuzzifier(Fuzzifier, ABC):
 
     def __init__(self):
         self.visit_mapping: dict[Formula.__class__, Callable] = {
-            DatalogFormula: self._visit_formula,
+            DefinitionFormula: self._visit_formula,
             Expression: self._visit_expression,
             Negation: self._visit_negation,
             Variable: self._visit_variable,
             Boolean: self._visit_boolean,
             Number: self._visit_number,
             Unary: self._visit_unary,
-            MofN: self._visit_m_of_n,
             Nary: self._visit_nary
         }
 
@@ -62,26 +95,22 @@ class DatalogFuzzifier(Fuzzifier, ABC):
     def _visit_unary(self, formula: Formula, _) -> Any:
         pass
 
-    @abstractmethod
-    def _visit_m_of_n(self, node: MofN, local_mapping: dict[str, int] = None):
-        pass
-
     def _visit_nary(self, node: Nary, local_mapping: dict[str, int] = None):
         # Prevents side effect on the original local map.
-        local_mapping_copy = self._predicates[node.name][0].copy()
+        local_mapping_copy = self._predicates[node.predicate][0].copy()
         inv_map = {v: k for k, v in local_mapping_copy.items()}
         # Dynamic bounding between the variables of the caller and the callee.
-        for i, variable in enumerate(self._get_variables_names(node.arg)):
+        for i, variable in enumerate(self._get_variables_names(node.args)):
             if i in inv_map.keys():
                 if variable in self.feature_mapping:
                     local_mapping_copy[inv_map[i]] = self.feature_mapping.get(variable)
                 elif variable in local_mapping:
                     local_mapping_copy[inv_map[i]] = local_mapping.get(variable)
-        return self._predicates[node.name][1](local_mapping_copy)
+        return self._predicates[node.predicate][1](local_mapping_copy)
 
     def _get_variables_names(self, node: Argument) -> list[str]:
         if node is not None and isinstance(node.term, Variable):
-            return [node.term.name] + self._get_variables_names(node.arg)
+            return [node.term.name] + self._get_variables_names(node.args)
         else:
             return []
 
@@ -101,10 +130,27 @@ class DatalogFuzzifier(Fuzzifier, ABC):
         pass
 
 
-def load_knowledge_from_file(file: str) -> list[DatalogFormula]:
-    result = []
-    with open(str(file), mode="r", encoding="utf8") as file:
-        reader = csv.reader(file, delimiter=';')
-        for item in reader:
-            result += item
-    return [get_formula_from_string(rule) for rule in result]
+class ConstrainingFuzzifier(DatalogFuzzifier, ABC):
+    """
+    A fuzzifier that encodes logic formulae into continuous functions (or something equivalent) to constrain the
+    behaviour of the predictor during the training in such a way that it is penalised when it violates the prior
+    knowledge.
+    """
+
+    def visit(self, rules: List[Formula]) -> Any:
+        super().visit(rules)
+        for rule in rules:
+            self._visit(rule, {})
+        return self.classes
+
+
+class StructuringFuzzifier(DatalogFuzzifier, ABC):
+    """
+    A fuzzifier that encodes logic formulae into new sub parts of the predictors which mimic the logic formulae.
+    """
+
+    def visit(self, rules: List[Formula]) -> Any:
+        super().visit(rules)
+        for rule in rules:
+            self._visit(rule, {})
+        return list(self.classes.values())
