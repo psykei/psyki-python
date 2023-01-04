@@ -106,13 +106,24 @@ class DefinitionFormula(Formula):
     def copy(self) -> Formula:
         return DefinitionFormula(self.lhs.copy(), self.rhs.copy())
 
-    def remove_variable_assignment(self, variable_names: Iterable[str]) -> DefinitionFormula:
+    @property
+    def arity(self) -> int:
+        return self.lhs.arity
+
+    def remove_variable_assignment(self, variables: Iterable[Variable]) -> DefinitionFormula:
         """
         Return a new formula without 'is' expressions in the body.
         If a variable's name appears in variable_names then the expression is substituted with the true predicate.
         If the variable's name does not appear in variable_names then 'is' is substituted with the equivalence.
         """
-        return DefinitionFormula(self.lhs.copy(), self.rhs.remove_variable_assignment(variable_names), self.trainable)
+        return DefinitionFormula(self.lhs.copy(), self.rhs.remove_variable_assignment(variables), self.trainable)
+
+    def get_substitution(self, variable: Variable) -> Formula:
+        """
+        Return the assigned formula to a specific variable.
+        If there is no 'is' predicate for the provided variable return the variable itself.
+        """
+        return self.rhs.get_substitution(variable)
 
 
 class DefinitionClause(Formula):
@@ -139,11 +150,18 @@ class DefinitionClause(Formula):
     def copy(self) -> DefinitionClause:
         return DefinitionClause(self.predication, self.args)
 
+    @property
+    def arity(self) -> int:
+        return len(self.args.unfolded)
+
 
 class Clause(Formula, ABC):
 
-    def remove_variable_assignment(self, variable_names: Iterable[str]) -> Clause:
+    def remove_variable_assignment(self, variables: Iterable[Variable]) -> Clause:
         return self
+
+    def get_substitution(self, variable: Variable) -> Formula:
+        return variable
 
 
 class Expression(Clause):
@@ -172,17 +190,28 @@ class Expression(Clause):
         rhs = self.rhs.copy()
         return Expression(lhs, rhs, self.op)
 
-    def remove_variable_assignment(self, variable_names: Iterable[str]) -> Clause:
+    def remove_variable_assignment(self, variables: Iterable[Variable]) -> Clause:
         match self.op.symbol:
             case operators.Assignment.symbol:
                 assert isinstance(self.lhs, Variable)
-                if self.lhs.name in variable_names:
+                if self.lhs in variables:
                     return Boolean(True)
                 else:
                     return Expression(self.lhs.copy(), self.rhs.copy(), operators.Equal())
             case _:
-                return Expression(self.lhs.remove_variable_assignment(variable_names),
-                                  self.rhs.remove_variable_assignment(variable_names), self.op)
+                return Expression(self.lhs.remove_variable_assignment(variables),
+                                  self.rhs.remove_variable_assignment(variables), self.op)
+
+    def get_substitution(self, variable: Variable) -> Formula:
+        if isinstance(self.lhs, Variable) and self.lhs == variable and self.op.symbol == operators.Assignment.symbol:
+            return self.rhs
+        else:
+            rhs = self.rhs.get_substitution(variable)
+            lhs = self.lhs.get_substitution(variable)
+            if isinstance(lhs, Variable) and lhs.name == variable.name:
+                return rhs
+            else:
+                return lhs
 
 
 class Literal(Clause, ABC):
@@ -259,13 +288,17 @@ class Nary(Predicate):
         return self.predicate + '(' + str(self.args) + ')'
 
     def __eq__(self, other: Nary) -> bool:
-        return self.predicate == other.predicate and self.args == self.args
+        return self.predicate == other.predicate and self.arity == other.arity
 
     def __hash__(self) -> int:
         return hash((self.predicate, self.args))
 
     def copy(self) -> Nary:
         return Nary(self.predicate, self.args)
+
+    @property
+    def arity(self) -> int:
+        return len(self.args.unfolded)
 
 
 class Term(Predicate, ABC):
@@ -367,7 +400,7 @@ class Variable(Term):
         return self.name
 
     def __eq__(self, other: Variable) -> bool:
-        return self is other
+        return self.name == other.name
 
     def __hash__(self) -> int:
         return hash(self.name)

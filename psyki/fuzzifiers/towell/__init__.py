@@ -15,6 +15,7 @@ class Towell(StructuringFuzzifier):
     """
     Fuzzifier that implements the mapping from crispy logic knowledge into neural networks proposed by Geoffrey Towell.
     """
+    name = 'towell'
     custom_objects: dict = {}
 
     def __init__(self, predictor_input: Tensor, feature_mapping: dict[str, int], omega: float = 4):
@@ -149,8 +150,8 @@ class Towell(StructuringFuzzifier):
         layer, w = self._visit(node.name, local_mapping)
         return layer, - w
 
-    def _visit_nary(self, node: Nary, local_mapping: dict[str, int] = None):
-        return super(Towell, self)._visit_nary(node, local_mapping), self.omega
+    def _visit_nary(self, formula: Nary, local_mapping: dict[str, int] = None):
+        return super(Towell, self)._visit_nary(formula, local_mapping), self.omega
 
     def _clear(self):
         self.classes = {}

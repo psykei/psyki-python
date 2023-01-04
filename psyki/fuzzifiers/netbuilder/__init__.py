@@ -1,5 +1,6 @@
 from __future__ import annotations
 from collections.abc import Callable
+import numpy as np
 from tensorflow.keras import Model
 from tensorflow import Tensor, maximum
 from tensorflow.keras.layers import Minimum, Maximum, Dense, Concatenate, Dot, Lambda
@@ -18,17 +19,17 @@ class NetBuilder(StructuringFuzzifier):
     The resulting object is a list of ad hoc layers that can be exploited by the predictor.
     This is suitable for classification and regression tasks.
     """
-
+    name = 'netbuilder'
     custom_objects: dict[str: Callable] = {'eta': eta, 'eta_one_abs': eta_one_abs, 'eta_abs_one': eta_abs_one}
 
     def __init__(self, predictor_input: Tensor, feature_mapping: dict[str, int]):
         """
         @param predictor_input: the input tensor of the predictor.
         @param feature_mapping: a map between variables in the logic formulae and indices of dataset features. Example:
-            - 'PL': 0,
-            - 'PW': 1,
-            - 'SL': 2,
-            - 'SW': 3.
+            - 'PetalLength': 0,
+            - 'PetalWidth': 1,
+            - 'SepalLength': 2,
+            - 'SepalWidth': 3.
         """
         super().__init__()
         self.predictor_input = predictor_input
@@ -44,52 +45,61 @@ class NetBuilder(StructuringFuzzifier):
     def _clear(self):
         self.classes = {}
         self.__rhs = {}
-        self._predicates = {}
+        self.predicate_call_mapping = {}
         self._trainable = False
 
-    def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
-        return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
-
-    def _visit_formula(self, node: DefinitionFormula, local_mapping: dict[str, int] = None):
+    def _visit_formula(self, node: DefinitionFormula, local_mapping):
         self._trainable = node.trainable
         self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
 
-    def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause, local_mapping: dict[str, int] = None):
-        definition_name = node.predication
-        predication_name = self._get_predication_name(node.args)
+    def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause, local_mapping):
+        predicate_name = node.predication
+        output_value = str(node.args.last)
 
-        if predication_name is not None:
-            if predication_name not in self.classes.keys():
-                self.classes[predication_name] = self._visit(rhs, local_mapping)
-                self.__rhs[predication_name] = self._visit(rhs, local_mapping)
+        if output_value is not None and output_value[0].islower():
+            if output_value not in self.classes.keys():
+                self.classes[output_value] = self._visit(rhs, local_mapping)
+                self.__rhs[output_value] = self._visit(rhs, local_mapping)
             else:
-                incomplete_function = self.__rhs[predication_name]
-                self.classes[predication_name] = maximum(incomplete_function, self._visit(rhs, local_mapping))
-                self.__rhs[predication_name] = maximum(incomplete_function, self._visit(rhs, local_mapping))
+                incomplete_rule: Tensor = self.__rhs[output_value]
+                self.classes[output_value] = maximum(incomplete_rule, self._visit(rhs, local_mapping))
+                self.__rhs[output_value] = maximum(incomplete_rule, self._visit(rhs, local_mapping))
         else:
             # Substitute variables that are not matching features with mapping functions
-            variables_names = self._get_variables_names(node.args)
-            for i, variable in enumerate(variables_names):
-                if variable not in self.feature_mapping.keys():
-                    local_mapping[variable] = i
-
-            if definition_name not in self._predicates.keys():
-                self._predicates[definition_name] = (local_mapping, lambda m: self._visit(rhs, m))
+            arguments = node.args.unfolded
+            for arg in arguments:
+                if isinstance(arg, Variable):
+                    if arg.name in self.feature_mapping.keys():
+                        pass
+                    else:
+                        local_mapping[arg] = None
+            if predicate_name not in self.predicate_call_mapping.keys():
+                self.predicate_call_mapping[predicate_name] = (local_mapping, lambda m: self._visit(rhs, m))
             else:
-                incomplete_function = self._predicates[definition_name][1]
-                self._predicates[definition_name] = (
-                    local_mapping, lambda m: maximum(incomplete_function(m), self._visit(rhs, m)))
+                incomplete_function: Callable[Tensor] = self.predicate_call_mapping[predicate_name]
+                self.predicate_call_mapping[predicate_name] = lambda m: maximum(incomplete_function(m),
+                                                                                self._visit(rhs, m))
 
-    def _visit_expression(self, node: Expression, local_mapping: dict[str, int] = None):
+    def _assign_variables(self, mappings, local_mapping) -> Any:
+        substitutions = []
+        layers = []
+        for element in mappings:
+            body, mapping = element
+            _, value = mapping
+            substitutions.append(self._visit(value, local_mapping))
+            layers.append(body)
+        return lambda l: substitutions[np.argmax([layer(l) for layer in layers])](l)
+
+    def _visit_expression(self, node: Expression, local_mapping):
         def concat(layers):
             return Concatenate(axis=1)(layers)
 
         if node.op.symbol == Assignment.symbol:
             assert isinstance(node.lhs, Variable)
-            if node.lhs.name in local_mapping.keys():
+            if node.lhs in local_mapping.keys():
                 node.op = Equal()
             else:
-                local_mapping[node.lhs.name] = None
+                local_mapping[node.lhs] = node.rhs
         layer = [self._visit(node.lhs, local_mapping), self._visit(node.rhs, local_mapping)]
         match node.op.symbol:
             case Conjunction.symbol:
@@ -126,18 +136,19 @@ class NetBuilder(StructuringFuzzifier):
         else:
             raise Exception("No match between variable name and feature names.")
 
-    def _visit_boolean(self, node: Boolean, _):
+    def _visit_boolean(self, node: Boolean):
         return Dense(1, kernel_initializer=Zeros,
                      bias_initializer=constant_initializer(1. if node.is_true else 0.),
                      trainable=False, activation='linear')(self.predictor_input)
 
-    def _visit_number(self, node: Number, _):
+    def _visit_number(self, node: Number):
         return Dense(1, kernel_initializer=Zeros,
                      bias_initializer=constant_initializer(node.value),
                      trainable=False, activation='linear')(self.predictor_input)
 
-    def _visit_unary(self, node: Unary, _):
-        return self._predicates[node.predicate][1]({})
+    def _visit_unary(self, node: Unary):
+        return self.predicate_call_mapping[node.predicate]({})
 
-    def _visit_negation(self, node: LogicNegation, local_mapping: dict[str, int] = None):
-        return Dense(1, kernel_initializer=Ones, activation=eta_abs_one, trainable=False)(self._visit(node.name, local_mapping))
+    def _visit_negation(self, node: Negation, local_mapping):
+        return Dense(1, kernel_initializer=Ones, activation=eta_abs_one, trainable=False) \
+            (self._visit(node.predicate, local_mapping))

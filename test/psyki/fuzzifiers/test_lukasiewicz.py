@@ -10,8 +10,45 @@ from test.resources.data import get_dataset
 from test.resources.knowledge.poker import FEATURE_MAPPING as POKER_FEATURE_MAPPING, CLASS_MAPPING as POKER_CLASS_MAPPING
 
 
-class TestLukasiewicz(unittest.TestCase):
+class TestLukasiewiczSimple(unittest.TestCase):
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'simple.pl').formulae
+    fuzzifier = Fuzzifier.get('lukasiewicz')([{'no': 0, 'yes': 1}, {'X': 0, 'Y': 1}])
+    functions = fuzzifier.visit(knowledge)
+    predicted_output_yes = constant([0, 1], dtype=float32)
+    predicted_output_yes = reshape(predicted_output_yes, [1, 2])
+    predicted_output_no = constant([1, 0], dtype=float32)
+    predicted_output_no = reshape(predicted_output_no, [1, 2])
+    true = tile(reshape(constant(0.), [1, 1]), [1, 1])
+    false = tile(reshape(constant(1.), [1, 1]), [1, 1])
 
+    def test_greater_yes(self):
+        function_yes = self.functions['yes']
+        function_no = self.functions['no']
+        input_values = constant([3.4, 1.7], dtype=float32)
+        input_values = reshape(input_values, [1, 2])
+        actual_output_yes = function_yes(input_values, self.predicted_output_yes)
+        actual_output_no = function_no(input_values, self.predicted_output_yes)
+        print("Test true")
+        print('No: ' + str(actual_output_no))
+        print('Yes: ' + str(actual_output_yes))
+        assert_equal(self.true, actual_output_no)
+        assert_equal(self.true, actual_output_yes)
+
+    def test_greater_no(self):
+        function_yes = self.functions['yes']
+        function_no = self.functions['no']
+        input_values = constant([-2.2, 5.7], dtype=float32)
+        input_values = reshape(input_values, [1, 2])
+        actual_output_yes = function_yes(input_values, self.predicted_output_no)
+        actual_output_no = function_no(input_values, self.predicted_output_no)
+        print("Test false")
+        print('No: ' + str(actual_output_no))
+        print('Yes: ' + str(actual_output_yes))
+        assert_equal(self.true, actual_output_no)
+        assert_equal(self.true, actual_output_yes)
+
+
+class TestLukasiewiczOnPoker(unittest.TestCase):
     knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'poker.pl').formulae
     fuzzifier = Fuzzifier.get('lukasiewicz')([POKER_CLASS_MAPPING, POKER_FEATURE_MAPPING])
     functions = fuzzifier.visit(knowledge)

@@ -1,6 +1,9 @@
 from __future__ import annotations
+
+import copy
 from typing import List, Callable
 from tensorflow.python.keras import Model
+from psyki import logic
 from psyki.logic import *
 from pathlib import Path
 
@@ -10,8 +13,11 @@ PATH = Path(__file__).parents[0]
 class Fuzzifier(ABC):
     """
     A fuzzifier transforms a theory (list of formulae) representing symbolic knowledge into an injectable object.
-    Usually layers of a neural network or cost functions.
+    Usually the output consists of layers of a neural network or cost functions.
+    In other words, a fuzzifier is a visitor of theories.
     """
+
+    name: str
 
     @abstractmethod
     def visit(self, rules: List[Formula]) -> Any:
@@ -22,15 +28,16 @@ class Fuzzifier(ABC):
         from psyki.fuzzifiers.netbuilder import NetBuilder
         from psyki.fuzzifiers.lukasciewicz import Lukasiewicz
         from psyki.fuzzifiers.towell import Towell
-        available_fuzzifiers: dict[str, Callable] = {
-            'lukasiewicz': lambda x: Lukasiewicz(*x),
-            'netbuilder': lambda x: NetBuilder(*x),
-            'towell': lambda x: Towell(*x)
-        }
-        if name not in available_fuzzifiers.keys():
-            valid_names = '\n - '.join(available_fuzzifiers.keys())
-            raise Exception('Fuzzifier ' + name + ' is not available\nAvailable fuzzifiers are:\n - ' + valid_names)
-        return available_fuzzifiers[name]
+
+        match name:
+            case Lukasiewicz.name:
+                return lambda x: Lukasiewicz(*x)
+            case NetBuilder.name:
+                return lambda x: NetBuilder(*x)
+            case Towell.name:
+                return lambda x: Towell(*x)
+            case _:
+                raise Exception('Fuzzifier ' + name + ' is not defined')
 
     @staticmethod
     def enriched_model(model: Model) -> Model:
@@ -44,86 +51,135 @@ class Fuzzifier(ABC):
 
 
 class DatalogFuzzifier(Fuzzifier, ABC):
-    feature_mapping: dict[str, int] = {}
-    classes = {}
-    _predicates: dict[str, tuple[dict[str, int], Callable]] = {}
+    """
+    A fuzzifier supporting the Datalog logic language.
+    """
+    """
+    A variable can be grounded in two different ways:
+    - the variable appears in the head of the predicate, then its value is the one provided by the caller.
+      Note that the variable can be one feature of the dataset;
+    - the variable appears in the head but it is not grounded for the caller, then it must be assigned in the body.
+    It is necessary to keep track of all variable groundings for each rule resolution/visiting.
+    """
+    VariableMap = dict[Variable, Clause]
+    SubMap = dict[Variable, Callable]
+    """
+    AssignmentType is a data type that represents the required information to apply variable assignments.
+    The key of the outer dictionary is the name of the predicate.
+    The value is a list of tuple (one for each definition occurrence of the predicate in the theory).
+    The first value of the tuple is the body of the predicate (without variable assignments).
+    The second value is a map of the assignments.
+    
+    Example:
+        {predicate1: [(body1, {Var1: Value1, Var2: Value2, ...}), (body2, {...}, ...],
+         predicate2: ...} 
+    """
+    AssignmentMap = dict[str, list[tuple[Clause, VariableMap]]]
+    assignment_mapping: AssignmentMap = {}
+    """
+    Map between dataset features (can appear as variables in the head of rules) and indices of the input layer.
+    """
+    FeatureMap = dict[str, int]
+    feature_mapping: FeatureMap = {}
+    """
+    Map between predicates' names and their fuzzy object.
+    """
+    PredicateCallMap = dict[str, Callable]
+    predicate_call_mapping: PredicateCallMap = {}
+    """
+    Map between the class and the object obtained by the corresponding classification rules.
+    """
+    classes: dict[str, Any] = {}
 
     def __init__(self):
-        self.visit_mapping: dict[Formula.__class__, Callable] = {
-            DefinitionFormula: self._visit_formula,
-            Expression: self._visit_expression,
-            Negation: self._visit_negation,
-            Variable: self._visit_variable,
-            Boolean: self._visit_boolean,
-            Number: self._visit_number,
-            Unary: self._visit_unary,
-            Nary: self._visit_nary
-        }
+        pass
 
     def visit(self, rules: List[Formula]) -> Any:
         self._clear()
 
+    def _visit(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
+        match type(formula):
+            case logic.DefinitionFormula:
+                return self._visit_formula(formula, local_mapping, substitutions)
+            case logic.Expression:
+                return self._visit_expression(formula, local_mapping, substitutions)
+            case logic.Negation:
+                return self._visit_negation(formula, local_mapping, substitutions)
+            case logic.Variable:
+                return self._visit_variable(formula, local_mapping, substitutions)
+            case logic.Boolean:
+                return self._visit_boolean(formula)
+            case logic.Number:
+                return self._visit_number(formula)
+            case logic.Unary:
+                return self._visit_unary(formula)
+            case logic.Nary:
+                return self._visit_nary(formula, local_mapping, substitutions)
+            case _:
+                raise Exception('Unexpected formula')
+
     @abstractmethod
-    def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
+    def _visit_formula(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
         pass
 
     @abstractmethod
-    def _visit_formula(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
+    def _visit_definition_clause(self, lhs: Formula, rhs: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
         pass
 
     @abstractmethod
-    def _visit_expression(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
+    def _visit_expression(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
         pass
 
     @abstractmethod
-    def _visit_negation(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
+    def _visit_negation(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
         pass
 
     @abstractmethod
-    def _visit_variable(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
+    def _visit_variable(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
         pass
 
     @abstractmethod
-    def _visit_boolean(self, formula: Formula, _) -> Any:
+    def _visit_boolean(self, formula: Formula) -> Any:
         pass
 
     @abstractmethod
-    def _visit_number(self, formula: Formula, _) -> Any:
+    def _visit_number(self, formula: Formula) -> Any:
         pass
 
     @abstractmethod
-    def _visit_unary(self, formula: Formula, _) -> Any:
+    def _visit_unary(self, formula: Formula) -> Any:
         pass
 
-    def _visit_nary(self, node: Nary, local_mapping: dict[str, int] = None):
-        # Prevents side effect on the original local map.
-        local_mapping_copy = self._predicates[node.predicate][0].copy()
-        inv_map = {v: k for k, v in local_mapping_copy.items()}
-        # Dynamic bounding between the variables of the caller and the callee.
-        for i, variable in enumerate(self._get_variables_names(node.args)):
-            if i in inv_map.keys():
-                if variable in self.feature_mapping:
-                    local_mapping_copy[inv_map[i]] = self.feature_mapping.get(variable)
-                elif variable in local_mapping:
-                    local_mapping_copy[inv_map[i]] = local_mapping.get(variable)
-        return self._predicates[node.predicate][1](local_mapping_copy)
+    @abstractmethod
+    def _assign_variables(self, mappings: list[tuple[Any, VariableMap]], local_mapping: VariableMap, substitutions: SubMap) -> Any:
+        pass
 
-    def _get_variables_names(self, node: Argument) -> list[str]:
-        if node is not None and isinstance(node.term, Variable):
-            return [node.term.name] + self._get_variables_names(node.args)
+    def _visit_nary(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap):
+        assert isinstance(formula, Nary)
+        # Check if all variables in the predicate are bounded.
+        # If positive then just evaluate the predicate.
+        # If negative there is at least one variable to assign.
+        arguments: list[Term] = formula.args.unfolded
+        keys = local_mapping.keys()
+        all_grounded = all([arg in keys for arg in arguments if isinstance(arg, Variable)])
+        if all_grounded:
+            return self.predicate_call_mapping[formula.predicate](local_mapping)
         else:
-            return []
-
-    def _get_predication_name(self, node: Argument):
-        if node is not None:
-            last = node.last
-            if isinstance(last, Predication):
-                return last.name
-            elif isinstance(last, Number):
-                return str(last.value)
-            else:
-                return None
-        return None
+            predicate_bodies: list[tuple[Clause, dict[Variable, Clause]]] = self.assignment_mapping[formula.predicate]
+            grounded = [arg for arg in arguments if isinstance(arg, Variable) and arg in keys]
+            not_grounded = [arg for arg in arguments if isinstance(arg, Variable) and arg not in grounded]
+            result: list[tuple[Clause, dict[Variable, Clause]]] = []
+            new_mapping = {}
+            for body, mapping in predicate_bodies:
+                # new_mapping = copy.deepcopy(mapping)
+                old_keys = list(mapping.keys())
+                new_values = {old_keys[arguments.index(v)]: v for v in grounded}
+                for k, v in new_values.items():
+                    new_mapping[k] = v
+                new_body: Clause = body.remove_variable_assignment(not_grounded)
+                subs_mapping = {arg: body.get_substitution(arg) for arg in not_grounded}
+                result.append((new_body, subs_mapping))
+            return self._assign_variables(result, new_mapping, substitutions)
 
     @abstractmethod
     def _clear(self):
@@ -132,15 +188,14 @@ class DatalogFuzzifier(Fuzzifier, ABC):
 
 class ConstrainingFuzzifier(DatalogFuzzifier, ABC):
     """
-    A fuzzifier that encodes logic formulae into continuous functions (or something equivalent) to constrain the
-    behaviour of the predictor during the training in such a way that it is penalised when it violates the prior
-    knowledge.
+    A fuzzifier that encodes logic formulae into continuous functions (or something equivalent).
+    It constrains the behaviour of the predictor during training (it is penalised when it violates the knowledge).
     """
 
     def visit(self, rules: List[Formula]) -> Any:
         super().visit(rules)
         for rule in rules:
-            self._visit(rule, {})
+            self._visit(rule, {}, {})
         return self.classes
 
 
@@ -152,5 +207,5 @@ class StructuringFuzzifier(DatalogFuzzifier, ABC):
     def visit(self, rules: List[Formula]) -> Any:
         super().visit(rules)
         for rule in rules:
-            self._visit(rule, {})
+            self._visit(rule, {}, {})
         return list(self.classes.values())

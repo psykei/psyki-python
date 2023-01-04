@@ -81,6 +81,7 @@ def get_splice_junction_feature_mapping(variable_indices: list[int] = SPLICE_JUN
 def get_splice_junction_extended_feature_mapping(features: list[str] = FEATURES,
                                                  variable_indices: list[int] = SPLICE_JUNCTION_INDICES
                                                  ) -> dict[str: int]:
+    print(', '.join([k for k in _get_extended_feature_mapping(features, variable_indices).keys()]))
     return _get_extended_feature_mapping(features, variable_indices)
 
 
