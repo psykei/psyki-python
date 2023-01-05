@@ -24,28 +24,36 @@ class TestLukasiewiczSimple(unittest.TestCase):
     def test_greater_yes(self):
         function_yes = self.functions['yes']
         function_no = self.functions['no']
-        input_values = constant([3.4, 1.7], dtype=float32)
-        input_values = reshape(input_values, [1, 2])
+        input_values = constant([3.4, 1.7], dtype=float32, shape=[1, 2])
+
+        # Functions must output 0 (true) for both yes and no classes, because the prediction is correct.
         actual_output_yes = function_yes(input_values, self.predicted_output_yes)
         actual_output_no = function_no(input_values, self.predicted_output_yes)
-        print("Test true")
-        print('No: ' + str(actual_output_no))
-        print('Yes: ' + str(actual_output_yes))
         assert_equal(self.true, actual_output_no)
+        assert_equal(self.true, actual_output_yes)
+
+        # Functions must output 0 (true) for yes and 1 (false) for no, because the prediction is wrong.
+        actual_output_yes = function_yes(input_values, self.predicted_output_no)
+        actual_output_no = function_no(input_values, self.predicted_output_no)
+        assert_equal(self.false, actual_output_no)
         assert_equal(self.true, actual_output_yes)
 
     def test_greater_no(self):
         function_yes = self.functions['yes']
         function_no = self.functions['no']
-        input_values = constant([-2.2, 5.7], dtype=float32)
-        input_values = reshape(input_values, [1, 2])
+        input_values = constant([-2.2, 5.7], dtype=float32, shape=[1, 2])
+
+        # Functions must output 0 (true) for both yes and no classes, because the prediction is correct.
         actual_output_yes = function_yes(input_values, self.predicted_output_no)
         actual_output_no = function_no(input_values, self.predicted_output_no)
-        print("Test false")
-        print('No: ' + str(actual_output_no))
-        print('Yes: ' + str(actual_output_yes))
         assert_equal(self.true, actual_output_no)
         assert_equal(self.true, actual_output_yes)
+
+        # Functions must output 1 (false) for yes and 0 (true) for no, because the prediction is wrong.
+        actual_output_yes = function_yes(input_values, self.predicted_output_yes)
+        actual_output_no = function_no(input_values, self.predicted_output_yes)
+        assert_equal(self.true, actual_output_no)
+        assert_equal(self.false, actual_output_yes)
 
 
 class TestLukasiewiczOnPoker(unittest.TestCase):
@@ -144,7 +152,7 @@ class TestLukasiewiczOnPoker(unittest.TestCase):
         self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
 
     def test_royal_flush(self):
-        hand1 = constant([1, 10, 1, 11, 1, 13, 1, 12, 1, 1], dtype=float32)
+        hand1 = constant([4, 10, 4, 11, 4, 1, 4, 13, 4, 12], dtype=float32)
         hand2 = constant([1, 9, 1, 11, 1, 13, 1, 10, 1, 12], dtype=float32)
         output1 = constant([0, 0, 0, 0, 0, 0, 0, 0, 0, 1], dtype=float32)
         output2 = constant([0, 0, 0, 0, 0, 0, 0, 0, 1, 0], dtype=float32)
@@ -179,7 +187,7 @@ class TestLukasiewiczOnPoker(unittest.TestCase):
         train_y = np.eye(10)[train_y.astype(int)]
         x, y = cast(train_x, dtype=float32), cast(train_y, dtype=float32)
         result = stack([reshape(function(x, y), [x.shape[0], 1]) for function in functions], axis=1)
-        indices = stack([range(0, len(poker_training)), argmax(train_y, axis=1)], axis=1)
+        indices = stack([range(0, x.shape[0]), argmax(train_y, axis=1)], axis=1)
         assert_equal(gather_nd(result, indices), 0.)
 
 

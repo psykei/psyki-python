@@ -21,10 +21,10 @@ class LambdaLayer(Injector):
             - 'virginica': 1,
             - 'versicolor': 2.
         @param feature_mapping: a map between variables in the logic formulae and indices of dataset features. Example:
-            - 'PL': 0,
-            - 'PW': 1,
-            - 'SL': 2,
-            - 'SW': 3.
+            - 'PetalLength': 0,
+            - 'PetalWidth': 1,
+            - 'SepalLength': 2,
+            - 'SepalWidth': 3.
         @param fuzzifier: the fuzzifiers used to map the knowledge.
         """
         self._predictor: Model = model_deep_copy(predictor)

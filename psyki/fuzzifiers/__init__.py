@@ -1,11 +1,10 @@
 from __future__ import annotations
-
-import copy
 from typing import List, Callable
 from tensorflow.python.keras import Model
 from psyki import logic
 from psyki.logic import *
 from pathlib import Path
+
 
 PATH = Path(__file__).parents[0]
 
@@ -163,21 +162,21 @@ class DatalogFuzzifier(Fuzzifier, ABC):
         keys = local_mapping.keys()
         all_grounded = all([arg in keys for arg in arguments if isinstance(arg, Variable)])
         if all_grounded:
+            # Simple logic evaluation.
             return self.predicate_call_mapping[formula.predicate](local_mapping)
         else:
+            # Variables assignment.
             predicate_bodies: list[tuple[Clause, dict[Variable, Clause]]] = self.assignment_mapping[formula.predicate]
             grounded = [arg for arg in arguments if isinstance(arg, Variable) and arg in keys]
             not_grounded = [arg for arg in arguments if isinstance(arg, Variable) and arg not in grounded]
             result: list[tuple[Clause, dict[Variable, Clause]]] = []
             new_mapping = {}
             for body, mapping in predicate_bodies:
-                # new_mapping = copy.deepcopy(mapping)
                 old_keys = list(mapping.keys())
-                new_values = {old_keys[arguments.index(v)]: v for v in grounded}
-                for k, v in new_values.items():
-                    new_mapping[k] = v
-                new_body: Clause = body.remove_variable_assignment(not_grounded)
-                subs_mapping = {arg: body.get_substitution(arg) for arg in not_grounded}
+                new_mapping = {old_keys[arguments.index(v)]: v for v in grounded}
+                new_mapping.update({old_keys[arguments.index(v)]: v for v in not_grounded})
+                new_body: Clause = body.remove_variable_assignment([k for k, v in new_mapping.items() if v in not_grounded])
+                subs_mapping = {v: body.get_substitution(k) for k, v in new_mapping.items() if v in not_grounded}
                 result.append((new_body, subs_mapping))
             return self._assign_variables(result, new_mapping, substitutions)
 

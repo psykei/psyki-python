@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import copy
 from typing import Callable
 import numpy as np
@@ -13,6 +12,10 @@ from psyki.fuzzifiers import ConstrainingFuzzifier
 from psyki.logic.operators import *
 from psyki.ski import EnrichedModel
 from psyki.utils import eta
+from tensorflow.python.ops.numpy_ops import np_config
+
+
+np_config.enable_numpy_behavior()
 
 
 class Lukasiewicz(ConstrainingFuzzifier):
@@ -146,8 +149,13 @@ class Lukasiewicz(ConstrainingFuzzifier):
                 else:
                     subs[k] = ([body], [v])
         for k, v in subs.items():
-            index: Callable = lambda l: np.argmin([self._visit(b, loc_copy, sub_copy)(l) for b in v[0]])
-            substitutions[k] = lambda l: self._visit(v[1][index(l)], loc_copy, sub_copy)(l)
+            index: Callable = lambda l: tf.argmin([self._visit(b, loc_copy, sub_copy)(l) for b in v[0]])
+
+            def pippo(l):
+                return tf.gather(tf.convert_to_tensor([self._visit(w, loc_copy, sub_copy)(l) for w in v[1]]).T, index(l), batch_dims=1)
+
+            #substitutions[k] = lambda l: self._visit(v[1][index(l)], loc_copy, sub_copy)(l)
+            substitutions[k] = pippo
         return lambda l: eta(tf.convert_to_tensor(np.min([layer(l) for layer in layers])))
 
     def _visit_variable(self, node: Variable, local_mapping, substitutions):
