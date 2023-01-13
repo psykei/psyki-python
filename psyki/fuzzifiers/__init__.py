@@ -81,9 +81,9 @@ class DatalogFuzzifier(Fuzzifier, ABC):
     FeatureMap = dict[str, int]
     feature_mapping: FeatureMap = {}
     """
-    Map between predicates' names and their fuzzy object.
+    Map between predicates' names and their fuzzy object plus the variables in the arguments.
     """
-    PredicateCallMap = dict[str, Callable]
+    PredicateCallMap = dict[str, (Callable, list[Variable])]
     predicate_call_mapping: PredicateCallMap = {}
     """
     Map between the class and the object obtained by the corresponding classification rules.
@@ -160,10 +160,20 @@ class DatalogFuzzifier(Fuzzifier, ABC):
         # If negative there is at least one variable to assign.
         arguments: list[Term] = formula.args.unfolded
         keys = local_mapping.keys()
-        all_grounded = all([arg in keys for arg in arguments if isinstance(arg, Variable)])
+        subs = substitutions.keys()
+        all_grounded = all([arg in keys or arg in subs for arg in arguments if isinstance(arg, Variable)])  # or arg in subs
+        # Update mapping with constants
+        predicate, local_variables = self.predicate_call_mapping[formula.predicate]
+        tmp_mapping: dict[Term, Term] = {k: v for k, v in zip(arguments, local_variables)}
+        for k, v in tmp_mapping.items():
+            if isinstance(k, Constant) and v not in local_mapping:
+                assert isinstance(v, Variable)
+                local_mapping[v] = k
         if all_grounded:
             # Simple logic evaluation.
-            return self.predicate_call_mapping[formula.predicate](local_mapping)
+            new_local_mapping = {k: v for k, v in zip(local_variables, arguments)}
+            local_mapping.update(new_local_mapping)
+            return predicate(local_mapping)(substitutions)
         else:
             # Variables assignment.
             predicate_bodies: list[tuple[Clause, dict[Variable, Clause]]] = self.assignment_mapping[formula.predicate]

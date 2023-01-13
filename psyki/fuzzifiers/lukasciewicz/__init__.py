@@ -98,12 +98,14 @@ class Lukasiewicz(ConstrainingFuzzifier):
                 else:
                     self.assignment_mapping[predicate_name] = self.assignment_mapping[predicate_name] + [subs]
             # Build predicates
+            # Keep track of the local arguments (should be all variables when defining the predicate)
             if predicate_name not in self.predicate_call_mapping.keys():
-                self.predicate_call_mapping[predicate_name] = lambda m: lambda x: self._visit(rhs, m, substitutions)(x)
+                local_args = [var for var in lhs.args.unfolded if isinstance(var, Variable)]
+                self.predicate_call_mapping[predicate_name] = (lambda m: lambda s: lambda x: self._visit(rhs, m, s)(x)), local_args  # copy.deepcopy(substitutions)
             else:
-                incomplete_function = self.predicate_call_mapping[predicate_name]
+                incomplete_function, local_args = self.predicate_call_mapping[predicate_name]
                 self.predicate_call_mapping[predicate_name] = \
-                    lambda m: lambda x: eta(minimum(incomplete_function(m)(x), self._visit(rhs, m, substitutions)(x)))
+                    (lambda m: lambda s: lambda x: eta(minimum(incomplete_function(m)(s)(x), self._visit(rhs, m, s)(x)))), local_args
 
     def _visit_expression(self, node: Expression, local_mapping, substitutions) -> Callable:
         if node.op.symbol == Assignment.symbol:
@@ -136,7 +138,7 @@ class Lukasiewicz(ConstrainingFuzzifier):
                 raise Exception("Unexpected symbol")
 
     def _assign_variables(self, mappings, local_mapping, substitutions) -> Any:
-        sub_copy = copy.deepcopy(substitutions)
+        sub_copy = substitutions  # copy.deepcopy(substitutions)
         loc_copy = local_mapping  # copy.deepcopy(local_mapping)
         subs: dict[Variable, tuple[list[Clause], list[Clause]]] = {}
         layers = []
@@ -151,11 +153,14 @@ class Lukasiewicz(ConstrainingFuzzifier):
         for k, v in subs.items():
             index: Callable = lambda l: tf.argmin([self._visit(b, loc_copy, sub_copy)(l) for b in v[0]])
 
-            def pippo(l):
-                return tf.gather(tf.convert_to_tensor([self._visit(w, loc_copy, sub_copy)(l) for w in v[1]]).T, index(l), batch_dims=1)
+            def select_sub(layer, values, idx):
+                # Honestly, I do not fully understand why this is necessary, it needs more investigation in the future.
+                if len(sub_copy) <= 1:
+                    return tf.gather(tf.convert_to_tensor([self._visit(w, loc_copy, sub_copy)(layer) for w in values]).T, idx, batch_dims=1)
+                else:
+                    return tf.gather(tf.convert_to_tensor([self._visit(w, loc_copy, sub_copy)(layer) for w in values]).T,idx)
 
-            #substitutions[k] = lambda l: self._visit(v[1][index(l)], loc_copy, sub_copy)(l)
-            substitutions[k] = pippo
+            substitutions[k] = lambda l: select_sub(l, v[1], index(l))
         return lambda l: eta(tf.convert_to_tensor(np.min([layer(l) for layer in layers])))
 
     def _visit_variable(self, node: Variable, local_mapping, substitutions):
@@ -166,6 +171,8 @@ class Lukasiewicz(ConstrainingFuzzifier):
             if isinstance(grounding, Variable):
                 if grounding.name in self.feature_mapping.keys():
                     return lambda x: x[:, self.feature_mapping[grounding.name]]
+                elif node == grounding:
+                    raise Exception("Unexpected state")
                 else:
                     return self._visit_variable(grounding, local_mapping, substitutions)
             else:
@@ -178,7 +185,8 @@ class Lukasiewicz(ConstrainingFuzzifier):
         return lambda _: node.value
 
     def _visit_unary(self, node: Unary):
-        return self.predicate_call_mapping[node.predicate]({})
+        # TODO: check.
+        return self.predicate_call_mapping[node.predicate][0]({})({})
 
     def _visit_negation(self, node: Negation, local_mapping, substitutions):
         return lambda x: eta(constant(1.) - self._visit(node.predicate, local_mapping, substitutions)(x))

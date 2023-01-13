@@ -1,26 +1,23 @@
 import unittest
 from psyki.fuzzifiers import Fuzzifier
 from tensorflow.keras import Input, Model
+from psyki.logic.prolog import TuProlog
 from test.resources.data import data_to_int, get_binary_data, get_dataset_dataframe, \
     get_splice_junction_extended_feature_mapping
-from test.resources.knowledge import textual_knowledge_from_file
+from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 from test.resources.data.splice_junction import CLASS_MAPPING, AGGREGATE_FEATURE_MAPPING
-from test.resources.knowledge.splice_junction import get_splice_junction_datalog_rules, get_binary_datalog_rules
 
 
 class TestSubnetworkBuilder(unittest.TestCase):
-    rules = textual_knowledge_from_file('splice_junction')
-    rules = get_splice_junction_datalog_rules(rules)
-    rules = get_binary_datalog_rules(rules)
     data = get_dataset_dataframe('splice_junction')
     y = data_to_int(data.iloc[:, -1:], CLASS_MAPPING)
     x = get_binary_data(data.iloc[:, :-1], AGGREGATE_FEATURE_MAPPING)
     y.columns = [x.shape[1]]
     data = x.join(y)
-    rules = [get_formula_from_string(rule) for rule in rules]
     inputs = Input((240,))
     fuzzifier = Fuzzifier.get('netbuilder')([inputs, get_splice_junction_extended_feature_mapping()])
-    modules = fuzzifier.visit(rules)
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
+    modules = fuzzifier.visit(knowledge)
 
     def test_rule_correctness(self):
         predict_ie = Model(self.inputs, self.modules[1])

@@ -376,7 +376,7 @@ class Number(Constant):
         return str(self.value)
 
     def __eq__(self, other: Number) -> bool:
-        return self.value == other.value
+        return False if not isinstance(other, Number) else self.value == other.value
 
     def __hash__(self) -> int:
         return hash(self.value)

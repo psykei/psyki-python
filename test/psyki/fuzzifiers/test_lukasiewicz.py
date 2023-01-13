@@ -6,8 +6,10 @@ from tensorflow import constant, float32, reshape, cast, stack, assert_equal, ti
 from tensorflow.python.ops.array_ops import gather_nd
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 from psyki.logic.prolog import TuProlog
-from test.resources.data import get_dataset
+from test.resources.data import get_dataset, get_splice_junction_extended_feature_mapping, get_dataset_dataframe, \
+    data_to_int, get_binary_data
 from test.resources.knowledge.poker import FEATURE_MAPPING as POKER_FEATURE_MAPPING, CLASS_MAPPING as POKER_CLASS_MAPPING
+from test.resources.data.splice_junction import CLASS_MAPPING as SJ_CLASS_MAPPING, AGGREGATE_FEATURE_MAPPING
 
 
 class TestLukasiewiczSimple(unittest.TestCase):
@@ -54,6 +56,23 @@ class TestLukasiewiczSimple(unittest.TestCase):
         actual_output_no = function_no(input_values, self.predicted_output_yes)
         assert_equal(self.true, actual_output_no)
         assert_equal(self.false, actual_output_yes)
+
+
+class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
+    fuzzifier = Fuzzifier.get('lukasiewicz')([SJ_CLASS_MAPPING, get_splice_junction_extended_feature_mapping()])
+    functions = fuzzifier.visit(knowledge)
+
+    def test_on_dataset(self):
+        data = get_dataset_dataframe('splice_junction')
+        y = data_to_int(data.iloc[:, -1:], SJ_CLASS_MAPPING)
+        x = get_binary_data(data.iloc[:, :-1], AGGREGATE_FEATURE_MAPPING)
+        y = np.eye(3)[y.astype(int)].reshape([y.shape[0], 3])
+        x, y = cast(x, dtype=float32), cast(y, dtype=float32)
+        functions = [self.functions[name] for name, _ in sorted(SJ_CLASS_MAPPING.items(), key=lambda i: i[1])]
+        result = stack([reshape(function(x, y), [x.shape[0], 1]) for function in functions], axis=1)
+        # Per class errors using the provided knowledge
+        self.assertTrue(np.all(sum(result) == constant([736, 473, 3], dtype=float32, shape=[3, 1])))
 
 
 class TestLukasiewiczOnPoker(unittest.TestCase):

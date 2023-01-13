@@ -1,9 +1,10 @@
 from __future__ import annotations
+import copy
 from collections.abc import Callable
-import numpy as np
 from tensorflow.keras import Model
 from tensorflow import Tensor, maximum
-from tensorflow.keras.layers import Minimum, Maximum, Dense, Concatenate, Dot, Lambda
+from tensorflow.keras.layers import Minimum, Maximum, Dense, Concatenate, Dot, Lambda, Layer
+from tensorflow.python.keras.backend import argmax
 from tensorflow.python.ops.array_ops import gather
 from tensorflow.python.ops.init_ops import Ones, constant_initializer, Zeros
 from psyki.logic import *
@@ -13,6 +14,17 @@ from psyki.ski import EnrichedModel
 from psyki.utils import eta_one_abs, eta, eta_abs_one
 
 
+class Argmax(Layer):
+    def __init__(self):
+        super(Argmax, self).__init__()
+
+    def build(self, input_shape):
+        pass
+
+    def call(self, inputs, *args, **kwargs):
+        return argmax(inputs)
+
+
 class NetBuilder(StructuringFuzzifier):
     """
     Fuzzifier that implements a mapping from symbolic rules into neural layers that mimic them.
@@ -20,7 +32,8 @@ class NetBuilder(StructuringFuzzifier):
     This is suitable for classification and regression tasks.
     """
     name = 'netbuilder'
-    custom_objects: dict[str: Callable] = {'eta': eta, 'eta_one_abs': eta_one_abs, 'eta_abs_one': eta_abs_one}
+    custom_objects: dict[str: Callable] = {'eta': eta, 'eta_one_abs': eta_one_abs, 'eta_abs_one': eta_abs_one,
+                                           'Argmax': Argmax}
 
     def __init__(self, predictor_input: Tensor, feature_mapping: dict[str, int]):
         """
@@ -48,49 +61,60 @@ class NetBuilder(StructuringFuzzifier):
         self.predicate_call_mapping = {}
         self._trainable = False
 
-    def _visit_formula(self, node: DefinitionFormula, local_mapping):
+    def _visit_formula(self, node: DefinitionFormula, local_mapping, substitutions):
         self._trainable = node.trainable
-        self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
+        self._visit_definition_clause(node.lhs, node.rhs, local_mapping, substitutions)
 
-    def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause, local_mapping):
-        predicate_name = node.predication
-        output_value = str(node.args.last)
+    def _visit_definition_clause(self, lhs: DefinitionClause, rhs: Clause, local_mapping, substitutions):
+        predicate_name = lhs.predication
+        output_value = str(lhs.args.last)
 
         if output_value is not None and output_value[0].islower():
             if output_value not in self.classes.keys():
-                self.classes[output_value] = self._visit(rhs, local_mapping)
-                self.__rhs[output_value] = self._visit(rhs, local_mapping)
+                self.classes[output_value] = self._visit(rhs, local_mapping, substitutions)
+                self.__rhs[output_value] = self._visit(rhs, local_mapping, substitutions)
             else:
                 incomplete_rule: Tensor = self.__rhs[output_value]
-                self.classes[output_value] = maximum(incomplete_rule, self._visit(rhs, local_mapping))
-                self.__rhs[output_value] = maximum(incomplete_rule, self._visit(rhs, local_mapping))
+                self.classes[output_value] = maximum(incomplete_rule, self._visit(rhs, local_mapping, substitutions))
+                self.__rhs[output_value] = maximum(incomplete_rule, self._visit(rhs, local_mapping, substitutions))
         else:
-            # Substitute variables that are not matching features with mapping functions
-            arguments = node.args.unfolded
-            for arg in arguments:
-                if isinstance(arg, Variable):
-                    if arg.name in self.feature_mapping.keys():
-                        pass
-                    else:
-                        local_mapping[arg] = None
+            # All variables are considered not ground.
+            not_grounded: list[Variable] = [arg for arg in lhs.args.unfolded if isinstance(arg, Variable)]
+            # Map variables that are not matching features with their substitutions
+            if len(not_grounded) > 0:
+                sub_dict = {v: rhs.get_substitution(v) for v in not_grounded}
+                body = rhs.copy()  # rhs.remove_variable_assignment(not_grounded)
+                subs: tuple[Clause, dict[Variable, Clause]] = (body, sub_dict)
+                if predicate_name not in self.assignment_mapping.keys():
+                    self.assignment_mapping[predicate_name] = [subs]
+                else:
+                    self.assignment_mapping[predicate_name] = self.assignment_mapping[predicate_name] + [subs]
             if predicate_name not in self.predicate_call_mapping.keys():
-                self.predicate_call_mapping[predicate_name] = (local_mapping, lambda m: self._visit(rhs, m))
+                self.predicate_call_mapping[predicate_name] = lambda m: self._visit(rhs, m, substitutions)
             else:
                 incomplete_function: Callable[Tensor] = self.predicate_call_mapping[predicate_name]
-                self.predicate_call_mapping[predicate_name] = lambda m: maximum(incomplete_function(m),
-                                                                                self._visit(rhs, m))
+                self.predicate_call_mapping[predicate_name] = lambda m: Maximum()([incomplete_function(m),
+                                                                                   self._visit(rhs, m, substitutions)])
 
-    def _assign_variables(self, mappings, local_mapping) -> Any:
-        substitutions = []
+    def _assign_variables(self, mappings, local_mapping, substitutions) -> Any:
+        sub_copy = copy.deepcopy(substitutions)
+        loc_copy = local_mapping  # copy.deepcopy(local_mapping)
+        subs: dict[Variable, tuple[list[Clause], list[Clause]]] = {}
         layers = []
         for element in mappings:
             body, mapping = element
-            _, value = mapping
-            substitutions.append(self._visit(value, local_mapping))
-            layers.append(body)
-        return lambda l: substitutions[np.argmax([layer(l) for layer in layers])](l)
+            layers.append(self._visit(body, loc_copy, sub_copy))
+            for k, v in mapping.items():
+                if k in subs.keys():
+                    subs[k] = (subs[k][0] + [body], subs[k][1] + [v])
+                else:
+                    subs[k] = ([body], [v])
+        for k, v in subs.items():
+            index: Callable = lambda l: Argmax()(Concatenate([self._visit(b, loc_copy, sub_copy)(l) for b in v[0]]))
+            substitutions[k] = lambda l: gather(Concatenate([self._visit(w, loc_copy, sub_copy)(l) for w in v[1]]), index(l))
+        return lambda l: Maximum()(Concatenate([layer(l) for layer in layers]))
 
-    def _visit_expression(self, node: Expression, local_mapping):
+    def _visit_expression(self, node: Expression, local_mapping, substitutions):
         def concat(layers):
             return Concatenate(axis=1)(layers)
 
@@ -100,7 +124,7 @@ class NetBuilder(StructuringFuzzifier):
                 node.op = Equal()
             else:
                 local_mapping[node.lhs] = node.rhs
-        layer = [self._visit(node.lhs, local_mapping), self._visit(node.rhs, local_mapping)]
+        layer = [self._visit(node.lhs, local_mapping, substitutions), self._visit(node.rhs, local_mapping, substitutions)]
         match node.op.symbol:
             case Conjunction.symbol:
                 return Minimum()(layer)
@@ -128,13 +152,18 @@ class NetBuilder(StructuringFuzzifier):
             case _:
                 raise Exception("Unexpected symbol")
 
-    def _visit_variable(self, node: Variable, local_mapping: dict[str, int] = None):
-        if node.name in self.feature_mapping.keys():
-            return Lambda(lambda x: gather(x, [self.feature_mapping[node.name]], axis=1))(self.predictor_input)
-        elif node.name in local_mapping.keys():
-            return Lambda(lambda x: gather(x, [local_mapping[node.name]], axis=1))(self.predictor_input)
+    def _visit_variable(self, node: Variable, local_mapping, substitutions):
+        if node in substitutions.keys():
+            return substitutions[node]
         else:
-            raise Exception("No match between variable name and feature names.")
+            grounding = local_mapping[node]
+            if isinstance(grounding, Variable):
+                if grounding.name in self.feature_mapping.keys():
+                    return Lambda(lambda x: gather(x, [self.feature_mapping[node.name]], axis=1))(self.predictor_input)
+                else:
+                    return self._visit_variable(grounding, local_mapping, substitutions)
+            else:
+                return self._visit(local_mapping[node], local_mapping, substitutions)
 
     def _visit_boolean(self, node: Boolean):
         return Dense(1, kernel_initializer=Zeros,
@@ -149,6 +178,6 @@ class NetBuilder(StructuringFuzzifier):
     def _visit_unary(self, node: Unary):
         return self.predicate_call_mapping[node.predicate]({})
 
-    def _visit_negation(self, node: Negation, local_mapping):
+    def _visit_negation(self, node: Negation, local_mapping, substitutions):
         return Dense(1, kernel_initializer=Ones, activation=eta_abs_one, trainable=False) \
-            (self._visit(node.predicate, local_mapping))
+            (self._visit(node.predicate, local_mapping, substitutions))
