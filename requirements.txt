@@ -7,3 +7,4 @@ numpy>=1.22.3
 pandas>=1.4.2
 scikit-learn>=1.0.2
 setuptools>=59.8.0
+codecarbon~=2.1.4
