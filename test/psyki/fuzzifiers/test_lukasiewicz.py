@@ -72,6 +72,10 @@ class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
         functions = [self.functions[name] for name, _ in sorted(SJ_CLASS_MAPPING.items(), key=lambda i: i[1])]
         result = stack([reshape(function(x, y), [x.shape[0], 1]) for function in functions], axis=1)
         # Per class errors using the provided knowledge
+        #         IE    EI     N
+        #   IE   295     0   473    ->  errors = 473
+        #   EI    25    31   711    ->  errors = 25 + 711 = 736
+        #   N      3     0  1652    ->  errors = 3
         self.assertTrue(np.all(sum(result) == constant([736, 473, 3], dtype=float32, shape=[3, 1])))
 
 
