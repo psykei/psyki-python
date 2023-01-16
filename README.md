@@ -47,9 +47,9 @@ To generate/edit the class diagram browse the URL above, after replacing `svg` w
 
 Currently, implemented injectors are:
 
+ - `KBANN`, one of the first injector introduced in literature;
  - `LambdaLayer`, performs injection into NN of any shape via constraining;
  - `NetworkComposer`, performs injection into NN of any shape via structuring.
-
 
 ## Users
 
@@ -61,18 +61,14 @@ pip install psyki
 ### Requirements
 
 - python 3.9+
-- java 11 (for test and demo)
-- antlr4-python3-runtime 4.9.3 (for test and demo)
-- tensorflow 2.6.2
-- numpy 1.19.2
-- scikit-learn 1.0.1
-- pandas 1.3.4
+- java 11 (for test)
+- antlr4-python3-runtime 4.9.3 (for test)
+- tensorflow 2.7.0
+- numpy 1.22.3
+- scikit-learn 1.0.2
+- pandas 1.4.2
 
-### Demo
-
-`demo/demo.ipynb` is a notebook that shows how injection is applied to a network for poker hand classification task.
-Rules are defined in `resources/rules/poker.csv`.
-
+### Examples
 
 Example of injection:
 ```python
