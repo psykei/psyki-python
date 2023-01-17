@@ -185,7 +185,6 @@ class Lukasiewicz(ConstrainingFuzzifier):
         return lambda _: node.value
 
     def _visit_unary(self, node: Unary):
-        # TODO: check.
         return self.predicate_call_mapping[node.predicate][0]({})({})
 
     def _visit_negation(self, node: Negation, local_mapping, substitutions):
