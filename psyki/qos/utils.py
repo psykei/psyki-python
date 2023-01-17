@@ -100,11 +100,12 @@ class EarlyStopping(tf.keras.callbacks.Callback):
             logs = {}
         if self.verbose:
             print('Epoch {} ==> Logs: {}'.format(epoch, logs))
-        if logs.get('val_accuracy') > self.threshold:
-            self.wait += 1
-            if self.wait >= self.patience:
-                if self.verbose:
-                    print("Accuracy in model {} reached over the test set."
-                          " Stopping training at epoch {}...".format(self.model_name,
-                                                                     epoch))
+        if 'val_acc' in logs and logs['val_acc'] is not None:
+            if logs['val_acc'] > self.threshold:
+                self.wait += 1
+                if self.wait >= self.patience:
+                    if self.verbose:
+                        print("Accuracy in model {} reached over the test set."
+                              " Stopping training at epoch {}...".format(self.model_name,
+                                                                         epoch))
                 self.model.stop_training = True
