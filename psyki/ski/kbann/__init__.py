@@ -5,7 +5,6 @@ from tensorflow.keras.layers import Concatenate
 from tensorflow import Tensor
 from tensorflow.keras.losses import Loss
 from tensorflow.python.keras.utils.generic_utils import custom_object_scope
-from psyki.logic.datalog.grammar import optimize_datalog_formula
 from psyki.logic import Formula
 from psyki.fuzzifiers import Fuzzifier
 from tensorflow.keras import Model
@@ -50,6 +49,7 @@ class KBANN(Injector):
 
         def __init__(self, model: Model, gamma: float, custom_objects: dict):
             super().__init__(model, custom_objects)
+            self.custom_objects = custom_objects
             self.gamma = gamma
             self.init_weights = copy.deepcopy(self.weights)
 
@@ -86,12 +86,10 @@ class KBANN(Injector):
         self._clear()
         # Prevent side effect on the original knowledge during optimization.
         rules_copy = [rule.copy() for rule in rules]
-        for rule in rules_copy:
-            optimize_datalog_formula(rule)
         predictor_input: Tensor = self._predictor.input
-        modules = self._fuzzifier.visit(rules_copy)
+        modules: list[Tensor] = self._fuzzifier.visit(rules_copy)
         x = Concatenate(axis=1)(modules)
-        #return self._fuzzifier.enriched_model(Model(predictor_input, x))
+        # return self._fuzzifier.enriched_model(Model(predictor_input, x))
         return self.ConstrainedModel(Model(predictor_input, x), self.gamma, self._fuzzifier.custom_objects)
 
     def _clear(self):

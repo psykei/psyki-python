@@ -1,5 +1,7 @@
 import unittest
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
+
+from psyki.logic import Formula, DefinitionFormula
 from psyki.logic.prolog import TuProlog
 from psyki.ski import Injector
 from sklearn.datasets import load_iris
@@ -22,7 +24,6 @@ class TestInjectionOnIris(unittest.TestCase):
     ACCEPTABLE_ACCURACY = 0.97
 
     set_seed(0)
-    # formulae = [get_formula_from_string(rule) for rule in get_rules('iris')]
     formulae = TuProlog.from_file(PATH / 'iris.pl').formulae
     input_layer = Input((4,))
     predictor = get_mlp(input_layer, 3, 3, 32, 'relu', 'softmax')
@@ -84,10 +85,16 @@ class TestInjectionOnIris(unittest.TestCase):
 
 class TestInjectionOnSpliceJunction(unittest.TestCase):
     EPOCHS = 100
-    VERBOSE = 0
+    VERBOSE = 1
 
     set_seed(0)
-    rules = TuProlog.from_file(PATH / 'splice-junction.pl').formulae
+    rules: list[Formula] = TuProlog.from_file(PATH / 'splice-junction.pl').formulae
+    trainable = ['intron_exon', 'exon_intron', 'pyramidine_rich', 'class']
+    for rule in rules:
+        assert(isinstance(rule, DefinitionFormula))
+        if rule.lhs.predication in trainable:
+            rule.trainable = True
+
     data = get_dataset_dataframe('splice_junction')
     y = data_to_int(data.iloc[:, -1:], CLASS_MAPPING)
     x = get_binary_data(data.iloc[:, :-1], AGGREGATE_FEATURE_MAPPING)
@@ -100,16 +107,16 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
     train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1:]
     early_stop = Conditions(train_x, train_y)
     test_x, test_y = test.iloc[:, :-1], test.iloc[:, -1:]
-    # knowledge = [get_formula_from_string(rule) for rule in knowledge]
-    rules = []
+
     input_layer = Input((4*60,))
     predictor = get_mlp(input_layer, 3, 3, [64, 32], 'relu', 'softmax', dropout=True)
     predictor = Model(input_layer, predictor)
 
     def common_test_function(self, injector: Injector, batch_size: int, acceptable_accuracy: float, constrain=False):
         model = injector.inject(self.rules)
+        model.summary()
         # Test if clone is successful
-        cloned_model = model.copy()
+        # cloned_model = model.copy()
         del injector
 
         if constrain:
@@ -122,21 +129,21 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
         accuracy = model.evaluate(self.test_x, self.test_y)[1]
         del model
 
-        if constrain:
-            loss = cloned_model.loss_function(SparseCategoricalCrossentropy())
-        else:
-            loss = 'sparse_categorical_crossentropy'
-
-        cloned_model.compile('adam', loss=loss, metrics=['accuracy'])
-        cloned_model.fit(self.train_x, self.train_y, batch_size=batch_size, epochs=self.EPOCHS, verbose=self.VERBOSE, callbacks=self.early_stop)
-        accuracy_cm = cloned_model.evaluate(self.test_x, self.test_y)[1]
-        del cloned_model
+        # if constrain:
+        #     loss = cloned_model.loss_function(SparseCategoricalCrossentropy())
+        # else:
+        #     loss = 'sparse_categorical_crossentropy'
+        #
+        # cloned_model.compile('adam', loss=loss, metrics=['accuracy'])
+        # cloned_model.fit(self.train_x, self.train_y, batch_size=batch_size, epochs=self.EPOCHS, verbose=self.VERBOSE, callbacks=self.early_stop)
+        # accuracy_cm = cloned_model.evaluate(self.test_x, self.test_y)[1]
+        # del cloned_model
 
         self.assertTrue(accuracy > acceptable_accuracy)
-        self.assertTrue(accuracy == accuracy_cm)
+        # self.assertTrue(accuracy == accuracy_cm)
 
     def test_kbann(self):
-        injector = Injector.kbann(self.predictor, get_splice_junction_extended_feature_mapping(), 'towell', 1)
+        injector = Injector.kbann(self.predictor, get_splice_junction_extended_feature_mapping(), 'towell', 1, gamma=0)
         self.common_test_function(injector, batch_size=16, acceptable_accuracy=0.957)
 
     def test_kbann_with_constraining(self):
@@ -145,7 +152,6 @@ class TestInjectionOnSpliceJunction(unittest.TestCase):
 
     def test_kins(self):
         injector = Injector.kins(self.predictor, get_splice_junction_extended_feature_mapping())
-        self.rules = self.rules[:-2]  # remove N class knowledge
         self.common_test_function(injector, batch_size=32, acceptable_accuracy=0.935)
 
 

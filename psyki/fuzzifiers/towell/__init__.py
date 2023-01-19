@@ -1,22 +1,27 @@
-from typing import Iterable, Callable
+from typing import Callable
+from tensorflow.keras.layers import Maximum
 from tensorflow.keras import Model
+from tensorflow.keras.backend import argmax, stack
 from psyki.logic import *
 from tensorflow.keras.layers import Dense, Lambda, Concatenate
 from tensorflow import Tensor, sigmoid, constant
-from tensorflow.python.ops.init_ops import constant_initializer, Constant
+from tensorflow.python.ops.init_ops import constant_initializer, Constant, Zeros
 from psyki.fuzzifiers import StructuringFuzzifier
 from psyki.logic.operators import *
 from psyki.ski import EnrichedModel
-from psyki.utils.exceptions import SymbolicException
-from tensorflow.python.ops.array_ops import gather
+from psyki.utils import eta_one_abs
+from tensorflow.python.ops.array_ops import gather, transpose, squeeze
 
 
 class Towell(StructuringFuzzifier):
     """
     Fuzzifier that implements the mapping from crispy logic knowledge into neural networks proposed by Geoffrey Towell.
+    The fuzzifier is extended to support the logic assignment operator 'is' and the equality logic operator.
+    The equality operator should be used only as a syntactic sugar to deal directly with categorical features.
     """
     name = 'towell'
-    custom_objects: dict = {}
+    custom_objects: dict[str: Callable] = {'eta_one_abs': eta_one_abs}
+    special_predicates: list[str] = ["m_of_n"]
 
     def __init__(self, predictor_input: Tensor, feature_mapping: dict[str, int], omega: float = 4):
         super().__init__()
@@ -25,30 +30,13 @@ class Towell(StructuringFuzzifier):
         self.omega = omega
         self.classes: dict[str, Tensor] = {}
         self._rhs: dict[str, list[Tensor]] = {}
-        self._rhs_predicates: dict[str, tuple[dict[str, int], list[Callable]]] = {}
         self._trainable = False
-        self._operation = {
-            Conjunction.symbol:
-                lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
-                                                       trainable=self._trainable,
-                                                       bias_initializer=self._compute_bias(w))(Concatenate(axis=1)(l)),
-            Disjunction.symbol:
-                lambda w: lambda l: Towell.CustomDense(kernel_initializer=constant_initializer(w),
-                                                       trainable=self._trainable,
-                                                       bias_initializer=constant_initializer(
-                                                           0.5 * self.omega))(Concatenate(axis=1)(l)),
-        }
 
     class CustomDense(Dense):
 
         def __init__(self, kernel_initializer, trainable, bias_initializer, **kwargs):
-            super().__init__(units=1,
-                             activation=self.logistic_function,
-                             kernel_initializer=kernel_initializer,
-                             bias_initializer=bias_initializer,
-                             trainable=trainable,
-                             use_bias=False,
-                             )
+            super().__init__(units=1, activation=self.logistic_function, kernel_initializer=kernel_initializer,
+                             bias_initializer=bias_initializer, trainable=trainable, use_bias=False)
 
         def logistic_function(self, x: Tensor):
             return sigmoid(x - constant(self.bias_initializer.value))
@@ -61,97 +49,180 @@ class Towell(StructuringFuzzifier):
         p = len([u for u in w if u > 0])
         return constant_initializer((p - 0.5) * self.omega)
 
-    def _visit(self, formula: Formula, local_mapping: dict[str, int] = None) -> Any:
-        return self.visit_mapping.get(formula.__class__)(formula, local_mapping)
-
-    def _visit_formula(self, node: DefinitionFormula, local_mapping: dict[str, int] = None):
+    def _visit_formula(self, node: DefinitionFormula, local_mapping, substitutions):
         self._trainable = node.trainable
-        self._visit_definition_clause(node.lhs, node.rhs, local_mapping)
+        self._visit_definition_clause(node.lhs, node.rhs, local_mapping, substitutions)
 
-    def _visit_definition_clause(self, node: DefinitionClause, rhs: Clause, local_mapping: dict[str, int] = None):
-        definition_name = node.predication
-        predication_name = self._get_predication_name(node.args)
+    # All the following _visit* functions should return a neuron and the weights to initialise it.
+    def _visit_definition_clause(self, lhs: DefinitionClause, rhs: Clause, local_mapping, substitutions):
+        predicate_name = lhs.predication
+        output_value = str(lhs.args.last)
+        output_value = None if output_value[0].isupper() else str(lhs.args.last)
 
-        if predication_name is not None:
-            net: Tensor = self._visit(rhs, local_mapping)[0]
-            if predication_name not in self.classes.keys():
-                # New predicate
-                self.classes[predication_name] = net
-                self._rhs[predication_name] = [net]
-            else:
-                # Already encountered predicate, this means that it should come in disjunction.
-                # Therefore, a new unit must be created with bias omega / 2.
-                incomplete_function = self._rhs[predication_name]
-                incomplete_function.append(net)
-                self._rhs[predication_name] = incomplete_function
-                w = len(self._rhs[predication_name]) * [self.omega]
-                self.classes[predication_name] = self._operation.get(Disjunction.symbol)(w)(self._rhs[predication_name])
+        # If it is a classification rule
+        if output_value is not None:
+            # Populate variable matching with features
+            for arg in lhs.args.unfolded:
+                if isinstance(arg, Variable):
+                    if str(arg) in self.feature_mapping.keys():
+                        local_mapping[arg] = arg
+                    else:
+                        raise Exception("Variable " + str(arg) + " does not match any feature")
+            net: Tensor = self._visit(rhs, local_mapping, substitutions)[0]
+            if output_value is not None and output_value[0].islower():
+                if output_value not in self.classes.keys():
+                    # New predicate
+                    self.classes[output_value] = net
+                    self._rhs[output_value] = [net]
+                else:
+                    # Already encountered predicate, this means that it should come in disjunction.
+                    # Therefore, a new unit must be created with bias omega / 2.
+                    incomplete_function = self._rhs[output_value]
+                    incomplete_function.append(net)
+                    self._rhs[output_value] = incomplete_function
+                    # new weights
+                    w = len(self._rhs[output_value]) * [self.omega]
+                    neuron = Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
+                                                bias_initializer=constant_initializer(0.5 * self.omega))(self._rhs[output_value])
+                    self.classes[output_value] = neuron
         else:
-            # Substitute variables that are not matching features with mapping functions
-            variables_names = self._get_variables_names(node.args)
-            for i, variable in enumerate(variables_names):
-                if variable not in self.feature_mapping.keys():
-                    local_mapping[variable] = i
-
-            net: Callable = lambda m: self._visit(rhs, m)[0]
-            if definition_name not in self._predicates.keys():
-                # Already encountered predicate, this means that it should come in disjunction.
-                # Therefore, a new unit must be created with bias omega / 2.
-                self._predicates[definition_name] = (local_mapping, net)
-                self._rhs_predicates[definition_name] = (local_mapping, [net])
+            # All variables are considered not ground.
+            not_grounded: list[Variable] = [arg for arg in lhs.args.unfolded if isinstance(arg, Variable)]
+            # Map variables that are not matching features with their substitutions
+            if len(not_grounded) > 0:
+                sub_dict = {v: rhs.get_substitution(v) for v in not_grounded}
+                body = rhs.copy()  # rhs.remove_variable_assignment(not_grounded)
+                subs: tuple[Clause, dict[Variable, Clause]] = (body, sub_dict)
+                if predicate_name not in self.assignment_mapping.keys():
+                    self.assignment_mapping[predicate_name] = [subs]
+                else:
+                    self.assignment_mapping[predicate_name] = self.assignment_mapping[predicate_name] + [subs]
+            if predicate_name not in self.predicate_call_mapping.keys():
+                local_args = [var for var in lhs.args.unfolded if isinstance(var, Variable)]
+                predicate: Callable = lambda m: lambda s: self._visit(rhs, m, s)[0]
+                self.predicate_call_mapping[predicate_name] = predicate, local_args
+                self._rhs[predicate_name] = [predicate]
             else:
-                # Substitute variables that are not matching features with mapping functions
-                nets = self._rhs_predicates[definition_name][1]
-                nets.append(net)
-                self._rhs_predicates[definition_name] = (local_mapping, nets)
-                w = len(self._rhs_predicates[definition_name][1]) * [self.omega]
-                self._predicates[definition_name] = (local_mapping,
-                                                     lambda m: self._operation.get(';')(w)
-                                                     ([f(m) for f in self._rhs_predicates[definition_name][1]]))
+                incomplete_function, local_args = self.predicate_call_mapping[predicate_name]
+                new_predicate: Callable = lambda m: lambda s: self._visit(rhs, m, s)[0]
+                new_rhs = self._rhs[predicate_name]
+                new_rhs.append(new_predicate)
+                self._rhs[predicate_name] = new_rhs
+                w = len(self._rhs[predicate_name]) * [self.omega]
+                layers = lambda m: lambda s: Concatenate(axis=1)([l(m)(s) for l in self._rhs[predicate_name]])
+                predicate: Callable = lambda m: lambda s: \
+                    Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
+                                       bias_initializer=constant_initializer(0.5 * self.omega))(layers(m)(s))
+                self.predicate_call_mapping[predicate_name] = predicate, local_args
 
-    def _visit_expression(self, node: Expression, local_mapping: dict[str, int] = None) -> tuple[any, float]:
+    def _visit_expression(self, node: Expression, local_mapping, substitutions) -> tuple[any, float]:
         """
         @return the corresponding antecedent network and the omega weight
         """
-        lhs, lhs_w = self._visit(node.lhs, local_mapping)
-        rhs, rhs_w = self._visit(node.rhs, local_mapping)
+
+        def concat(layer):
+            return Concatenate(axis=1)(layer)
+
+        lhs, lhs_w = self._visit(node.lhs, local_mapping, substitutions)
+        rhs, rhs_w = self._visit(node.rhs, local_mapping, substitutions)
         previous_layer = [lhs, rhs]
         w = [lhs_w, rhs_w]
-        return self._operation.get(node.op)(w)(previous_layer), self.omega
+        o = self.omega
+        match node.op.symbol:
+            case Disjunction.symbol:
+                return Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
+                                          bias_initializer=constant_initializer(0.5 * o))(concat(previous_layer)), o
+            case Conjunction.symbol:
+                return Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
+                                          bias_initializer=self._compute_bias(w))(concat(previous_layer)), o
+            case Equal.symbol:
+                return Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
+                             activation=eta_one_abs)(concat(previous_layer)), o
+            case _:
+                raise Exception("Unexpected symbol " + node.op.symbol)
 
-    def _visit_variable(self, node: Variable, local_mapping: dict[str, int] = None) -> tuple[any, float]:
+    def _assign_variables(self, mappings, local_mapping, substitutions) -> Any:
+        sub_copy = substitutions
+        loc_copy = local_mapping
+        subs: dict[Variable, tuple[list[Clause], list[Clause]]] = {}
+        layers = []
+        for element in mappings:
+            body, mapping = element
+            layers.append(self._visit(body, loc_copy, sub_copy)[0])
+            for k, v in mapping.items():
+                if k in subs.keys():
+                    subs[k] = (subs[k][0] + [body], subs[k][1] + [v])
+                else:
+                    subs[k] = ([body], [v])
+        for k, v in subs.items():
+            def index(v):
+                return argmax([self._visit(b, loc_copy, sub_copy)[0] for b in v], axis=0)
+
+            def subs(v, idx):
+                return gather(transpose(squeeze(stack([self._visit(w, loc_copy, sub_copy)[0] for w in v]), axis=2)), idx, axis=1, batch_dims=1)
+
+            substitutions[k] = subs(v[1], index(v[0]))
+        return Maximum()(layers)
+
+    def _visit_variable(self, node: Variable, local_mapping, substitutions) -> tuple[any, float]:
         """
         @return the corresponding antecedent network and the omega weight
         """
-        if node.name in self.feature_mapping.keys():
-            return Lambda(lambda x: gather(x, [self.feature_mapping[node.name]], axis=1))(
-                self.predictor_input), self.omega
-        elif node.name in local_mapping.keys():
-            return Lambda(lambda x: gather(x, [local_mapping[node.name]], axis=1))(self.predictor_input), self.omega
+        if node in substitutions.keys():
+            return substitutions[node]  # (self.predictor_input)
         else:
-            raise SymbolicException.mismatch(node.name)
+            grounding = local_mapping[node]
+            if isinstance(grounding, Variable):
+                if grounding.name in self.feature_mapping.keys():
+                    return Lambda(lambda x: gather(x, [self.feature_mapping[grounding.name]], axis=1))(self.predictor_input), self.omega
+                else:
+                    return self._visit_variable(grounding, local_mapping, substitutions)
+            else:
+                return self._visit(local_mapping[node], local_mapping, substitutions)
 
-    def _visit_boolean(self, node: Boolean, _):
-        raise SymbolicException.not_supported('visit boolean')
+    def _visit_boolean(self, node: Boolean):
+        return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(1. if node.is_true else 0.),
+                     trainable=True, activation='linear')(self.predictor_input), self.omega
 
-    def _visit_number(self, node: Number, _):
-        raise SymbolicException.not_supported('visit number')
+    def _visit_number(self, node: Number):
+        return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(node.value),
+                     trainable=False, activation='linear')(self.predictor_input), self.omega
 
-    def _visit_unary(self, node: Unary, _) -> tuple[any, float]:
+    def _visit_unary(self, node: Unary) -> tuple[any, float]:
         """
         @return the corresponding antecedent network and the omega weight
         """
         return self._predicates[node.predicate][1]({}), self.omega
 
-    def _visit_negation(self, node: LogicNegation, local_mapping: dict[str, int] = None) -> tuple[any, float]:
+    def _visit_negation(self, node: Negation, local_mapping, substitutions) -> tuple[any, float]:
         """
-        @return the corresponding antecedent network and minus its weight
+        @return the corresponding antecedent network and its weight with negative symbol
         """
-        layer, w = self._visit(node.name, local_mapping)
+        layer, w = self._visit(node.predicate, local_mapping, substitutions)
         return layer, - w
 
-    def _visit_nary(self, formula: Nary, local_mapping: dict[str, int] = None):
-        return super(Towell, self)._visit_nary(formula, local_mapping), self.omega
+    def _visit_nary(self, formula: Nary, local_mapping, substitutions):
+        # Handle special predicates
+        if formula.predicate in self.special_predicates:
+            match formula.predicate:
+                case 'm_of_n':
+                    return self._visit_m_of_n(formula, local_mapping, substitutions)
+                case _:
+                    raise Exception('Unexpected special predicate')
+        else:
+            return super(Towell, self)._visit_nary(formula, local_mapping, substitutions), self.omega
+
+    def _visit_m_of_n(self, formula: Nary, local_mapping, substitutions):
+        args = formula.args.unfolded
+        m = args[0]
+        assert isinstance(m, Number)
+        threshold = int(m.value)
+        assert threshold <= len(args) - 1
+        previous_layers = [self._visit(arg, local_mapping, substitutions) for arg in args[1:]]
+        w = (len(args) - 1) * [self.omega]
+        bias_initializer = constant_initializer(int(m.value) - 0.5 * self.omega)
+        layer = Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable, bias_initializer=bias_initializer)(Concatenate(axis=1)(previous_layers)),
+        return layer[0], self.omega
 
     def _clear(self):
         self.classes = {}

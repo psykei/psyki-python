@@ -183,13 +183,11 @@ class NetBuilder(StructuringFuzzifier):
                 return self._visit(local_mapping[node], local_mapping, substitutions)
 
     def _visit_boolean(self, node: Boolean):
-        return Dense(1, kernel_initializer=Zeros,
-                     bias_initializer=constant_initializer(1. if node.is_true else 0.),
+        return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(1. if node.is_true else 0.),
                      trainable=False, activation='linear')(self.predictor_input)
 
     def _visit_number(self, node: Number):
-        return Dense(1, kernel_initializer=Zeros,
-                     bias_initializer=constant_initializer(node.value),
+        return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(node.value),
                      trainable=False, activation='linear')(self.predictor_input)
 
     def _visit_unary(self, node: Unary):

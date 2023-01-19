@@ -104,7 +104,7 @@ class DefinitionFormula(Formula):
         return hash((self.lhs, self.rhs))
 
     def copy(self) -> Formula:
-        return DefinitionFormula(self.lhs.copy(), self.rhs.copy())
+        return DefinitionFormula(self.lhs.copy(), self.rhs.copy(), self.trainable)
 
     @property
     def arity(self) -> int:
