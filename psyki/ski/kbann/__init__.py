@@ -85,9 +85,9 @@ class KBANN(Injector):
     def inject(self, rules: List[Formula]) -> Model:
         self._clear()
         # Prevent side effect on the original knowledge during optimization.
-        rules_copy = [rule.copy() for rule in rules]
+        # rules_copy = [rule.copy() for rule in rules]
         predictor_input: Tensor = self._predictor.input
-        modules: list[Tensor] = self._fuzzifier.visit(rules_copy)
+        modules: list[Tensor] = self._fuzzifier.visit(rules)
         x = Concatenate(axis=1)(modules)
         # return self._fuzzifier.enriched_model(Model(predictor_input, x))
         return self.ConstrainedModel(Model(predictor_input, x), self.gamma, self._fuzzifier.custom_objects)

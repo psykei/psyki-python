@@ -162,8 +162,20 @@ class DatalogFuzzifier(Fuzzifier, ABC):
         keys = local_mapping.keys()
         subs = substitutions.keys()
         all_grounded = all([arg in keys or arg in subs for arg in arguments if isinstance(arg, Variable)])  # or arg in subs
+        # Check if the predicate has been defined
+        predicate, local_variables = None, {}
+        if formula.predicate in self.predicate_call_mapping.keys():
+            predicate, local_variables = self.predicate_call_mapping[formula.predicate]
+        # Check if you are using a classification/regression rule
+        elif not isinstance(formula.args.last, Variable):
+            output_value = str(formula.args.last)
+            if output_value in self.classes.keys():
+                # Here local variables and substitutions are ignored.
+                # Only the class/value overall evaluation of the rule is considered.
+                return self.classes[output_value]
+            else:
+                raise Exception("Rule " + formula.predicate + "for class/regression " + output_value + " not found")
         # Update mapping with constants
-        predicate, local_variables = self.predicate_call_mapping[formula.predicate]
         tmp_mapping: dict[Term, Term] = {k: v for k, v in zip(arguments, local_variables)}
         for k, v in tmp_mapping.items():
             if isinstance(k, Constant) and v not in local_mapping:

@@ -45,11 +45,11 @@ class NetworkStructurer(Injector):
     def inject(self, rules: List[Formula]) -> Model:
         self._clear()
         # Prevent side effect on the original knowledge during optimization.
-        rules_copy = [rule.copy() for rule in rules]
+        # rules_copy = [rule.copy() for rule in rules]
         # for rule in rules_copy:
         #     optimize_datalog_formula(rule)
         predictor_input: Tensor = self._predictor.input
-        modules = self._fuzzifier.visit(rules_copy)
+        modules = self._fuzzifier.visit(rules)
         if self._layer == 0:
             # Injection!
             x = Concatenate(axis=1)([predictor_input] + modules)

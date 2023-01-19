@@ -59,7 +59,7 @@ class TestLukasiewiczSimple(unittest.TestCase):
 
 
 class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction-2.pl').formulae
     fuzzifier = Fuzzifier.get('lukasiewicz')([SJ_CLASS_MAPPING, get_splice_junction_extended_feature_mapping()])
     functions = fuzzifier.visit(knowledge)
 

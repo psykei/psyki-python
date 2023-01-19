@@ -60,7 +60,6 @@ class NetBuilder(StructuringFuzzifier):
         self.assignment_mapping = {}
         self.predicate_call_mapping = {}
         self._trainable = False
-        self.classes = {}
 
     def _visit_formula(self, node: DefinitionFormula, local_mapping, substitutions):
         self._trainable = node.trainable

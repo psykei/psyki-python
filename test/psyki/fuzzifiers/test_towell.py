@@ -1,7 +1,5 @@
 import unittest
 from tensorflow.keras import Input, Model
-
-from psyki.logic import DefinitionFormula
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 from psyki.fuzzifiers import Fuzzifier
 from psyki.logic.prolog import TuProlog

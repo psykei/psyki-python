@@ -227,6 +227,6 @@ class Towell(StructuringFuzzifier):
     def _clear(self):
         self.classes = {}
         self._rhs = {}
-        self._rhs_predicates = {}
-        self._predicates = {}
+        self.assignment_mapping = {}
+        self.predicate_call_mapping = {}
         self._trainable = False
