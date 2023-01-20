@@ -1,12 +1,11 @@
 from __future__ import annotations
-import copy
 from typing import Callable
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from psyki.logic import *
 from tensorflow import cast, SparseTensor, maximum, minimum, constant, reshape, reduce_max, tile
-from tensorflow.python.keras.backend import to_dense
+from tensorflow.keras.backend import to_dense
 from tensorflow.python.ops.array_ops import shape
 from psyki.fuzzifiers import ConstrainingFuzzifier
 from psyki.logic.operators import *
@@ -36,16 +35,16 @@ class Lukasiewicz(ConstrainingFuzzifier):
             - 'versicolor': 2.
         @param feature_mapping: a map between variables in the logic formulae and indices of dataset features. Example:
             - 'PetalLength': 0,
-            - 'PW': 1,
-            - 'SL': 2,
-            - 'SW': 3.
+            - 'PetalWidth': 1,
+            - 'SepalLength': 2,
+            - 'SepalWidth': 3.
         """
         super().__init__()
         self.feature_mapping = feature_mapping
         self.class_mapping = {string: cast(to_dense(SparseTensor([[0, index]], [1.], (1, len(class_mapping)))), float)
                               for string, index in class_mapping.items()}
         self.classes: dict[str, Callable] = {}
-        self._rhs: dict[str, Callable] = {}
+        self.class_call: dict[str, Callable] = {}
 
     @staticmethod
     def enriched_model(model: Model) -> EnrichedModel:
@@ -55,7 +54,7 @@ class Lukasiewicz(ConstrainingFuzzifier):
         self.classes = {}
         self.assignment_mapping = {}
         self.predicate_call_mapping = {}
-        self._rhs = {}
+        self.class_call = {}
 
     def _visit_formula(self, node: DefinitionFormula, local_mapping, substitutions) -> None:
         self._visit_definition_clause(node.lhs, node.rhs, local_mapping, substitutions)
@@ -75,15 +74,18 @@ class Lukasiewicz(ConstrainingFuzzifier):
                     else:
                         raise Exception("Variable " + str(arg) + " does not match any feature")
             class_tensor = reshape(self.class_mapping[output_value], (1, len(self.class_mapping)))
-            l = lambda y: eta(reduce_max(abs(tile(class_tensor, (shape(y)[0], 1)) - y), axis=1))
+            def pippide(y, c):
+                return eta(reduce_max(abs(tile(c, (shape(y)[0], 1)) - y), axis=1))
+            l = lambda y: pippide(y, class_tensor)
+            # l = lambda y: eta(reduce_max(abs(tile(class_tensor, (shape(y)[0], 1)) - y), axis=1))
             r = self._visit(rhs, local_mapping, substitutions)
             if output_value not in self.classes.keys():
                 self.classes[output_value] = lambda x, y: eta(r(x) - l(y))
-                self._rhs[output_value] = lambda x: r(x)
+                self.class_call[output_value] = lambda x: r(x)
             else:
-                incomplete_function = self._rhs[output_value]
+                incomplete_function = self.class_call[output_value]
                 self.classes[output_value] = lambda x, y: eta(minimum(incomplete_function(x), r(x)) - l(y))
-                self._rhs[output_value] = lambda x: minimum(incomplete_function(x), r(x))
+                self.class_call[output_value] = lambda x: minimum(incomplete_function(x), r(x))
         # Predicate that does not directly map a record into a class/value
         else:
             # All variables are considered not ground.
@@ -138,30 +140,27 @@ class Lukasiewicz(ConstrainingFuzzifier):
                 raise Exception("Unexpected symbol")
 
     def _assign_variables(self, mappings, local_mapping, substitutions) -> Any:
-        sub_copy = substitutions  # copy.deepcopy(substitutions)
-        loc_copy = local_mapping  # copy.deepcopy(local_mapping)
         subs: dict[Variable, tuple[list[Clause], list[Clause]]] = {}
         layers = []
         for element in mappings:
             body, mapping = element
-            layers.append(self._visit(body, loc_copy, sub_copy))
+            layers.append(self._visit(body, local_mapping, substitutions))
             for k, v in mapping.items():
                 if k in subs.keys():
                     subs[k] = (subs[k][0] + [body], subs[k][1] + [v])
                 else:
                     subs[k] = ([body], [v])
         for k, v in subs.items():
-            index: Callable = lambda l: tf.argmin([self._visit(b, loc_copy, sub_copy)(l) for b in v[0]])
+            index: Callable = lambda l: tf.argmin([self._visit(b, local_mapping, substitutions)(l) for b in v[0]])
 
             def select_sub(layer, values, idx):
-                # Honestly, I do not fully understand why this is necessary, it needs more investigation in the future.
-                if len(sub_copy) <= 1:
-                    return tf.gather(tf.convert_to_tensor([self._visit(w, loc_copy, sub_copy)(layer) for w in values]).T, idx, batch_dims=1)
+                if len(substitutions) <= 1:
+                    return tf.gather(tf.convert_to_tensor([self._visit(w, local_mapping, substitutions)(layer) for w in values]).T, idx, batch_dims=1)
                 else:
-                    return tf.gather(tf.convert_to_tensor([self._visit(w, loc_copy, sub_copy)(layer) for w in values]).T,idx)
+                    return tf.gather(tf.convert_to_tensor([self._visit(w, local_mapping, substitutions)(layer) for w in values]).T, idx)
 
             substitutions[k] = lambda l: select_sub(l, v[1], index(l))
-        return lambda l: eta(tf.convert_to_tensor(np.min([layer(l) for layer in layers])))
+        return lambda l: eta(tf.reduce_min([layer(l) for layer in layers]))
 
     def _visit_variable(self, node: Variable, local_mapping, substitutions):
         if node in substitutions.keys():

@@ -29,7 +29,8 @@ class Towell(StructuringFuzzifier):
         self.feature_mapping = feature_mapping
         self.omega = omega
         self.classes: dict[str, Tensor] = {}
-        self._rhs: dict[str, list[Tensor]] = {}
+        self.class_call: dict[str, list[Tensor]] = {}
+        self._class_calls: dict[str, list[Tensor]] = {}
         self._trainable = False
 
     class CustomDense(Dense):
@@ -73,17 +74,19 @@ class Towell(StructuringFuzzifier):
                 if output_value not in self.classes.keys():
                     # New predicate
                     self.classes[output_value] = net
-                    self._rhs[output_value] = [net]
+                    self.class_call[output_value] = net
+                    self._class_calls[output_value] = [net]
                 else:
                     # Already encountered predicate, this means that it should come in disjunction.
                     # Therefore, a new unit must be created with bias omega / 2.
-                    incomplete_function = self._rhs[output_value]
-                    incomplete_function.append(net)
-                    self._rhs[output_value] = incomplete_function
+                    incomplete_functions = self._class_calls[output_value]
+                    incomplete_functions.append(net)
+                    self._class_calls[output_value] = incomplete_functions
                     # new weights
-                    w = len(self._rhs[output_value]) * [self.omega]
+                    w = len(self._class_calls[output_value]) * [self.omega]
                     neuron = Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
-                                                bias_initializer=constant_initializer(0.5 * self.omega))(self._rhs[output_value])
+                                                bias_initializer=constant_initializer(0.5 * self.omega))(self._class_calls[output_value])
+                    self.class_call[output_value] = neuron
                     self.classes[output_value] = neuron
         else:
             # All variables are considered not ground.
@@ -101,15 +104,15 @@ class Towell(StructuringFuzzifier):
                 local_args = [var for var in lhs.args.unfolded if isinstance(var, Variable)]
                 predicate: Callable = lambda m: lambda s: self._visit(rhs, m, s)[0]
                 self.predicate_call_mapping[predicate_name] = predicate, local_args
-                self._rhs[predicate_name] = [predicate]
+                self._class_calls[predicate_name] = [predicate]
             else:
-                incomplete_function, local_args = self.predicate_call_mapping[predicate_name]
+                incomplete_functions, local_args = self.predicate_call_mapping[predicate_name]
                 new_predicate: Callable = lambda m: lambda s: self._visit(rhs, m, s)[0]
-                new_rhs = self._rhs[predicate_name]
+                new_rhs = self._class_calls[predicate_name]
                 new_rhs.append(new_predicate)
-                self._rhs[predicate_name] = new_rhs
-                w = len(self._rhs[predicate_name]) * [self.omega]
-                layers = lambda m: lambda s: Concatenate(axis=1)([l(m)(s) for l in self._rhs[predicate_name]])
+                self._class_calls[predicate_name] = new_rhs
+                w = len(self._class_calls[predicate_name]) * [self.omega]
+                layers = lambda m: lambda s: Concatenate(axis=1)([l(m)(s) for l in self._class_calls[predicate_name]])
                 predicate: Callable = lambda m: lambda s: \
                     Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
                                        bias_initializer=constant_initializer(0.5 * self.omega))(layers(m)(s))
@@ -226,7 +229,8 @@ class Towell(StructuringFuzzifier):
 
     def _clear(self):
         self.classes = {}
-        self._rhs = {}
+        self.class_call = {}
+        self._class_calls = {}
         self.assignment_mapping = {}
         self.predicate_call_mapping = {}
         self._trainable = False

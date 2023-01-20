@@ -6,10 +6,7 @@ from tensorflow import constant, float32, reshape, cast, stack, assert_equal, ti
 from tensorflow.python.ops.array_ops import gather_nd
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 from psyki.logic.prolog import TuProlog
-from test.resources.data import get_dataset, get_splice_junction_extended_feature_mapping, get_dataset_dataframe, \
-    data_to_int, get_binary_data
-from test.resources.knowledge.poker import FEATURE_MAPPING as POKER_FEATURE_MAPPING, CLASS_MAPPING as POKER_CLASS_MAPPING
-from test.resources.data.splice_junction import CLASS_MAPPING as SJ_CLASS_MAPPING, AGGREGATE_FEATURE_MAPPING
+from test.resources.data import get_dataset, SpliceJunction, get_splice_junction_processed_dataset, Poker
 
 
 class TestLukasiewiczSimple(unittest.TestCase):
@@ -59,17 +56,16 @@ class TestLukasiewiczSimple(unittest.TestCase):
 
 
 class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction-2.pl').formulae
-    fuzzifier = Fuzzifier.get('lukasiewicz')([SJ_CLASS_MAPPING, get_splice_junction_extended_feature_mapping()])
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
+    fuzzifier = Fuzzifier.get('lukasiewicz')([SpliceJunction.class_mapping, SpliceJunction.feature_mapping])
     functions = fuzzifier.visit(knowledge)
 
     def test_on_dataset(self):
-        data = get_dataset_dataframe('splice_junction')
-        y = data_to_int(data.iloc[:, -1:], SJ_CLASS_MAPPING)
-        x = get_binary_data(data.iloc[:, :-1], AGGREGATE_FEATURE_MAPPING)
+        data = get_splice_junction_processed_dataset('splice-junction-data.csv')
+        x, y = data.iloc[:, :-1], data.iloc[:, -1:]
         y = np.eye(3)[y.astype(int)].reshape([y.shape[0], 3])
         x, y = cast(x, dtype=float32), cast(y, dtype=float32)
-        functions = [self.functions[name] for name, _ in sorted(SJ_CLASS_MAPPING.items(), key=lambda i: i[1])]
+        functions = [self.functions[name] for name, _ in sorted(SpliceJunction.class_mapping.items(), key=lambda i: i[1])]
         result = stack([reshape(function(x, y), [x.shape[0], 1]) for function in functions], axis=1)
         # Per class errors using the provided knowledge
         #         IE    EI     N
@@ -81,7 +77,7 @@ class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
 
 class TestLukasiewiczOnPoker(unittest.TestCase):
     knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'poker.pl').formulae
-    fuzzifier = Fuzzifier.get('lukasiewicz')([POKER_CLASS_MAPPING, POKER_FEATURE_MAPPING])
+    fuzzifier = Fuzzifier.get('lukasiewicz')([Poker.class_mapping, Poker.feature_mapping])
     functions = fuzzifier.visit(knowledge)
     true = tile(reshape(constant(0.), [1, 1]), [1, 1])
     false = tile(reshape(constant(1.), [1, 1]), [1, 1])
@@ -203,10 +199,10 @@ class TestLukasiewiczOnPoker(unittest.TestCase):
         return result1, result2, result3, result4
 
     def test_on_dataset(self):
-        poker_training = get_dataset('poker', 'train')
-        functions = [self.functions[name] for name, _ in sorted(POKER_CLASS_MAPPING.items(), key=lambda i: i[1])]
-        train_x = poker_training[:, :-1]
-        train_y = poker_training[:, -1]
+        poker_training = get_dataset('poker-train.csv')
+        functions = [self.functions[name] for name, _ in sorted(Poker.class_mapping.items(), key=lambda i: i[1])]
+        train_x = poker_training.iloc[:, :-1]
+        train_y = poker_training.iloc[:, -1]
         train_y = np.eye(10)[train_y.astype(int)]
         x, y = cast(train_x, dtype=float32), cast(train_y, dtype=float32)
         result = stack([reshape(function(x, y), [x.shape[0], 1]) for function in functions], axis=1)

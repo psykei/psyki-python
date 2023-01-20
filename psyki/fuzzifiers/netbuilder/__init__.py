@@ -47,7 +47,7 @@ class NetBuilder(StructuringFuzzifier):
         self.predictor_input = predictor_input
         self.feature_mapping = feature_mapping
         self.classes: dict[str, Tensor] = {}
-        self._rhs: dict[str, Tensor] = {}
+        self.class_call: dict[str, Tensor] = {}
         self._trainable = False
 
     @staticmethod
@@ -56,7 +56,7 @@ class NetBuilder(StructuringFuzzifier):
 
     def _clear(self):
         self.classes = {}
-        self._rhs = {}
+        self.class_call = {}
         self.assignment_mapping = {}
         self.predicate_call_mapping = {}
         self._trainable = False
@@ -82,11 +82,11 @@ class NetBuilder(StructuringFuzzifier):
             if output_value is not None and output_value[0].islower():
                 if output_value not in self.classes.keys():
                     self.classes[output_value] = self._visit(rhs, local_mapping, substitutions)
-                    self._rhs[output_value] = self._visit(rhs, local_mapping, substitutions)
+                    self.class_call[output_value] = self._visit(rhs, local_mapping, substitutions)
                 else:
-                    incomplete_rule: Tensor = self._rhs[output_value]
+                    incomplete_rule: Tensor = self.class_call[output_value]
                     self.classes[output_value] = maximum(incomplete_rule, self._visit(rhs, local_mapping, substitutions))
-                    self._rhs[output_value] = maximum(incomplete_rule, self._visit(rhs, local_mapping, substitutions))
+                    self.class_call[output_value] = maximum(incomplete_rule, self._visit(rhs, local_mapping, substitutions))
         else:
             # All variables are considered not ground.
             not_grounded: list[Variable] = [arg for arg in lhs.args.unfolded if isinstance(arg, Variable)]

@@ -89,6 +89,7 @@ class DatalogFuzzifier(Fuzzifier, ABC):
     Map between the class and the object obtained by the corresponding classification rules.
     """
     classes: dict[str, Any] = {}
+    class_call: dict[str, Any] = {}
 
     def __init__(self):
         pass
@@ -169,10 +170,10 @@ class DatalogFuzzifier(Fuzzifier, ABC):
         # Check if you are using a classification/regression rule
         elif not isinstance(formula.args.last, Variable):
             output_value = str(formula.args.last)
-            if output_value in self.classes.keys():
+            if output_value in self.class_call.keys():
                 # Here local variables and substitutions are ignored.
                 # Only the class/value overall evaluation of the rule is considered.
-                return self.classes[output_value]
+                return self.class_call[output_value]
             else:
                 raise Exception("Rule " + formula.predicate + "for class/regression " + output_value + " not found")
         # Update mapping with constants
