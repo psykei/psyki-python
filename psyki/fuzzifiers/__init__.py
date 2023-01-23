@@ -229,5 +229,7 @@ class StructuringFuzzifier(DatalogFuzzifier, ABC):
     def visit(self, rules: List[Formula]) -> Any:
         super().visit(rules)
         for rule in rules:
-            self._visit(rule, {}, {})
+            new_rule = rule.copy()
+            new_rule.optimize()
+            self._visit(new_rule, {}, {})
         return list(self.classes.values())

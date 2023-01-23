@@ -126,11 +126,15 @@ class Towell(StructuringFuzzifier):
         def concat(layer):
             return Concatenate(axis=1)(layer)
 
-        lhs, lhs_w = self._visit(node.lhs, local_mapping, substitutions)
-        rhs, rhs_w = self._visit(node.rhs, local_mapping, substitutions)
-        previous_layer = [lhs, rhs]
-        w = [lhs_w, rhs_w]
         o = self.omega
+        if node.is_optimized:
+            children = [self._visit(child, local_mapping, substitutions) for child in node.unfolded_arguments]
+            previous_layer, w = [child[0] for child in children], [child[1] for child in children]
+        else:
+            lhs, lhs_w = self._visit(node.lhs, local_mapping, substitutions)
+            rhs, rhs_w = self._visit(node.rhs, local_mapping, substitutions)
+            previous_layer = [lhs, rhs]
+            w = [lhs_w, rhs_w]
         match node.op.symbol:
             case Disjunction.symbol:
                 return Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
@@ -185,7 +189,7 @@ class Towell(StructuringFuzzifier):
 
     def _visit_boolean(self, node: Boolean):
         return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(1. if node.is_true else 0.),
-                     trainable=True, activation='linear')(self.predictor_input), self.omega
+                     trainable=False, activation='linear')(self.predictor_input), self.omega
 
     def _visit_number(self, node: Number):
         return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(node.value),

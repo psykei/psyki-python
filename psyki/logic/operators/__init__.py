@@ -19,6 +19,7 @@ class LogicOperator(object):
     name: str
     symbol: str
     arity: int
+    is_optimizable: bool = False
     __metaclass__ = SingletonABCMeta
 
     def __repr__(self) -> str:
@@ -58,7 +59,12 @@ class LogicOperator(object):
             case Multiplication.symbol:
                 return Multiplication()
             case _:
-                return None  # raise Exception("Unexpected type")
+                return None
+                # raise Exception("Unexpected type")
+
+
+class Optimizable(ABC, LogicOperator):
+    is_optimizable: bool = True
 
 
 class BinaryOperator(ABC, LogicOperator):
@@ -73,22 +79,25 @@ class LogicNegation(UnaryOperator):
     name = "negation"
     symbol = r"\+"
 
+    @property
     def pretty_string(self) -> str:
         return self.symbol + ' '
 
 
-class Conjunction(BinaryOperator):
+class Conjunction(BinaryOperator, Optimizable):
     name = "conjunction"
     symbol = ","
 
+    @property
     def pretty_string(self) -> str:
         return self.symbol + ' '
 
 
-class Disjunction(BinaryOperator):
+class Disjunction(BinaryOperator, Optimizable):
     name = "disjunction"
     symbol = ";"
 
+    @property
     def pretty_string(self) -> str:
         return self.symbol + ' '
 
@@ -106,6 +115,7 @@ class Equal(BinaryOperator):
     name = "equal"
     symbol = "="
 
+    @property
     def pretty_string(self) -> str:
         return ' ' + self.symbol + ' '
 
@@ -114,6 +124,7 @@ class LessEqual(BinaryOperator):
     name = "less equal"
     symbol = "=<"
 
+    @property
     def pretty_string(self) -> str:
         return ' ' + self.symbol + ' '
 
@@ -122,6 +133,7 @@ class Less(BinaryOperator):
     name = "less"
     symbol = "<"
 
+    @property
     def pretty_string(self) -> str:
         return ' ' + self.symbol + ' '
 
@@ -130,6 +142,7 @@ class Greater(BinaryOperator):
     name = "greater"
     symbol = ">"
 
+    @property
     def pretty_string(self) -> str:
         return ' ' + self.symbol + ' '
 
@@ -138,21 +151,24 @@ class GreaterEqual(BinaryOperator):
     name = "greater equal"
     symbol = ">="
 
+    @property
     def pretty_string(self) -> str:
         return ' ' + self.symbol + ' '
 
 
-class Plus(BinaryOperator):
+class Plus(BinaryOperator, Optimizable):
     name = "plus"
     symbol = "+"
 
+    @property
     def pretty_string(self) -> str:
         return ' ' + self.symbol + ' '
 
 
-class Multiplication(BinaryOperator):
+class Multiplication(BinaryOperator, Optimizable):
     name = "multiplication"
     symbol = "*"
 
+    @property
     def pretty_string(self) -> str:
         return ' ' + self.symbol + ' '

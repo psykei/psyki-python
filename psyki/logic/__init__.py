@@ -78,6 +78,49 @@ class Formula(ABC):
     def __hash__(self):
         raise NotImplementedError()
 
+    def optimize(self):
+        optimize_formula(self)
+
+    @property
+    def is_optimized(self) -> bool:
+        return False
+
+
+def optimize_formula(formula: Formula) -> None:
+
+    def optimize_child(child, operator, father):
+        if isinstance(child, Expression):
+            if child.op.name == operator.name:
+                optimize_formula(child)
+                for clause in child.unfolded_arguments:
+                    father.unfolded_arguments.append(clause)
+                # if father.lhs == child:
+                #     father.lhs = None
+                # elif father.rhs == child:
+                #     father.rhs = None
+            else:
+                father.unfolded_arguments.append(child)
+        else:
+            father.unfolded_arguments.append(child)
+
+    if isinstance(formula, Expression):
+        lhs = formula.lhs
+        rhs = formula.rhs
+        op = formula.op
+        if op.is_optimizable and len(formula.unfolded_arguments) == 0:
+            optimize_child(lhs, op, formula)
+            optimize_child(rhs, op, formula)
+        else:
+            optimize_formula(lhs)
+            optimize_formula(rhs)
+    else:
+        if hasattr(formula, 'lhs'):
+            optimize_formula(formula.lhs)
+        if hasattr(formula, 'rhs'):
+            optimize_formula(formula.rhs)
+        if hasattr(formula, 'predicate'):
+            optimize_formula(formula.predicate)
+
 
 class DefinitionFormula(Formula):
     """
@@ -109,6 +152,10 @@ class DefinitionFormula(Formula):
     @property
     def arity(self) -> int:
         return self.lhs.arity
+
+    @property
+    def is_optimized(self) -> bool:
+        return self.rhs.is_optimized
 
     def remove_variable_assignment(self, variables: Iterable[Variable]) -> DefinitionFormula:
         """
@@ -171,13 +218,20 @@ class Expression(Clause):
     def __init__(self, lhs: Clause, rhs: Clause, op: operators.LogicOperator):
         self.lhs: Clause = lhs
         self.rhs: Clause = rhs
+        self.unfolded_arguments: list[Clause] = []
         self.op: operators.LogicOperator = op
 
     def __repr__(self) -> str:
-        return repr(self.lhs) + repr(self.op) + repr(self.rhs)
+        if len(self.unfolded_arguments) > 0:
+            return "'" + repr(self.op) + "'(" + ','.join(repr(arg) for arg in self.unfolded_arguments) + ")"
+        else:
+            return repr(self.lhs) + repr(self.op) + repr(self.rhs)
 
     def __str__(self) -> str:
-        return str(self.lhs) + self.op.pretty_string + str(self.rhs)
+        if len(self.unfolded_arguments) > 0:
+            return "'" + str(self.op) + "'(" + ','.join(str(arg) for arg in self.unfolded_arguments) + ")"
+        else:
+            return str(self.lhs) + self.op.pretty_string + str(self.rhs)
 
     def __eq__(self, other: Expression) -> bool:
         return self.lhs == other.lhs and self.rhs == other.rhs and self.op is other.op
@@ -189,6 +243,15 @@ class Expression(Clause):
         lhs = self.lhs.copy()
         rhs = self.rhs.copy()
         return Expression(lhs, rhs, self.op)
+
+    @property
+    def is_optimized(self) -> bool:
+        if self.op.is_optimizable and len(self.unfolded_arguments) > 0:
+            return True
+        elif self.lhs.is_optimized or self.rhs.is_optimized:
+            return True
+        else:
+            return False
 
     def remove_variable_assignment(self, variables: Iterable[Variable]) -> Clause:
         match self.op.symbol:
