@@ -13,7 +13,7 @@ PATH = Path(__file__).parents[0]
 class Injector(ABC):
     """
     An injectors allows a sub-symbolic predictor to exploit prior symbolic knowledge.
-    The knowledge is provided via symbolic representation (e.g., logic rules).
+    The knowledge is provided via symbolic representation (e.g., logic knowledge).
     Usually, after the injection, the predictor must be trained like in a standard ML workflow.
     """
     _predictor: Any  # Any class that has methods fit and predict
@@ -21,7 +21,7 @@ class Injector(ABC):
     @abstractmethod
     def inject(self, rules: List[Formula]) -> Any:
         """
-        @param rules: list of logic rules that represents the prior knowledge to be injected.
+        @param rules: list of logic knowledge that represents the prior knowledge to be injected.
         """
         pass
 

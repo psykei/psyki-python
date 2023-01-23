@@ -1,14 +1,10 @@
 from typing import List
-
 import numpy as np
 from numpy import argmax
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder
 from tensorflow import Tensor
 from tensorflow.keras import Model, Input
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.callbacks import Callback
-from test.resources.data import get_dataset
 from sklearn.metrics import f1_score
 
 
@@ -34,24 +30,6 @@ def create_standard_fully_connected_nn(input_size: int, output_size, layers: int
         x = Dense(neurons, activation=activation)(x)
     x = Dense(output_size, activation='softmax' if output_size > 1 else 'sigmoid')(x)
     return Model(inputs, x)
-
-
-def get_processed_dataset(name: str, validation: float = 1.0):
-    training = get_dataset(name, 'train')
-    testing = get_dataset(name, 'test')
-    if validation < 1:
-        _, testing = train_test_split(testing, test_size=validation, random_state=123, stratify=testing[:, -1])
-    train_x = training[:, :-1]
-    train_y = training[:, -1]
-    test_x = testing[:, :-1]
-    test_y = testing[:, -1]
-
-    # One Hot encode the class labels
-    encoder = OneHotEncoder(sparse=False)
-    encoder.fit_transform([train_y])
-    encoder.fit_transform([test_y])
-
-    return train_x, train_y, test_x, test_y
 
 
 def get_class_accuracy(predictor, x, y_expect) -> tuple[List[float], List[float]]:

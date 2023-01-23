@@ -5,7 +5,8 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Lambda
 from tensorflow.keras.utils import custom_object_scope
 from psyki.ski import Injector, EnrichedModel
-from psyki.logic import Formula, Fuzzifier
+from psyki.logic import Formula
+from psyki.fuzzifiers import Fuzzifier
 from psyki.utils import model_deep_copy
 
 
@@ -20,14 +21,16 @@ class LambdaLayer(Injector):
             - 'virginica': 1,
             - 'versicolor': 2.
         @param feature_mapping: a map between variables in the logic formulae and indices of dataset features. Example:
-            - 'PL': 0,
-            - 'PW': 1,
-            - 'SL': 2,
-            - 'SW': 3.
+            - 'PetalLength': 0,
+            - 'PetalWidth': 1,
+            - 'SepalLength': 2,
+            - 'SepalWidth': 3.
         @param fuzzifier: the fuzzifiers used to map the knowledge.
         """
         self._predictor: Model = model_deep_copy(predictor)
         self._class_mapping: dict[str, int] = class_mapping
+        self._fuzzifier_name = fuzzifier
+        self._feature_mapping = feature_mapping
         self._fuzzifier = Fuzzifier.get(fuzzifier)([class_mapping, feature_mapping])
         self._fuzzy_functions: Iterable[Callable] = ()
 
@@ -44,7 +47,7 @@ class LambdaLayer(Injector):
 
         def remove_constraints(self) -> Model:
             """
-            Remove the lambda layer obtained by the injected rules.
+            Remove the lambda layer obtained by the injected knowledge.
             """
             # Layer -3 is the layer before the lambda layer (last original layer -> lambda -> output).
             return Model(self.input, self.layers[-3].output)
@@ -61,6 +64,7 @@ class LambdaLayer(Injector):
             return y * (1 + cost)
 
     def inject(self, rules: List[Formula]) -> Model:
+        self._clear()
         dict_functions = self._fuzzifier.visit(rules)
         # To ensure that every function refers to the right class we check the associated class name.
         self._fuzzy_functions = [dict_functions[name] for name, _ in
@@ -70,4 +74,6 @@ class LambdaLayer(Injector):
                                      self._fuzzifier.custom_objects)
 
     def _clear(self):
-        self._fuzzy_functions = ()
+        self._predictor: Model = model_deep_copy(self._predictor)
+        self._fuzzy_functions = {}
+        self._fuzzifier = Fuzzifier.get(self._fuzzifier_name)([self._class_mapping, self._feature_mapping])

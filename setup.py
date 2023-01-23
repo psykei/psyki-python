@@ -60,24 +60,6 @@ class GetVersionCommand(distutils.cmd.Command):
         print(version)
 
 
-class GenerateAntlr4Parser(distutils.cmd.Command):
-    """A custom command to generate an Antlr4 parser class for a given grammar."""
-
-    description = 'generate the Antlr4 parser for a given grammar'
-    user_options = [('file=', 'f', 'grammar file name')]
-
-    def initialize_options(self):
-        from psyki.resources import PATH
-        self.file = str(PATH / 'Datalog.g4')
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        from psyki.utils import initialize_antlr4
-        initialize_antlr4(self.file)
-
-
 setup(
     name='psyki',  # Required
     version=version,
@@ -123,6 +105,5 @@ setup(
     },
     cmdclass={
         'get_project_version': GetVersionCommand,
-        'generate_antlr4_parser': GenerateAntlr4Parser,
     },
 )

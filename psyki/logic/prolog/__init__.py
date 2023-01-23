@@ -1,32 +1,76 @@
-from typing import List, Any
-import numpy as np
-import tuprolog.solve
-import tuprolog.theory.parsing
-from tuprolog.solve.prolog import prolog_solver
-from psyki.logic.prolog.grammar import PrologFormula
-from psyki.logic import Formula, Fuzzifier
+from tuprolog.core import Clause as PrologClause
+from psyki.logic import *
+from tuprolog.theory import Theory as PrologTheory, mutable_theory
+from tuprolog.theory.parsing import parse_theory
+from psyki.logic.operators import LogicOperator, Conjunction, LogicNegation
 
 
-# Not implemented yet
-class EnricherFuzzifier(Fuzzifier):
-
-    def __init__(self, knowledge_base_file: str, mapping=None):
-        self.engine = prolog_solver(static_kb=EnricherFuzzifier._parse_file(knowledge_base_file))
-        self.mapping = mapping
-
-    def visit(self, rules: List[Formula]) -> Any:
-        if all(isinstance(rule, PrologFormula) for rule in rules):
-            substitutions = [self.engine.solveOnce(query.theory) for index, query in enumerate(rules)]
-            results = [str(query.solved_query.get_arg_at(1)) if query.is_yes else -1 for query in substitutions]
-            processed_results = [float(result) if result.isnumeric() else self.mapping[result] for result in results]
-            return np.array(processed_results)
-        else:
-            raise Exception('Trying to visit a not Prolog Formula in a Prolog Fuzzifier')
+class TuProlog(TheoryAdapter):
+    """Adapter for 2ppy library: https://github.com/tuProlog/2ppy"""
 
     @staticmethod
-    def _parse_file(file: str):
-        knowledge_base: str = ''
-        with open(file, encoding="utf8") as f:
-            for row in f:
-                knowledge_base += row
-        return tuprolog.theory.parsing.parse_theory(knowledge_base)
+    def _from_file(filename: str) -> PrologTheory:
+        with open(filename, 'r', encoding="utf8") as file:
+            textual_rule = file.read()
+        return TuProlog._from_string(textual_rule)
+
+    @staticmethod
+    def _from_string(textual_theory: str) -> PrologTheory:
+        return parse_theory(textual_theory)
+
+    @staticmethod
+    def _visit_element(elem: Any) -> Any:
+        if isinstance(elem, list):
+            if len(elem) > 1:
+                return Expression(TuProlog._visit_element(elem[0]), TuProlog._visit_element(elem[1:]), Conjunction())
+            elif len(elem) == 1:
+                return TuProlog._visit_element(elem[0])
+            else:
+                raise Exception("Unexpected value")
+        elif elem.is_truth:
+            return Boolean(elem.is_true)
+        elif elem.is_var:
+            return Variable(str(elem.name))
+        elif elem.is_number:
+            return Number(str(float(elem.value)))
+        elif elem.is_constant:
+            return Predication(str(elem.functor))
+        elif elem.is_struct:
+            args: list[Any] = list(elem.args)
+            operator: LogicOperator = LogicOperator.from_symbol(elem.functor)
+            if operator is None:
+                return Nary(str(elem.functor), TuProlog._arg_from_list(list(elem.args)))
+            if operator.arity == 2:
+                return Expression(TuProlog._visit_element(args[0]), TuProlog._visit_element(args[1]), operator)
+            elif operator.symbol == LogicNegation.symbol:
+                return Negation(TuProlog._visit_element(args))
+            else:
+                raise Exception()
+        else:
+            raise Exception("Unexpected type")
+
+    @staticmethod
+    def _arg_from_list(args: list[Any]) -> Argument:
+        if len(args) > 0:
+            return Argument(TuProlog._visit_element(args[0]), TuProlog._arg_from_list(args[1:]))
+        else:
+            return None
+
+    @staticmethod
+    def _convert_clause(clause: PrologClause) -> Formula:
+        name: str = str(clause.head.functor)
+        args: Argument = TuProlog._arg_from_list(list(clause.head.args))
+        rhs: Clause = TuProlog._visit_element(clause.body)
+        return DefinitionFormula(DefinitionClause(name, args), rhs)
+
+    @staticmethod
+    def from_legacy_theory(legacy_theory: PrologTheory) -> Theory:
+        return Theory([TuProlog._convert_clause(clause) for clause in mutable_theory(legacy_theory).clauses])
+
+    @staticmethod
+    def from_file(filename: str) -> Theory:
+        return TuProlog.from_legacy_theory(TuProlog._from_file(filename))
+
+    @staticmethod
+    def from_string(textual_theory: str) -> Theory:
+        return TuProlog.from_legacy_theory(TuProlog._from_string(textual_theory))

@@ -6,16 +6,13 @@ from tensorflow.python.keras.optimizer_v1 import Optimizer
 from tensorflow.keras.layers import Dense
 import numpy as np
 import math
-
 from psyki.ski import EnrichedModel, Formula
-from psyki.qos.utils import split_dataset, get_injector, EarlyStopping
+from psyki.qos.utils import get_injector, EarlyStopping
 from psyki.qos import EnergyQoS, LatencyQoS, MemoryQoS
 
 
 class QoS:
-    def __init__(self,
-                 metric_arguments: dict,
-                 flags: dict):
+    def __init__(self, metric_arguments: dict, flags: dict):
         self.dataset = metric_arguments['dataset']
         # Get injection method from the metric arguments
         self.injection = metric_arguments['injection']
@@ -46,14 +43,11 @@ class QoS:
                 if self.track_memory:
                     max_neurons_width = metric_arguments['max_neurons_width']
                     grid_levels = metric_arguments['grid_levels']
-                    neurons_grid = get_grid_neurons(max_neurons=max_neurons_width,
-                                                    grid_levels=grid_levels)
+                    neurons_grid = get_grid_neurons(max_neurons=max_neurons_width, grid_levels=grid_levels)
                     print('neurons_grid: {}'.format(neurons_grid))
 
-                    self.bare_model_dict['memory'] = self.search_in_grid(neurons_grid=neurons_grid,
-                                                                         inject=False)
-                    self.injected_model_dict['memory'] = self.search_in_grid(neurons_grid=neurons_grid,
-                                                                             inject=True)
+                    self.bare_model_dict['memory'] = self.search_in_grid(neurons_grid=neurons_grid, inject=False)
+                    self.injected_model_dict['memory'] = self.search_in_grid(neurons_grid=neurons_grid, inject=True)
 
                 if self.track_latency:
                     max_layers = metric_arguments['max_layers']
@@ -64,10 +58,8 @@ class QoS:
                                                   grid_levels=grid_levels)
                     print('layers_grid: {}'.format(layers_grid))
 
-                    self.bare_model_dict['latency'] = self.search_in_grid(neurons_grid=layers_grid,
-                                                                          inject=False)
-                    self.injected_model_dict['latency'] = self.search_in_grid(neurons_grid=layers_grid,
-                                                                              inject=True)
+                    self.bare_model_dict['latency'] = self.search_in_grid(neurons_grid=layers_grid, inject=False)
+                    self.injected_model_dict['latency'] = self.search_in_grid(neurons_grid=layers_grid, inject=True)
 
                 if self.track_energy:  # focus on depth -> same as latency
                     max_layers = metric_arguments['max_layers']
@@ -77,10 +69,8 @@ class QoS:
                                                   grid_levels=grid_levels)
                     print('layers_grid: {}'.format(layers_grid))
 
-                    self.bare_model_dict['energy'] = self.search_in_grid(neurons_grid=layers_grid,
-                                                                         inject=False)
-                    self.injected_model_dict['energy'] = self.search_in_grid(neurons_grid=layers_grid,
-                                                                             inject=True)
+                    self.bare_model_dict['energy'] = self.search_in_grid(neurons_grid=layers_grid, inject=False)
+                    self.injected_model_dict['energy'] = self.search_in_grid(neurons_grid=layers_grid, inject=True)
             except AttributeError:
                 raise ValueError('If setting the grid_search flag in QoS class, '
                                  'the training settings must be passed to the QoS class amongst its metric_arguments.')
@@ -280,8 +270,7 @@ def build_and_train_model(neurons: list[int],
                       loss=loss,
                       metrics=metrics)
     # Train the model
-    callbacks = EarlyStopping(threshold=threshold,
-                              verbose=False)
+    callbacks = EarlyStopping(threshold=threshold, verbose=False)
     history = model.fit(dataset['train_x'],
                         dataset['train_y'],
                         epochs=epochs,
