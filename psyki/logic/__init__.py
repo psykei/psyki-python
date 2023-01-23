@@ -254,16 +254,15 @@ class Expression(Clause):
             return False
 
     def remove_variable_assignment(self, variables: Iterable[Variable]) -> Clause:
-        match self.op.symbol:
-            case operators.Assignment.symbol:
-                assert isinstance(self.lhs, Variable)
-                if self.lhs in variables:
-                    return Boolean(True)
-                else:
-                    return Expression(self.lhs.copy(), self.rhs.copy(), operators.Equal())
-            case _:
-                return Expression(self.lhs.remove_variable_assignment(variables),
-                                  self.rhs.remove_variable_assignment(variables), self.op)
+        if self.op.symbol == operators.Assignment.symbol:
+            assert isinstance(self.lhs, Variable)
+            if self.lhs in variables:
+                return Boolean(True)
+            else:
+                return Expression(self.lhs.copy(), self.rhs.copy(), operators.Equal())
+        else:
+            return Expression(self.lhs.remove_variable_assignment(variables),
+                              self.rhs.remove_variable_assignment(variables), self.op)
 
     def get_substitution(self, variable: Variable) -> Formula:
         if isinstance(self.lhs, Variable) and self.lhs == variable and self.op.symbol == operators.Assignment.symbol:

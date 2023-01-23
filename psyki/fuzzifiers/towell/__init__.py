@@ -29,7 +29,7 @@ class Towell(StructuringFuzzifier):
         self.feature_mapping = feature_mapping
         self.omega = omega
         self.classes: dict[str, Tensor] = {}
-        self.class_call: dict[str, list[Tensor]] = {}
+        self.class_call: dict[str, Tensor] = {}
         self._class_calls: dict[str, list[Tensor]] = {}
         self._trainable = False
 
@@ -127,7 +127,7 @@ class Towell(StructuringFuzzifier):
             return Concatenate(axis=1)(layer)
 
         o = self.omega
-        if node.is_optimized:
+        if node.is_optimized and node.op.is_optimizable:
             children = [self._visit(child, local_mapping, substitutions) for child in node.unfolded_arguments]
             previous_layer, w = [child[0] for child in children], [child[1] for child in children]
         else:
@@ -135,18 +135,21 @@ class Towell(StructuringFuzzifier):
             rhs, rhs_w = self._visit(node.rhs, local_mapping, substitutions)
             previous_layer = [lhs, rhs]
             w = [lhs_w, rhs_w]
-        match node.op.symbol:
-            case Disjunction.symbol:
-                return Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
-                                          bias_initializer=constant_initializer(0.5 * o))(concat(previous_layer)), o
-            case Conjunction.symbol:
-                return Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
-                                          bias_initializer=self._compute_bias(w))(concat(previous_layer)), o
-            case Equal.symbol:
-                return Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
-                             activation=eta_one_abs)(concat(previous_layer)), o
-            case _:
-                raise Exception("Unexpected symbol " + node.op.symbol)
+        cases = [
+            (Disjunction.symbol, Towell.CustomDense(kernel_initializer=constant_initializer(w),
+                                                    trainable=self._trainable,
+                                                    bias_initializer=constant_initializer(0.5 * o))),
+            (Conjunction.symbol, Towell.CustomDense(kernel_initializer=constant_initializer(w),
+                                                    trainable=self._trainable, bias_initializer=self._compute_bias(w))),
+            (Equal.symbol, Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
+                                 activation=eta_one_abs)),
+            (node.op.symbol, None)
+        ]
+        matched = match_case(node.op.symbol, cases)
+        if matched is not None:
+            return matched(concat(previous_layer)), o
+        else:
+            raise Exception("Unexpected symbol " + node.op.symbol)
 
     def _assign_variables(self, mappings, local_mapping, substitutions) -> Any:
         sub_copy = substitutions
@@ -199,7 +202,7 @@ class Towell(StructuringFuzzifier):
         """
         @return the corresponding antecedent network and the omega weight
         """
-        return self._predicates[node.predicate][1]({}), self.omega
+        return self.predicate_call_mapping[node.predicate][1]({}), self.omega
 
     def _visit_negation(self, node: Negation, local_mapping, substitutions) -> tuple[any, float]:
         """
@@ -211,11 +214,10 @@ class Towell(StructuringFuzzifier):
     def _visit_nary(self, formula: Nary, local_mapping, substitutions):
         # Handle special predicates
         if formula.predicate in self.special_predicates:
-            match formula.predicate:
-                case 'm_of_n':
-                    return self._visit_m_of_n(formula, local_mapping, substitutions)
-                case _:
-                    raise Exception('Unexpected special predicate')
+            if formula.predicate == 'm_of_n':
+                return self._visit_m_of_n(formula, local_mapping, substitutions)
+            else:
+                raise Exception('Unexpected special predicate')
         else:
             return super(Towell, self)._visit_nary(formula, local_mapping, substitutions), self.omega
 

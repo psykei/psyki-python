@@ -1,10 +1,13 @@
 from __future__ import annotations
+
+import types
 from typing import List, Callable
 from tensorflow.python.keras import Model
 from psyki import logic
 from psyki.logic import *
 from pathlib import Path
 
+from psyki.utils import match_case
 
 PATH = Path(__file__).parents[0]
 
@@ -28,15 +31,14 @@ class Fuzzifier(ABC):
         from psyki.fuzzifiers.lukasciewicz import Lukasiewicz
         from psyki.fuzzifiers.towell import Towell
 
-        match name:
-            case Lukasiewicz.name:
-                return lambda x: Lukasiewicz(*x)
-            case NetBuilder.name:
-                return lambda x: NetBuilder(*x)
-            case Towell.name:
-                return lambda x: Towell(*x)
-            case _:
-                raise Exception('Fuzzifier ' + name + ' is not defined')
+        if name == Lukasiewicz.name:
+            return lambda x: Lukasiewicz(*x)
+        elif name == NetBuilder.name:
+            return lambda x: NetBuilder(*x)
+        elif name == Towell.name:
+            return lambda x: Towell(*x)
+        else:
+            raise Exception('Fuzzifier ' + name + ' is not defined')
 
     @staticmethod
     def enriched_model(model: Model) -> Model:
@@ -98,25 +100,25 @@ class DatalogFuzzifier(Fuzzifier, ABC):
         self._clear()
 
     def _visit(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
-        match type(formula):
-            case logic.DefinitionFormula:
-                return self._visit_formula(formula, local_mapping, substitutions)
-            case logic.Expression:
-                return self._visit_expression(formula, local_mapping, substitutions)
-            case logic.Negation:
-                return self._visit_negation(formula, local_mapping, substitutions)
-            case logic.Variable:
-                return self._visit_variable(formula, local_mapping, substitutions)
-            case logic.Boolean:
-                return self._visit_boolean(formula)
-            case logic.Number:
-                return self._visit_number(formula)
-            case logic.Unary:
-                return self._visit_unary(formula)
-            case logic.Nary:
-                return self._visit_nary(formula, local_mapping, substitutions)
-            case _:
-                raise Exception('Unexpected formula')
+        cases = [
+            (logic.DefinitionFormula, self._visit_formula),
+            (logic.Expression, self._visit_expression),
+            (logic.Negation, self._visit_negation),
+            (logic.Variable, self._visit_variable),
+            (logic.Boolean, self._visit_boolean),
+            (logic.Number, self._visit_number),
+            (logic.Unary, self._visit_unary),
+            (logic.Nary, self._visit_nary),
+            (type(formula), None)
+        ]
+        matched = match_case(type(formula), cases)
+        if matched is not None:
+            if type(formula) in (logic.Boolean, logic.Number, logic.Unary):
+                return matched(formula)
+            else:
+                return matched(formula, local_mapping, substitutions)
+        else:
+            raise Exception('Unexpected formula')
 
     @abstractmethod
     def _visit_formula(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:

@@ -117,27 +117,23 @@ class Lukasiewicz(ConstrainingFuzzifier):
             else:
                 local_mapping[node.lhs] = node.rhs
         l, r = self._visit(node.lhs, local_mapping, substitutions), self._visit(node.rhs, local_mapping, substitutions)
-        match node.op.symbol:
-            case Conjunction.symbol:
-                return lambda x: eta(maximum(l(x), r(x)))
-            case Disjunction.symbol:
-                return lambda x: eta(minimum(l(x), r(x)))
-            case Equal.symbol:
-                return lambda x: eta(abs(l(x) - r(x)))
-            case Less.symbol:
-                return lambda x: eta(constant(.5) + l(x) - r(x))
-            case LessEqual.symbol:
-                return lambda x: eta(l(x) - r(x))
-            case Greater.symbol:
-                return lambda x: eta(constant(.5) - l(x) + r(x))
-            case GreaterEqual.symbol:
-                return lambda x: eta(r(x) - l(x))
-            case Plus.symbol:
-                return lambda x: l(x) + r(x)
-            case Multiplication.symbol:
-                return lambda x: l(x) * r(x)
-            case _:
-                raise Exception("Unexpected symbol")
+        cases = [
+            (Conjunction.symbol, lambda x: eta(maximum(l(x), r(x)))),
+            (Disjunction.symbol, lambda x: eta(minimum(l(x), r(x)))),
+            (Equal.symbol, lambda x: eta(abs(l(x) - r(x)))),
+            (Less.symbol, lambda x: eta(constant(.5) + l(x) - r(x))),
+            (LessEqual.symbol, lambda x: eta(l(x) - r(x))),
+            (Greater.symbol, lambda x: eta(constant(.5) + l(x) - r(x))),
+            (GreaterEqual.symbol, lambda x: eta(r(x) - l(x))),
+            (Plus.symbol, lambda x: l(x) + r(x)),
+            (Multiplication.symbol, lambda x: l(x) * r(x)),
+            (node.op.symbol, None)
+        ]
+        matched = match_case(node.op.symbol, cases)
+        if matched is not None:
+            return matched
+        else:
+            raise Exception("Unexpected symbol")
 
     def _assign_variables(self, mappings, local_mapping, substitutions) -> Any:
         subs: dict[Variable, tuple[list[Clause], list[Clause]]] = {}

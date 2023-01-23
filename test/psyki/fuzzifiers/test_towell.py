@@ -22,7 +22,6 @@ class TestTowellOnSpliceJunction(unittest.TestCase):
         predict_ei = Model(self.inputs, self.modules[0])
         result_ei = predict_ei.predict(self.data.iloc[:, :-1]).astype(bool)[:, -1]
         predict_n = Model(self.inputs, self.modules[2])
-        # result_n = (~ result_ei) & (~ result_ie)
         result_n = predict_n.predict(self.data.iloc[:, :-1]).astype(bool)[:, -1]
         self.assertEqual([sum(result_ie), sum(result_ei), sum(result_n)], [3190, 3190, 3190])
 

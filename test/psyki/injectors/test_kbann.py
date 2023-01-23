@@ -1,5 +1,4 @@
 import unittest
-
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -16,7 +15,7 @@ from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 class TestKinsOnSpliceJunction(unittest.TestCase):
     epochs = 100
     batch_size = 32
-    verbose = 1
+    verbose = 0
     acceptable_accuracy = 0.9
     knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
     trainable = ['intron_exon', 'exon_intron', 'pyramidine_rich', 'class']
@@ -43,9 +42,7 @@ class TestKinsOnSpliceJunction(unittest.TestCase):
         new_predictor.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
         callbacks = Conditions(train_x, y)
         # Train
-        new_predictor.summary()
         new_predictor.fit(train_x, train_y, epochs=self.epochs, batch_size=self.batch_size, verbose=self.verbose, callbacks=callbacks)
-        pred_y = new_predictor.predict(test_x)
         _, accuracy = new_predictor.evaluate(test_x, test_y, verbose=self.verbose)
         self.assertTrue(accuracy > self.acceptable_accuracy)
 

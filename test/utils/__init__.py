@@ -26,24 +26,6 @@ def get_mlp(input_layer: Tensor, output: int, layers: int, neurons: int or list[
     return Dense(output, activation=last_activation_function)(x)
 
 
-def get_processed_dataset(name: str, validation: float = 1.0):
-    training = get_dataset(name, 'train')
-    testing = get_dataset(name, 'test')
-    if validation < 1:
-        _, testing = train_test_split(testing, test_size=validation, random_state=123, stratify=testing[:, -1])
-    train_x = training[:, :-1]
-    train_y = training[:, -1]
-    test_x = testing[:, :-1]
-    test_y = testing[:, -1]
-
-    # One Hot encode the class labels
-    encoder = OneHotEncoder(sparse=False)
-    encoder.fit_transform([train_y])
-    encoder.fit_transform([test_y])
-
-    return train_x, train_y, test_x, test_y
-
-
 def get_class_accuracy(predictor, x, y_expect) -> tuple[List[float], List[float]]:
     from collections import Counter
     y_pred = argmax(predictor.predict(x), axis=1)

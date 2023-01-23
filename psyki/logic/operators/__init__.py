@@ -2,6 +2,7 @@ from __future__ import annotations
 from abc import abstractmethod, ABCMeta, ABC
 from pathlib import Path
 
+from psyki.utils import match_case
 
 PATH = Path(__file__).parents[0]
 
@@ -35,32 +36,22 @@ class LogicOperator(object):
 
     @staticmethod
     def from_symbol(symbol: str) -> LogicOperator:
-        match symbol:
-            case LogicNegation.symbol:
-                return LogicNegation()
-            case Conjunction.symbol:
-                return Conjunction()
-            case Disjunction.symbol:
-                return Disjunction()
-            case Assignment.symbol:
-                return Assignment()
-            case Equal.symbol:
-                return Equal()
-            case Greater.symbol:
-                return Greater()
-            case Less.symbol:
-                return Less()
-            case GreaterEqual.symbol:
-                return GreaterEqual()
-            case LessEqual.symbol:
-                return LessEqual()
-            case Plus.symbol:
-                return Plus()
-            case Multiplication.symbol:
-                return Multiplication()
-            case _:
-                return None
-                # raise Exception("Unexpected type")
+        cases = [
+            (LogicNegation.symbol, LogicNegation),
+            (Conjunction.symbol, Conjunction),
+            (Disjunction.symbol, Disjunction),
+            (Assignment.symbol, Assignment),
+            (Equal.symbol, Equal),
+            (GreaterEqual.symbol, GreaterEqual),
+            (Greater.symbol, Greater),
+            (LessEqual.symbol, LessEqual),
+            (Less.symbol, Less),
+            (Plus.symbol, Plus),
+            (Multiplication.symbol, Multiplication),
+            (symbol, None)
+        ]
+        matched = match_case(symbol, cases)
+        return matched() if matched is not None else None
 
 
 class Optimizable(ABC, LogicOperator):

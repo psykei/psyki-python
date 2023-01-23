@@ -140,33 +140,36 @@ class NetBuilder(StructuringFuzzifier):
                 node.op = Equal()
             else:
                 local_mapping[node.lhs] = node.rhs
-        layer = [self._visit(node.lhs, local_mapping, substitutions), self._visit(node.rhs, local_mapping, substitutions)]
-        match node.op.symbol:
-            case Conjunction.symbol:
-                return Minimum()(layer)
-            case Disjunction.symbol:
-                return Maximum()(layer)
-            case Plus.symbol:
-                return Dense(1, kernel_initializer=Ones, activation='linear', trainable=self._trainable)(concat(layer))
-            case Equal.symbol:
-                return Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
-                             activation=eta_one_abs)(concat(layer))
-            case Less.symbol:
-                return Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
-                             bias_initializer=constant_initializer([0.5]), activation=eta)(concat(layer))
-            case LessEqual.symbol:
-                return Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
-                             bias_initializer=constant_initializer([1.]), activation=eta)(concat(layer))
-            case Greater.symbol:
-                return Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
-                             bias_initializer=constant_initializer([0.5]), activation=eta)(concat(layer))
-            case GreaterEqual.symbol:
-                return Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
-                             bias_initializer=constant_initializer([1.]), activation=eta)(concat(layer))
-            case Multiplication.symbol:
-                return Dot(axes=1)(layer)
-            case _:
-                raise Exception("Unexpected symbol")
+        if node.is_optimized and node.op.is_optimizable:
+            layer = [self._visit(child, local_mapping, substitutions) for child in node.unfolded_arguments]
+        else:
+            layer = [self._visit(node.lhs, local_mapping, substitutions), self._visit(node.rhs, local_mapping, substitutions)]
+        cases = [
+            (Conjunction.symbol, Minimum()),
+            (Disjunction.symbol, Maximum()),
+            (Plus.symbol, Dense(1, kernel_initializer=Ones, activation='linear', trainable=self._trainable)),
+            (Equal.symbol, Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
+                                 activation=eta_one_abs)),
+            (Less.symbol, Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
+                                bias_initializer=constant_initializer([0.5]), activation=eta)),
+            (LessEqual.symbol, Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
+                                     bias_initializer=constant_initializer([1.]), activation=eta)),
+            (Greater.symbol, Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
+                                   bias_initializer=constant_initializer([0.5]), activation=eta)),
+            (GreaterEqual.symbol, Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
+                                        bias_initializer=constant_initializer([1.]), activation=eta)),
+            (Multiplication.symbol, Dot(axes=1)),
+            (node.op.symbol, None)
+        ]
+        matched = match_case(node.op.symbol, cases)
+        if node.op.symbol in (Conjunction.symbol, Disjunction.symbol, Multiplication.symbol):
+            previous_layer = layer
+        else:
+            previous_layer = concat(layer)
+        if matched is not None:
+            return matched(previous_layer)
+        else:
+            raise Exception("Unexpected symbol")
 
     def _visit_variable(self, node: Variable, local_mapping, substitutions):
         if node in substitutions.keys():
