@@ -9,7 +9,7 @@ from tensorflow.python.ops.init_ops import constant_initializer, Constant, Zeros
 from psyki.fuzzifiers import StructuringFuzzifier
 from psyki.logic.operators import *
 from psyki.ski import EnrichedModel
-from psyki.utils import eta_one_abs
+from psyki.utils import eta_one_abs, eta
 from tensorflow.python.ops.array_ops import gather, transpose, squeeze
 
 
@@ -20,7 +20,7 @@ class Towell(StructuringFuzzifier):
     The equality operator should be used only as a syntactic sugar to deal directly with categorical features.
     """
     name = 'towell'
-    custom_objects: dict[str: Callable] = {'eta_one_abs': eta_one_abs}
+    custom_objects: dict[str: Callable] = {'eta_one_abs': eta_one_abs, 'eta': eta}
     special_predicates: list[str] = ["m_of_n"]
 
     def __init__(self, predictor_input: Tensor, feature_mapping: dict[str, int], omega: float = 4):
@@ -143,6 +143,14 @@ class Towell(StructuringFuzzifier):
                                                     trainable=self._trainable, bias_initializer=self._compute_bias(w))),
             (Equal.symbol, Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
                                  activation=eta_one_abs)),
+            (Less.symbol, Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
+                                bias_initializer=constant_initializer([0.5]), activation=eta)),
+            (LessEqual.symbol, Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
+                                     bias_initializer=constant_initializer([1.]), activation=eta)),
+            (Greater.symbol, Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
+                                   bias_initializer=constant_initializer([0.5]), activation=eta)),
+            (GreaterEqual.symbol, Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
+                                        bias_initializer=constant_initializer([1.]), activation=eta)),
             (node.op.symbol, None)
         ]
         matched = match_case(node.op.symbol, cases)
@@ -195,6 +203,9 @@ class Towell(StructuringFuzzifier):
                      trainable=False, activation='linear')(self.predictor_input), self.omega
 
     def _visit_number(self, node: Number):
+        # This fuzzifier deals only with integers that represent categorical features values.
+        # It cannot operate real numbers!
+        assert node.value.is_integer()
         return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(node.value),
                      trainable=False, activation='linear')(self.predictor_input), self.omega
 

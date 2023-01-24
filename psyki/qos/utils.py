@@ -4,7 +4,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.losses import Loss
 from tensorflow.python.keras.optimizer_v1 import Optimizer
 import tensorflow as tf
-from sklearn.model_selection import train_test_split
+from tensorflow.keras.callbacks import Callback
 from tensorflow.python.platform.gfile import GFile
 from psyki.ski import Injector, EnrichedModel
 
@@ -43,14 +43,6 @@ def measure_predict_with_tracker(models_list: list[Union[Model, EnrichedModel]],
     return tracked_values
 
 
-def split_dataset(dataset) -> tuple:
-    # Split dataset into train and test
-    train, test = train_test_split(dataset, test_size=0.3, random_state=0)
-    train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1]
-    test_x, test_y = test.iloc[:, :-1], test.iloc[:, -1]
-    return train_x, train_y, test_x, test_y
-
-
 def load_protobuf(file: str) -> tf.Graph:
     # Open the protobuf file
     with GFile(file, "rb") as f:
@@ -70,12 +62,8 @@ def get_injector(choice: str) -> Callable:
     return injectors[choice]
 
 
-class EarlyStopping(tf.keras.callbacks.Callback):
-    def __init__(self,
-                 threshold: float,
-                 patience: int = 1,
-                 model_name: str = '',
-                 verbose: bool = False):
+class EarlyStopping(Callback):
+    def __init__(self, threshold: float, patience: int = 1, model_name: str = '', verbose: bool = False):
         self.threshold = threshold
         self.patience = patience
         self.model_name = model_name

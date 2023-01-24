@@ -2,7 +2,7 @@ import unittest
 from psyki.logic.prolog import TuProlog
 from psyki.qos import QoS
 import numpy as np
-from psyki.qos.utils import split_dataset
+from test.psyki.qos import split_dataset
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 from test.resources.data import get_splice_junction_processed_dataset, SpliceJunction
 from test.utils import create_standard_fully_connected_nn
@@ -11,11 +11,10 @@ from test.utils import create_standard_fully_connected_nn
 class TestQoSKins(unittest.TestCase):
     formulae = TuProlog.from_file(str(KNOWLEDGE_PATH / 'splice-junction.pl')).formulae
     dataset = get_splice_junction_processed_dataset('splice-junction-data.csv')
-    train_x, train_y, test_x, test_y = split_dataset(dataset=dataset)
-    dataset_split = {'train_x': train_x, 'train_y': train_y, 'test_x': test_x, 'test_y': test_y}
+    dataset_split = split_dataset(dataset)
     # Get input and output size depending on the dataset
-    input_size = train_x.shape[-1]
-    output_size = np.max(train_y) + 1
+    input_size = dataset_split["train_x"].shape[-1]
+    output_size = np.max(dataset_split["train_y"]) + 1
 
     model = create_standard_fully_connected_nn(input_size=input_size, output_size=output_size, layers=3, neurons=128,
                                                activation='relu')
@@ -23,7 +22,7 @@ class TestQoSKins(unittest.TestCase):
     variable_mapping = SpliceJunction.feature_mapping
     injector_arguments = {'feature_mapping': variable_mapping, 'injection_layer': len(model.layers) - 2}
 
-    def do_not_test_qos(self):
+    def test_qos(self):
         metric_arguments = dict(model=self.model, injection=self.injector, injector_arguments=self.injector_arguments,
                                 formulae=self.formulae, optim='adam', loss='sparse_categorical_crossentropy', batch=16,
                                 epochs=10, metrics=['accuracy'], dataset=self.dataset_split, threshold=0.9, alpha=0.8)
@@ -43,11 +42,10 @@ class TestQoSKins(unittest.TestCase):
 class TestQoSKbann(unittest.TestCase):
     formulae = TuProlog.from_file(str(KNOWLEDGE_PATH / 'splice-junction.pl')).formulae
     dataset = get_splice_junction_processed_dataset('splice-junction-data.csv')
-    train_x, train_y, test_x, test_y = split_dataset(dataset=dataset)
-    dataset_split = {'train_x': train_x, 'train_y': train_y, 'test_x': test_x, 'test_y': test_y}
+    dataset_split = split_dataset(dataset=dataset)
     # Get input and output size depending on the dataset
-    input_size = train_x.shape[-1]
-    output_size = np.max(train_y) + 1
+    input_size = dataset_split["train_x"].shape[-1]
+    output_size = np.max(dataset_split["train_y"]) + 1
     model = create_standard_fully_connected_nn(input_size=input_size, output_size=output_size, layers=3, neurons=128,
                                                activation='relu')
     injector = 'kbann'

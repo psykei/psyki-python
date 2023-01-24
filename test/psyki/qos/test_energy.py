@@ -1,6 +1,8 @@
 import unittest
 from sklearn.datasets import load_iris
 from sklearn.preprocessing import OneHotEncoder
+
+from test.psyki.qos import split_dataset
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 from psyki.logic.prolog import TuProlog
 from psyki.qos.energy import EnergyQoS
@@ -14,6 +16,7 @@ class TestEnergyOnIris(unittest.TestCase):
     encoder.fit_transform([y])
     x.columns = list(Iris.feature_mapping.keys())
     dataset = x.join(y)
+    dataset = split_dataset(dataset)
     model = create_standard_fully_connected_nn(input_size=4, output_size=3, layers=3, neurons=128, activation='relu')
     injector = 'kins'
     class_mapping = Iris.class_mapping
@@ -21,7 +24,7 @@ class TestEnergyOnIris(unittest.TestCase):
     injector_arguments = {'feature_mapping': variable_mapping, 'injection_layer': len(model.layers) - 2}
     formulae = TuProlog.from_file(str(KNOWLEDGE_PATH / 'iris.pl')).formulae
 
-    def do_not_test_energy_fit(self):
+    def test_energy_fit(self):
         print('TEST ENERGY FIT WITH {} ON IRIS'.format(self.injector.upper()))
         options = dict(injector=self.injector, optim='adam', loss='sparse_categorical_crossentropy', epochs=300,
                        batch=16, dataset=self.dataset, threshold=0.97, metrics=['accuracy'], formula=self.formulae,
@@ -35,13 +38,14 @@ class TestEnergyOnIris(unittest.TestCase):
 class TestEnergyOnSplice(unittest.TestCase):
     formulae = TuProlog.from_file(str(KNOWLEDGE_PATH / 'splice-junction.pl')).formulae
     dataset = get_splice_junction_processed_dataset('splice-junction-data.csv')
+    dataset = split_dataset(dataset)
 
     model = create_standard_fully_connected_nn(input_size=4 * 60, output_size=3, layers=3, neurons=128,
                                                activation='relu')
     injector = 'kins'
     injector_arguments = {'feature_mapping': SpliceJunction.feature_mapping, 'injection_layer': len(model.layers) - 2}
 
-    def do_not_test_energy_fit(self):
+    def test_energy_fit(self):
         print('TEST ENERGY FIT WITH {} ON SPLICE JUNCTION'.format(self.injector.upper()))
         options = dict(injector=self.injector, optim='adam', loss='sparse_categorical_crossentropy', epochs=1,
                        batch=16, dataset=self.dataset, threshold=0.97, metrics=['accuracy'], formula=self.formulae,

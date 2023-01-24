@@ -9,15 +9,9 @@ from psyki.qos.base import BaseQoS
 
 
 class EnergyQoS(BaseQoS):
-    def __init__(self,
-                 model: Union[Model, EnrichedModel],
-                 injection: Union[str, Union[Model, EnrichedModel]],
-                 options: dict,
-                 injector_arguments: dict = {},
-                 formulae: list[Formula] = []):
-        super(EnergyQoS, self).__init__(model=model,
-                                        injection=injection,
-                                        injector_arguments=injector_arguments,
+    def __init__(self, model: Union[Model, EnrichedModel], injection: Union[str, Union[Model, EnrichedModel]],
+                 options: dict, injector_arguments: dict = {}, formulae: list[Formula] = []):
+        super(EnergyQoS, self).__init__(model=model, injection=injection, injector_arguments=injector_arguments,
                                         formulae=formulae)
         # Read options from dictionary
         self.optimiser = options['optim']
@@ -33,14 +27,9 @@ class EnergyQoS(BaseQoS):
         if verbose:
             print('Calculating energy spent for model training. This can take a while as model.fit needs to run...')
         energy_train = measure_fit_with_tracker(models_list=[self.bare_model, self.inj_model],
-                                                names=['bare', 'injected'],
-                                                optimiser=self.optimiser,
-                                                loss=self.loss,
-                                                epochs=self.epochs,
-                                                batch_size=self.batch_size,
-                                                dataset=self.dataset,
-                                                threshold=self.threshold,
-                                                metrics=self.metrics,
+                                                names=['bare', 'injected'], optimiser=self.optimiser, loss=self.loss,
+                                                epochs=self.epochs, batch_size=self.batch_size, dataset=self.dataset,
+                                                threshold=self.threshold, metrics=self.metrics,
                                                 tracker_class=EnergyTracker)
         if verbose:
             print('The injected model is {:.5f} Wh {} energy consuming during training'.format(

@@ -236,9 +236,7 @@ def create_nn(neurons: list[int],
     # Compile the keras model or the enriched model
     if compile_it:
         assert compile_it
-        built_model.compile(optimiser,
-                            loss=loss,
-                            metrics=metrics)
+        built_model.compile(optimiser, loss=loss, metrics=metrics)
     return built_model
 
 

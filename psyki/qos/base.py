@@ -3,7 +3,8 @@ from typing import Union
 from tensorflow.keras import Model
 
 from psyki.ski import EnrichedModel, Formula
-from psyki.qos.utils import split_dataset, get_injector, EarlyStopping
+from psyki.qos.utils import get_injector, EarlyStopping
+from test.psyki.qos import split_dataset
 
 
 class BaseQoS:

@@ -12,7 +12,7 @@ from test.utils import get_mlp, Conditions
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 
 
-class TestKinsOnSpliceJunction(unittest.TestCase):
+class TestKbannOnSpliceJunction(unittest.TestCase):
     epochs = 100
     batch_size = 32
     verbose = 0
