@@ -2,10 +2,10 @@ from __future__ import annotations
 import math
 from typing import Union
 import numpy as np
-from tensorflow.python.keras import Model, Input
-from tensorflow.python.keras.layers import Dense
-from tensorflow.python.keras.losses import Loss
-from tensorflow.python.keras.optimizer_v1 import Optimizer
+from tensorflow.keras import Model, Input
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.losses import Loss
+from tensorflow.keras.optimizers import Optimizer
 from psyki.logic import Formula
 from psyki.qos.energy import EnergyQoS
 from psyki.qos.latency import LatencyQoS
