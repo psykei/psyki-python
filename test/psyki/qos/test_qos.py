@@ -52,10 +52,10 @@ class TestQoSKbann(unittest.TestCase):
     variable_mapping = SpliceJunction.feature_mapping
     injector_arguments = {'feature_mapping': variable_mapping}
 
-    def do_not_test_qos(self):
+    def test_qos(self):
         metric_arguments = dict(model=self.model, injection=self.injector, injector_arguments=self.injector_arguments,
-                                formulae=self.formulae, optim='adam', loss='sparse_categorical_crossentropy', batch=16,
-                                epochs=10, metrics=['accuracy'], dataset=self.dataset_split, threshold=0.9, alpha=0.8)
+                                formulae=self.formulae, optim='adam', loss='sparse_categorical_crossentropy', batch=32,
+                                epochs=10, metrics=['accuracy'], dataset=self.dataset_split, threshold=0.5, alpha=0.8)
         flags = dict(energy=False, latency=True, memory=False, grid_search=False)
         qos = QoS(metric_arguments=metric_arguments, flags=flags)
         qos.compute(verbose=True)
