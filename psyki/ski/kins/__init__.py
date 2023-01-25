@@ -21,10 +21,10 @@ class NetworkStructurer(Injector):
         """
         @param predictor: the predictor.
         @param feature_mapping: a map between variables in the logic formulae and indices of dataset features. Example:
-            - 'PL': 0,
-            - 'PW': 1,
-            - 'SL': 2,
-            - 'SW': 3.
+            - 'PetalLength': 0,
+            - 'PetalWidth': 1,
+            - 'SepalLength': 2,
+            - 'SepalWidth': 3.
         @param layer: the level of the layer where to perform the injection.
         @param fuzzifier: the fuzzifiers used to map the knowledge (by default it is SubNetworkBuilder).
         """
