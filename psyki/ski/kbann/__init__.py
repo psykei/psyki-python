@@ -4,7 +4,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Concatenate
 from tensorflow import Tensor
 from tensorflow.keras.losses import Loss
-from tensorflow.python.keras.utils.generic_utils import custom_object_scope
+from tensorflow.keras.utils import custom_object_scope
 from psyki.logic import Formula
 from psyki.fuzzifiers import Fuzzifier
 from tensorflow.keras import Model
@@ -22,16 +22,17 @@ class KBANN(Injector):
                  feature_mapping: dict[str, int],
                  fuzzifier: str,
                  omega: float = 4.,
-                 gamma: float = 10E-3):
+                 gamma: float = 0.):
         """
         @param predictor: the predictor.
         @param feature_mapping: a map between variables in the logic formulae and indices of dataset features. Example:
-            - 'PL': 0,
-            - 'PW': 1,
-            - 'SL': 2,
-            - 'SW': 3.
-        @param layer: the level of the layer where to perform the injection.
+            - 'PetalLength': 0,
+            - 'PetalWidth': 1,
+            - 'SepalLength': 2,
+            - 'SepalWidth': 3.
         @param fuzzifier: the fuzzifiers used to map the knowledge (by default it is SubNetworkBuilder).
+        @param omega: hyperparameter of the algorithm, it may highly impact on the performance
+        @param gamma: weight for the constraining variant of the algorithm. If 0 no constrain is applied.
         """
         # self.feature_mapping: dict[str, int] = feature_mapping
         # Use as default fuzzifiers SubNetworkBuilder.
@@ -76,7 +77,7 @@ class KBANN(Injector):
 
         def copy(self) -> EnrichedModel:
             with custom_object_scope(self.custom_objects):
-                model = model_deep_copy(Model(self.input, self.output))
+                model = model_deep_copy(self)  # Model(self.input, self.output)
                 return KBANN.ConstrainedModel(model, self.gamma, self.custom_objects)
 
         def loss_function(self, original_function: Callable) -> Callable:

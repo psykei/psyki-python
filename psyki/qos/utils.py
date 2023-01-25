@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Union, Callable
 from tensorflow.keras import Model
 from tensorflow.keras.losses import Loss
-from tensorflow.python.keras.optimizer_v1 import Optimizer
+from tensorflow.python.keras.optimizers import Optimizer
 import tensorflow as tf
 from tensorflow.keras.callbacks import Callback
 from tensorflow.python.platform.gfile import GFile

@@ -85,7 +85,8 @@ class Towell(StructuringFuzzifier):
                     # new weights
                     w = len(self._class_calls[output_value]) * [self.omega]
                     neuron = Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
-                                                bias_initializer=constant_initializer(0.5 * self.omega))(self._class_calls[output_value])
+                                                bias_initializer=constant_initializer(0.5 * self.omega))(
+                        self._class_calls[output_value])
                     self.class_call[output_value] = neuron
                     self.classes[output_value] = neuron
         else:
@@ -173,11 +174,13 @@ class Towell(StructuringFuzzifier):
                 else:
                     subs[k] = ([body], [v])
         for k, v in subs.items():
+
             def index(v):
                 return argmax([self._visit(b, loc_copy, sub_copy)[0] for b in v], axis=0)
 
             def subs(v, idx):
-                return gather(transpose(squeeze(stack([self._visit(w, loc_copy, sub_copy)[0] for w in v]), axis=2)), idx, axis=1, batch_dims=1)
+                return gather(transpose(squeeze(stack([self._visit(w, loc_copy, sub_copy)[0] for w in v]), axis=2)),
+                              idx, axis=1, batch_dims=1)
 
             substitutions[k] = subs(v[1], index(v[0]))
         return Maximum()(layers)
@@ -192,7 +195,8 @@ class Towell(StructuringFuzzifier):
             grounding = local_mapping[node]
             if isinstance(grounding, Variable):
                 if grounding.name in self.feature_mapping.keys():
-                    return Lambda(lambda x: gather(x, [self.feature_mapping[grounding.name]], axis=1))(self.predictor_input), self.omega
+                    return Lambda(lambda x: gather(x, [self.feature_mapping[grounding.name]], axis=1))(
+                        self.predictor_input), self.omega
                 else:
                     return self._visit_variable(grounding, local_mapping, substitutions)
             else:
@@ -200,14 +204,14 @@ class Towell(StructuringFuzzifier):
 
     def _visit_boolean(self, node: Boolean):
         return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(1. if node.is_true else 0.),
-                     trainable=False, activation='linear')(self.predictor_input), self.omega
+                     trainable=False, activation=None)(self.predictor_input), self.omega
 
     def _visit_number(self, node: Number):
         # This fuzzifier deals only with integers that represent categorical features values.
         # It cannot operate real numbers!
         assert node.value.is_integer()
         return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(node.value),
-                     trainable=False, activation='linear')(self.predictor_input), self.omega
+                     trainable=False, activation=None)(self.predictor_input), self.omega
 
     def _visit_unary(self, node: Unary) -> tuple[any, float]:
         """
@@ -241,8 +245,9 @@ class Towell(StructuringFuzzifier):
         previous_layers = [self._visit(arg, local_mapping, substitutions) for arg in args[1:]]
         w = (len(args) - 1) * [self.omega]
         bias_initializer = constant_initializer(int(m.value) - 0.5 * self.omega)
-        layer = Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable, bias_initializer=bias_initializer)(Concatenate(axis=1)(previous_layers)),
-        return layer[0], self.omega
+        layer = Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
+                                   bias_initializer=bias_initializer)(Concatenate(axis=1)(previous_layers))
+        return layer, self.omega
 
     def _clear(self):
         self.classes = {}

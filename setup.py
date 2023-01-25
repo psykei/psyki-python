@@ -88,7 +88,7 @@ setup(
     python_requires='>=3.9.0, <3.10',
     install_requires=[
         'antlr4-python3-runtime~=4.9.3',
-        'tensorflow>=2.7.0',
+        'tensorflow>=2.11.0',
         'numpy>=1.22.3',
         'scikit-learn>=1.0.2',
         'pandas>=1.4.2',

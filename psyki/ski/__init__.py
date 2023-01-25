@@ -46,12 +46,18 @@ class Injector(ABC):
               feature_mapping: dict[str, int],
               fuzzifier: str = 'towell',
               omega: float = 4.,
-              gamma: float = 10E-3) -> Injector:
+              gamma: float = 0.) -> Injector:
         from psyki.ski.kbann import KBANN
         return KBANN(model, feature_mapping, fuzzifier, omega, gamma)
 
 
 class EnrichedModel(Model):
+
+    def _restore_from_tensors(self, restored_tensors):
+        return super()._restore_from_tensors(restored_tensors)
+
+    def _serialize_to_tensors(self):
+        super()._serialize_to_tensors()
 
     def __init__(self, original_predictor: Model, custom_objects: dict):
         super(EnrichedModel, self).__init__(original_predictor.inputs, original_predictor.outputs)

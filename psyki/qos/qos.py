@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import Union
 from tensorflow.keras import Model, Input
-from tensorflow.python.keras.losses import Loss
-from tensorflow.python.keras.optimizer_v1 import Optimizer
+from tensorflow.keras.losses import Loss
+from tensorflow.python.keras.optimizers import Optimizer
 from tensorflow.keras.layers import Dense
 import numpy as np
 import math
@@ -91,46 +91,36 @@ class QoS:
                     'The injection argument could be either a string defining the injection technique to use'
                     ' or a Model/EnrichedModel object defining the model with injection already applied.')
 
-            self.injected_model_dict['memory'] = self.injected_model
-            self.injected_model_dict['latency'] = self.injected_model
-            self.injected_model_dict['energy'] = self.injected_model
+            self.injected_model_dict['memory'] = self.injected_model.copy()
+            self.injected_model_dict['latency'] = self.injected_model.copy()
+            self.injected_model_dict['energy'] = self.injected_model.copy()
 
-    def search_in_grid(self,
-                       neurons_grid: list[list[int]],
-                       inject: bool) -> Union[Model, EnrichedModel]:
+    def search_in_grid(self, neurons_grid: list[list[int]], inject: bool) -> Union[Model, EnrichedModel]:
 
         input_size = self.dataset['train_x'].shape[-1]
-        output_size = np.max(self.dataset['train_y']) + 1
+        output_size = len(np.unique(self.dataset['train_y']))
         # Define activation
         activation = 'relu'
         # Cycle through the given grid to find the smallest model
         smallest_model_setting = None
         for neurons in neurons_grid:
             print('Searching grid. Model with neurons: {}'.format(neurons), end='\r')
-            history = build_and_train_model(neurons=neurons,
-                                            input_size=input_size,
-                                            output_size=output_size,
-                                            activation=activation,
-                                            threshold=self.metrics_options['threshold'],
-                                            dataset=self.dataset,
-                                            epochs=self.metrics_options['epochs'],
-                                            batch_size=self.metrics_options['batch'],
-                                            inject=inject,
-                                            injection=self.injection,
-                                            injector_arguments=self.injector_arguments,
-                                            formulae=self.formulae,
-                                            optimiser=self.metrics_options['optim'],
-                                            loss=self.metrics_options['loss'],
-                                            metrics=self.metrics_options['metrics'])
-            if history['accuracy'][-1] >= self.metrics_options['threshold']:
+            accuracy = build_and_train_model(neurons=neurons, input_size=input_size, output_size=output_size,
+                                             activation=activation, threshold=self.metrics_options['threshold'],
+                                             dataset=self.dataset, epochs=self.metrics_options['epochs'],
+                                             batch_size=self.metrics_options['batch'], inject=inject,
+                                             injection=self.injection, injector_arguments=self.injector_arguments,
+                                             formulae=self.formulae, optimiser=self.metrics_options['optim'],
+                                             loss=self.metrics_options['loss'], metrics=self.metrics_options['metrics'])
+            if accuracy >= self.metrics_options['threshold']:
                 smallest_model_setting = neurons
                 # Print statistics concerning model training
                 print('{} model has best settings {}. '
-                      'Its training took {} epochs to reach {} {}'.format('Bare' if not inject else 'Injected',
-                                                                          smallest_model_setting,
-                                                                          len(history['accuracy']),
-                                                                          self.metrics_options['threshold'],
-                                                                          self.metrics_options['metrics']))
+                      'Its training took ? epochs to reach {} {}'.format('Bare' if not inject else 'Injected',
+                                                                         smallest_model_setting,
+                                                                         # len(history['accuracy']),
+                                                                         self.metrics_options['threshold'],
+                                                                         self.metrics_options['metrics']))
                 break
         if not smallest_model_setting:
             raise ValueError('Not able to find a model getting '
@@ -227,53 +217,25 @@ def create_nn(neurons: list[int],
     x = Dense(output_size, activation='softmax' if output_size > 1 else 'sigmoid')(x)
     built_model = Model(inputs, x)
     if inject:
-        assert inject
-
         if injection == 'kins':  # provvisorio
             injector_arguments['injection_layer'] = len(built_model.layers) - 2
-
         built_model = get_injector(injection)(built_model, **injector_arguments).inject(formulae)
     # Compile the keras model or the enriched model
     if compile_it:
-        assert compile_it
         built_model.compile(optimiser, loss=loss, metrics=metrics)
     return built_model
 
 
-def build_and_train_model(neurons: list[int],
-                          input_size: int,
-                          output_size: int,
-                          activation: str,
-                          threshold: float,
-                          dataset,
-                          epochs: int = 100,
-                          batch_size: int = 16,
-                          inject: bool = False,
-                          injection: Union[str, Union[Model, EnrichedModel]] = None,
-                          injector_arguments: dict = None,
-                          formulae: list[Formula] = None,
-                          optimiser: Union[str, Optimizer] = None,
-                          loss: Union[str, Loss] = None,
-                          metrics: list[str] = None) -> dict[str, list[float]]:
-    model = create_nn(neurons=neurons,
-                      input_size=input_size,
-                      output_size=output_size,
-                      activation=activation,
-                      inject=inject,
-                      injection=injection,
-                      injector_arguments=injector_arguments,
-                      formulae=formulae,
-                      compile_it=True,
-                      optimiser=optimiser,
-                      loss=loss,
-                      metrics=metrics)
+def build_and_train_model(neurons: list[int], input_size: int, output_size: int, activation: str, threshold: float,
+                          dataset, epochs: int = 100, batch_size: int = 16, inject: bool = False,
+                          injection: Union[str, Union[Model, EnrichedModel]] = None, injector_arguments: dict = None,
+                          formulae: list[Formula] = None, optimiser: Union[str, Optimizer] = None,
+                          loss: Union[str, Loss] = None, metrics: list[str] = None) -> dict[str, list[float]]:
+    model = create_nn(neurons=neurons, input_size=input_size, output_size=output_size, activation=activation,
+                      inject=inject, injection=injection, injector_arguments=injector_arguments, formulae=formulae,
+                      compile_it=True, optimiser=optimiser, loss=loss, metrics=metrics)
     # Train the model
     callbacks = EarlyStopping(threshold=threshold, verbose=False)
-    history = model.fit(dataset['train_x'],
-                        dataset['train_y'],
-                        epochs=epochs,
-                        batch_size=batch_size,
-                        validation_data=(dataset['test_x'], dataset['test_y']),
-                        verbose=0,
-                        callbacks=[callbacks])
-    return history.history
+    model.fit(dataset['train_x'], dataset['train_y'], epochs=epochs, batch_size=batch_size, verbose=0, callbacks=[callbacks])
+    _, accuracy = model.evaluate(dataset["test_x"], dataset["test_y"])
+    return accuracy

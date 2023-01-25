@@ -1,7 +1,6 @@
 import unittest
 from sklearn.datasets import load_iris
 from sklearn.preprocessing import OneHotEncoder
-
 from test.psyki.qos import split_dataset
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 from psyki.logic.prolog import TuProlog

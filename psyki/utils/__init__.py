@@ -37,7 +37,9 @@ def model_deep_copy(predictor: Model) -> Model:
     Return a copy of the original model with the same weights.
     """
     new_predictor = clone_model(predictor)
-    new_predictor.set_weights(predictor.get_weights())
+    old_weights = predictor.get_weights()
+    if len(old_weights) == len(new_predictor.get_weights()):
+        new_predictor.set_weights(old_weights)
     return new_predictor
 
 

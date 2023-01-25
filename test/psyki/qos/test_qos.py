@@ -14,7 +14,7 @@ class TestQoSKins(unittest.TestCase):
     dataset_split = split_dataset(dataset)
     # Get input and output size depending on the dataset
     input_size = dataset_split["train_x"].shape[-1]
-    output_size = np.max(dataset_split["train_y"]) + 1
+    output_size = len(np.unique(dataset_split["train_y"]))
 
     model = create_standard_fully_connected_nn(input_size=input_size, output_size=output_size, layers=3, neurons=128,
                                                activation='relu')
@@ -45,7 +45,7 @@ class TestQoSKbann(unittest.TestCase):
     dataset_split = split_dataset(dataset=dataset)
     # Get input and output size depending on the dataset
     input_size = dataset_split["train_x"].shape[-1]
-    output_size = np.max(dataset_split["train_y"]) + 1
+    output_size = len(np.unique(dataset_split["train_y"]))
     model = create_standard_fully_connected_nn(input_size=input_size, output_size=output_size, layers=3, neurons=128,
                                                activation='relu')
     injector = 'kbann'
@@ -54,7 +54,7 @@ class TestQoSKbann(unittest.TestCase):
 
     def do_not_test_qos(self):
         metric_arguments = dict(model=self.model, injection=self.injector, injector_arguments=self.injector_arguments,
-                                formulae=self.formulae, optim='adam', loss='sparse_categorical_crossentropy', batch=8,
+                                formulae=self.formulae, optim='adam', loss='sparse_categorical_crossentropy', batch=16,
                                 epochs=10, metrics=['accuracy'], dataset=self.dataset_split, threshold=0.9, alpha=0.8)
         flags = dict(energy=False, latency=True, memory=False, grid_search=False)
         qos = QoS(metric_arguments=metric_arguments, flags=flags)
