@@ -3,7 +3,6 @@ from sklearn.datasets import load_iris
 from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras import Model
 from tensorflow.python.framework.random_seed import set_seed
-
 from psyki.ski import Injector
 from test.psyki.qos import split_dataset, evaluate_metric
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
