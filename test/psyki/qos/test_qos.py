@@ -1,4 +1,5 @@
 import unittest
+from tensorflow.python.framework.random_seed import set_seed
 from psyki.logic.prolog import TuProlog
 from psyki.qos import QoS
 import numpy as np
@@ -23,6 +24,7 @@ class TestQoSKins(unittest.TestCase):
     injector_arguments = {'feature_mapping': variable_mapping, 'injection_layer': len(model.layers) - 2}
 
     def test_qos(self):
+        set_seed(0)
         metric_arguments = dict(model=self.model, injection=self.injector, injector_arguments=self.injector_arguments,
                                 formulae=self.formulae, optim='adam', loss='sparse_categorical_crossentropy', batch=16,
                                 epochs=10, metrics=['accuracy'], dataset=self.dataset_split, threshold=0.9, alpha=0.8)
@@ -53,9 +55,10 @@ class TestQoSKbann(unittest.TestCase):
     injector_arguments = {'feature_mapping': variable_mapping}
 
     def test_qos(self):
+        set_seed(0)
         metric_arguments = dict(model=self.model, injection=self.injector, injector_arguments=self.injector_arguments,
                                 formulae=self.formulae, optim='adam', loss='sparse_categorical_crossentropy', batch=32,
-                                epochs=10, metrics=['accuracy'], dataset=self.dataset_split, threshold=0.5, alpha=0.8)
+                                epochs=10, metrics=['accuracy'], dataset=self.dataset_split, threshold=0.1, alpha=0.8)
         flags = dict(energy=False, latency=True, memory=False, grid_search=False)
         qos = QoS(metric_arguments=metric_arguments, flags=flags)
         qos.compute(verbose=True)

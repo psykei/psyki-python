@@ -79,7 +79,7 @@ class NetBuilder(StructuringFuzzifier):
                         local_mapping[arg] = arg
                     else:
                         raise Exception("Variable " + str(arg) + " does not match any feature")
-            if output_value is not None and output_value[0].islower():
+            if output_value is not None and not output_value[0].isupper():
                 if output_value not in self.classes.keys():
                     self.classes[output_value] = self._visit(rhs, local_mapping, substitutions)
                     self.class_call[output_value] = self._visit(rhs, local_mapping, substitutions)

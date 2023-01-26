@@ -4,6 +4,7 @@ from typing import Callable, TypeVar
 from tensorflow import minimum, maximum, abs
 from tensorflow.keras import Model
 from tensorflow.keras.models import clone_model
+from tensorflow.keras.layers import Concatenate
 from tensorflow.python.types.core import Tensor
 
 
@@ -14,6 +15,10 @@ def match_case(match: A, cases: list[tuple[A, any]]) -> any:
     for case, body in cases:
         if match == case:
             return body
+
+
+def concat(layer):
+    return Concatenate(axis=1)(layer)
 
 
 def eta(x: Tensor) -> Tensor:

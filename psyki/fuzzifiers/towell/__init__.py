@@ -9,7 +9,7 @@ from tensorflow.python.ops.init_ops import constant_initializer, Constant, Zeros
 from psyki.fuzzifiers import StructuringFuzzifier
 from psyki.logic.operators import *
 from psyki.ski import EnrichedModel
-from psyki.utils import eta_one_abs, eta
+from psyki.utils import eta_one_abs, eta, concat
 from tensorflow.python.ops.array_ops import gather, transpose, squeeze
 
 
@@ -34,6 +34,12 @@ class Towell(StructuringFuzzifier):
         self._trainable = False
 
     class CustomDense(Dense):
+
+        def _serialize_to_tensors(self):
+            super()._serialize_to_tensors()
+
+        def _restore_from_tensors(self, restored_tensors):
+            return super()._restore_from_tensors(restored_tensors)
 
         def __init__(self, kernel_initializer, trainable, bias_initializer, **kwargs):
             super().__init__(units=1, activation=self.logistic_function, kernel_initializer=kernel_initializer,
@@ -70,7 +76,7 @@ class Towell(StructuringFuzzifier):
                     else:
                         raise Exception("Variable " + str(arg) + " does not match any feature")
             net: Tensor = self._visit(rhs, local_mapping, substitutions)[0]
-            if output_value is not None and output_value[0].islower():
+            if output_value is not None and not output_value[0].isupper():
                 if output_value not in self.classes.keys():
                     # New predicate
                     self.classes[output_value] = net
@@ -85,8 +91,8 @@ class Towell(StructuringFuzzifier):
                     # new weights
                     w = len(self._class_calls[output_value]) * [self.omega]
                     neuron = Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
-                                                bias_initializer=constant_initializer(0.5 * self.omega))(
-                        self._class_calls[output_value])
+                                                bias_initializer=constant_initializer(0.5 * self.omega))
+                    neuron = neuron(concat(self._class_calls[output_value]))
                     self.class_call[output_value] = neuron
                     self.classes[output_value] = neuron
         else:
@@ -123,10 +129,6 @@ class Towell(StructuringFuzzifier):
         """
         @return the corresponding antecedent network and the omega weight
         """
-
-        def concat(layer):
-            return Concatenate(axis=1)(layer)
-
         o = self.omega
         if node.is_optimized and node.op.is_optimizable:
             children = [self._visit(child, local_mapping, substitutions) for child in node.unfolded_arguments]
@@ -246,7 +248,7 @@ class Towell(StructuringFuzzifier):
         w = (len(args) - 1) * [self.omega]
         bias_initializer = constant_initializer(int(m.value) - 0.5 * self.omega)
         layer = Towell.CustomDense(kernel_initializer=constant_initializer(w), trainable=self._trainable,
-                                   bias_initializer=bias_initializer)(Concatenate(axis=1)(previous_layers))
+                                   bias_initializer=bias_initializer)(concat(previous_layers))
         return layer, self.omega
 
     def _clear(self):
