@@ -23,7 +23,7 @@ def get_mlp(input_layer: Tensor, output: int, layers: int, neurons: int or list[
     return Dense(output, activation=last_activation_function)(x)
 
 
-def create_standard_fully_connected_nn(input_size: int, output_size, layers: int, neurons: int, activation: str) -> Model:
+def create_standard_fully_connected_nn(input_size: int, output_size, layers: int, neurons: int, activation: str = "relu") -> Model:
     inputs = Input((input_size,))
     x = Dense(neurons, activation=activation)(inputs)
     for _ in range(1, layers):

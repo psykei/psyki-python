@@ -1,12 +1,14 @@
 import unittest
 from sklearn.datasets import load_iris
 from sklearn.preprocessing import OneHotEncoder
+from tensorflow.python.framework.random_seed import set_seed
 from psyki.logic.prolog import TuProlog
-from test.psyki.qos import split_dataset
+from psyki.qos.latency import Latency
+from psyki.ski import Injector
+from test.psyki.qos import split_dataset, evaluate_metric
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 from test.resources.data import Iris, get_splice_junction_processed_dataset, SpliceJunction
 from test.utils import create_standard_fully_connected_nn
-from psyki.qos.latency import LatencyQoS
 
 
 class TestLatencyOnIris(unittest.TestCase):
@@ -15,42 +17,31 @@ class TestLatencyOnIris(unittest.TestCase):
     encoder.fit_transform([y])
     dataset = x.join(y)
     dataset = split_dataset(dataset)
-    model = create_standard_fully_connected_nn(input_size=4, output_size=3, layers=3, neurons=128, activation='relu')
-    injector = 'kill'
-    class_mapping = Iris.class_mapping
-    variable_mapping = Iris.feature_mapping
-    injector_arguments = {'class_mapping': class_mapping, 'feature_mapping': variable_mapping}
+    model = create_standard_fully_connected_nn(input_size=4, output_size=3, layers=3, neurons=128)
+    injector = Injector.kill(model, Iris.class_mapping, Iris.feature_mapping)
     formulae = TuProlog.from_file(str(KNOWLEDGE_PATH / 'iris.pl')).formulae
+    educated_predictor = injector.inject(formulae)
 
     def test_latency_fit(self):
-        print('TEST LATENCY FIT WITH {} ON IRIS'.format(self.injector.upper()))
-        options = dict(injector=self.injector, optim='adam', loss='sparse_categorical_crossentropy', epochs=300,
-                       batch=16, dataset=self.dataset, threshold=0.97, metrics=['accuracy'], formula=self.formulae,
-                       alpha=0.8)
-
-        qos = LatencyQoS(model=self.model, injection=self.injector, injector_arguments=self.injector_arguments,
-                         formulae=self.formulae, options=options)
-        qos.measure(fit=True)
+        print('TEST LATENCY FIT WITH KILL ON IRIS')
+        set_seed(0)
+        latency = evaluate_metric(self.model, self.educated_predictor, self.dataset, Latency.compute_during_training)
+        self.assertTrue(isinstance(latency, float))
 
 
 class TestLatencyOnSplice(unittest.TestCase):
     formulae = TuProlog.from_file(str(KNOWLEDGE_PATH / 'splice-junction.pl')).formulae
     dataset = get_splice_junction_processed_dataset('splice-junction-data.csv')
     dataset = split_dataset(dataset)
-
-    model = create_standard_fully_connected_nn(input_size=4 * 60, output_size=3, layers=3, neurons=128,
-                                               activation='relu')
-    injector = 'kins'
-    variable_mapping = SpliceJunction.feature_mapping
-    injector_arguments = {'injection_layer': len(model.layers) - 2, 'feature_mapping': variable_mapping}
+    model = create_standard_fully_connected_nn(input_size=240, output_size=3, layers=3, neurons=128)
+    injector = Injector.kins(model, SpliceJunction.feature_mapping)
+    educated_predictor = injector.inject(formulae)
 
     def test_latency_fit(self):
-        print('TEST LATENCY FIT WITH {} ON SPLICE JUNCTION'.format(self.injector.upper()))
-        options = dict(injector=self.injector, optim='adam', loss='sparse_categorical_crossentropy', batch=16,
-                       epochs=1, dataset=self.dataset, formula=self.formulae, threshold=0.97, alpha=0.8,
-                       metrics=['accuracy'])
-        qos = LatencyQoS(self.model, self.injector, options, self.injector_arguments, self.formulae)
-        qos.measure(fit=True)
+        print('TEST LATENCY FIT WITH KINS ON SPLICE JUNCTION')
+        set_seed(0)
+        latency = evaluate_metric(self.model, self.educated_predictor, self.dataset, Latency.compute_during_training)
+        self.assertTrue(isinstance(latency, float))
 
 
 if __name__ == '__main__':
