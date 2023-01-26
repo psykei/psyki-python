@@ -206,14 +206,14 @@ class Towell(StructuringFuzzifier):
 
     def _visit_boolean(self, node: Boolean):
         return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(1. if node.is_true else 0.),
-                     trainable=False, activation=None)(self.predictor_input), self.omega
+                     trainable=True, activation=None)(self.predictor_input), self.omega
 
     def _visit_number(self, node: Number):
         # This fuzzifier deals only with integers that represent categorical features values.
         # It cannot operate real numbers!
         assert node.value.is_integer()
         return Dense(1, kernel_initializer=Zeros, bias_initializer=constant_initializer(node.value),
-                     trainable=False, activation=None)(self.predictor_input), self.omega
+                     trainable=True, activation=None)(self.predictor_input), self.omega
 
     def _visit_unary(self, node: Unary) -> tuple[any, float]:
         """
