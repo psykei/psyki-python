@@ -6,6 +6,7 @@ on:
       - master
       - develop
       - 'feature/**'
+      - 'upgrade/**'
 env:
   PROJECT_NAME: psyki-python
   WORKFLOW: check
@@ -21,6 +22,7 @@ jobs:
         python-version:
           - '3.9.12'
           - '3.9.13'
+          - '3.10'
     runs-on: ${{ matrix.os }}
     name: Run tests on Python ${{ matrix.python-version }}, on ${{ matrix.os }}
     timeout-minutes: 45
