@@ -1,8 +1,6 @@
 from __future__ import annotations
-from typing import Callable
 from tensorflow.keras import Model
 from tensorflow.keras.callbacks import Callback
-from psyki.ski import Injector
 
 
 def measure_fit_with_tracker(predictor1: Model, predictor2: Model, training_params: dict, tracker) -> tuple[float, float]:
@@ -23,13 +21,6 @@ def measure_predict_with_tracker(predictor1: Model, predictor2: Model, training_
         predictor2.predict(**training_params)
         m2 = tracker.get_tracked_value()
     return m1, m2
-
-
-def get_injector(choice: str) -> Callable:
-    injectors = {'kill': Injector.kill,
-                 'kins': Injector.kins,
-                 'kbann': Injector.kbann}
-    return injectors[choice]
 
 
 class EarlyStopping(Callback):

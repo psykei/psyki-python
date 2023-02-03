@@ -1,10 +1,13 @@
 from __future__ import annotations
 from tensorflow.keras import Model
 from codecarbon import OfflineEmissionsTracker
-from psyki.qos.metric import Metric
+from psyki.qos import Metric
 
 
 class Energy(Metric):
+    """
+    Energy efficiency gain metric.
+    """
 
     class Tracker:
         """Context manager to measure how much energy was spent in the target scope."""

@@ -1,10 +1,13 @@
 from __future__ import annotations
 from tensorflow.keras import Model
 import time
-from psyki.qos.metric import Metric
+from psyki.qos import Metric
 
 
 class Latency(Metric):
+    """
+    Latency efficiency gain metric.
+    """
 
     class Tracker:
         """Context manager to measure how much time did the target scope take."""
