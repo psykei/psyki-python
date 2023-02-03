@@ -1,12 +1,15 @@
 from __future__ import annotations
 from tensorflow.keras import Model
-from psyki.qos.metric import Metric
+from psyki.qos import Metric
 from tensorflow.python.profiler.model_analyzer import profile
 from tensorflow.python.profiler.option_builder import ProfileOptionBuilder
 import tensorflow as tf
 
 
 class Memory(Metric):
+    """
+    Memory efficiency gain metric.
+    """
 
     @staticmethod
     def get_flops(predictor: Model) -> int:
