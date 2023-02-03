@@ -6,6 +6,7 @@ on:
       - master
       - develop
       - 'feature/**'
+      - 'upgrade/**'
 env:
   PROJECT_NAME: psyki-python
   WORKFLOW: check
@@ -19,6 +20,8 @@ jobs:
           - windows-latest
           - macos-latest
         python-version:
+          - '3.7.0'
+          - '3.8.0'
           - '3.9.12'
           - '3.9.13'
     runs-on: ${{ matrix.os }}
