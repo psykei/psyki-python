@@ -16,10 +16,10 @@ def measure_fit_with_tracker(predictor1: Model, predictor2: Model, training_para
 def measure_predict_with_tracker(predictor1: Model, predictor2: Model, training_params: dict, tracker) -> tuple[float, float]:
     with tracker:
         predictor1.predict(**training_params)
-        m1 = tracker.get_tracked_value()
+    m1 = tracker.get_tracked_value()
     with tracker:
         predictor2.predict(**training_params)
-        m2 = tracker.get_tracked_value()
+    m2 = tracker.get_tracked_value()
     return m1, m2
 
 
