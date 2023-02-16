@@ -14,12 +14,15 @@ from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 
 class TestKbannOnSpliceJunction(unittest.TestCase):
     epochs = 100
-    batch_size = 32
+    batch_size = 64
     verbose = 0
-    acceptable_accuracy = 0.5
+    acceptable_accuracy = 0.8
     knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
     trainable = ['intron_exon', 'exon_intron', 'pyramidine_rich', 'class']
     knowledge = set_trainable_rules(trainable, knowledge)
+    for k in knowledge:
+        k.optimize()
+        k.trainable = True
     data = get_splice_junction_processed_dataset('splice-junction-data.csv')
 
     def prepare_data(self, seed: int):
@@ -46,7 +49,6 @@ class TestKbannOnSpliceJunction(unittest.TestCase):
         # Train
         new_predictor.fit(train_x, train_y, epochs=self.epochs, batch_size=self.batch_size, verbose=self.verbose, callbacks=callbacks)
         _, accuracy = new_predictor.evaluate(test_x, test_y, verbose=self.verbose)
-        print(accuracy)
         self.assertTrue(accuracy > self.acceptable_accuracy)
 
     def test_copy(self):

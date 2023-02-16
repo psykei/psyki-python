@@ -23,7 +23,7 @@ class Energy(Metric):
         def __exit__(self, type=None, value=None, traceback=None):
             self.tracker.stop()
             # Measure in milliWatt
-            self.energy = self.tracker._total_energy.kWh * 10E6
+            self.energy = self.tracker._total_energy.kWh * 1E6
 
         def get_tracked_value(self):
             assert self.energy is not None
@@ -31,8 +31,12 @@ class Energy(Metric):
 
     @staticmethod
     def compute_during_training(predictor1: Model, predictor2: Model, training_params: dict) -> float:
-        return Energy._compute_during_training(predictor1, predictor2, training_params, Energy.Tracker())
+        row_energy = Energy._compute_during_training(predictor1, predictor2, training_params, Energy.Tracker())
+        normaliser = training_params['x'].shape[0] * training_params['epochs']
+        return row_energy / normaliser
 
     @staticmethod
     def compute_during_inference(predictor1: Model, predictor2: Model, training_params: dict) -> float:
-        return Energy._compute_during_inference(predictor1, predictor2, training_params, Energy.Tracker())
+        row_energy = Energy._compute_during_inference(predictor1, predictor2, training_params, Energy.Tracker())
+        normaliser = training_params['x'].shape[0]
+        return row_energy / normaliser - Energy.compute_during_training(predictor1, predictor2, training_params)

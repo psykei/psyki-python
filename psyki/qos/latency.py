@@ -28,10 +28,14 @@ class Latency(Metric):
 
     @staticmethod
     def compute_during_training(predictor1: Model, predictor2: Model, training_params: dict) -> float:
-        return Latency._compute_during_training(predictor1, predictor2, training_params, Latency.Tracker())
+        row_latency = Latency._compute_during_training(predictor1, predictor2, training_params, Latency.Tracker())
+        normaliser = training_params['x'].shape[0] * training_params['epochs']
+        return row_latency / normaliser
 
     @staticmethod
     def compute_during_inference(predictor1: Model, predictor2: Model, training_params: dict) -> float:
-        return Latency._compute_during_inference(predictor1, predictor2, training_params, Latency.Tracker())
+        row_latency = Latency._compute_during_inference(predictor1, predictor2, training_params, Latency.Tracker())
+        normaliser = training_params['x'].shape[0]
+        return row_latency / normaliser
 
 

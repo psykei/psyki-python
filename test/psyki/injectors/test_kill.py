@@ -20,6 +20,9 @@ class TestKillOnSpliceJunction(unittest.TestCase):
     verbose = 0
     acceptable_accuracy = 0.9
     knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
+    for k in knowledge:
+        k.trainable = True
+        k.optimize()
     data = get_splice_junction_processed_dataset('splice-junction-data.csv')
     x, y = data.iloc[:, :-1], data.iloc[:, -1:]
     y.columns = [x.shape[1]]

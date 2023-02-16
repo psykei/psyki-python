@@ -6,6 +6,7 @@ from tensorflow.keras.layers import Minimum, Maximum, Dense, Concatenate, Dot, L
 from tensorflow.keras.backend import argmax, squeeze
 from tensorflow.python.ops.array_ops import gather, stack, transpose
 from tensorflow.python.ops.init_ops import Ones, constant_initializer, Zeros
+from tensorflow.python.ops.initializers_ns import ones
 from psyki.logic import *
 from psyki.fuzzifiers import StructuringFuzzifier
 from psyki.logic.operators import *
@@ -147,7 +148,7 @@ class NetBuilder(StructuringFuzzifier):
         cases = [
             (Conjunction.symbol, Minimum()),
             (Disjunction.symbol, Maximum()),
-            (Plus.symbol, Dense(1, kernel_initializer=Ones, activation='linear', trainable=self._trainable)),
+            (Plus.symbol, Dense(1, kernel_initializer=ones(), activation='linear', trainable=self._trainable)),
             (Equal.symbol, Dense(1, kernel_initializer=constant_initializer([1, -1]), trainable=self._trainable,
                                  activation=eta_one_abs)),
             (Less.symbol, Dense(1, kernel_initializer=constant_initializer([-1, 1]), trainable=self._trainable,
