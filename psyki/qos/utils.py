@@ -14,11 +14,16 @@ def measure_fit_with_tracker(predictor1: Model, predictor2: Model, training_para
 
 
 def measure_predict_with_tracker(predictor1: Model, predictor2: Model, training_params: dict, tracker) -> tuple[float, float]:
+    params_copy = training_params.copy()
+    if 'y' in params_copy.keys():
+        params_copy.pop('y')
+    if 'epochs' in params_copy.keys():
+        params_copy.pop('epochs')
     with tracker:
-        predictor1.predict(**training_params)
+        predictor1.predict(**params_copy)
     m1 = tracker.get_tracked_value()
     with tracker:
-        predictor2.predict(**training_params)
+        predictor2.predict(**params_copy)
     m2 = tracker.get_tracked_value()
     return m1, m2
 
