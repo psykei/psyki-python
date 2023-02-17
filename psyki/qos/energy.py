@@ -33,7 +33,7 @@ class Energy(Metric):
     def compute_during_training(predictor1: Model, predictor2: Model, training_params: dict) -> float:
         row_energy = Energy._compute_during_training(predictor1, predictor2, training_params, Energy.Tracker())
         normaliser = training_params['x'].shape[0] * training_params['epochs']
-        return row_energy / normaliser - Energy.compute_during_inference(predictor1, predictor2, training_params)
+        return row_energy / normaliser
 
     @staticmethod
     def compute_during_inference(predictor1: Model, predictor2: Model, training_params: dict) -> float:
