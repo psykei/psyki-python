@@ -1,17 +1,15 @@
 import unittest
-
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import Input, Model
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.python.framework.random_seed import set_seed
-
 from psyki.logic import Theory
 from psyki.ski import Injector
 from psyki.ski.kill import LambdaLayer
 from psyki.logic.prolog import TuProlog
-from test.resources.data import get_splice_junction_processed_dataset, SpliceJunction, get_dataset, Poker
+from test.resources.data import SpliceJunction, Poker
 from test.utils import get_mlp, Conditions
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 
@@ -21,20 +19,17 @@ class TestKillOnSpliceJunction(unittest.TestCase):
     batch_size = 32
     verbose = 0
     acceptable_accuracy = 0.9
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
+    knowledge = SpliceJunction.get_knowledge()
     for k in knowledge:
         k.trainable = True
         k.optimize()
-    data = get_splice_junction_processed_dataset('splice-junction-data.csv')
-    x, y = data.iloc[:, :-1], data.iloc[:, -1:]
-    y.columns = [x.shape[1]]
-    data = x.join(y)
-    theory = Theory(knowledge, data, SpliceJunction.class_mapping)
+    dataset = SpliceJunction.get_train()
+    theory = Theory(knowledge, dataset, SpliceJunction.class_mapping)
 
     def test_on_dataset(self):
         set_seed(0)
         # Split data
-        train, test = train_test_split(self.data, train_size=1000, random_state=0, stratify=self.data.iloc[:, -1])
+        train, test = train_test_split(self.dataset, train_size=1000, random_state=0, stratify=self.dataset.iloc[:, -1])
         train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1:]
         test_x, test_y = test.iloc[:, :-1], test.iloc[:, -1:]
         # Setup predictor
@@ -58,10 +53,9 @@ class TestKillOnPoker(unittest.TestCase):
     batch_size = 32
     verbose = 0
     acceptable_accuracy = 0.9
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'poker.pl')
-    train = get_dataset('poker-train.csv')
-    test = get_dataset('poker-test.csv')
-    theory = Theory(knowledge, train, Poker.class_mapping)
+    train = Poker.get_train()
+    test = Poker.get_test()
+    theory = Poker.get_theory()
 
     # Extremely slow, for the time being don't test it!
     def do_not_test_on_dataset(self):

@@ -46,17 +46,8 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Download dataset for test in Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          curl -o test/resources/data/poker-test.csv --url https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data
-          curl -o test/resources/data/poker-train.csv --url https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data
-
-      - name: Download dataset for test no windows
-        if: matrix.os != 'windows-latest'
-        run: |
-          wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data -O test/resources/data/poker-test.csv
-          wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data -O test/resources/data/poker-train.csv
+      - name: Download datasets
+        run: python -m setup download_datasets
 
       - name: Test
         run: python -m unittest discover -s test -t .

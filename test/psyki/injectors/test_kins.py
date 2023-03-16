@@ -7,7 +7,7 @@ from psyki.logic import Theory
 from psyki.ski import Injector
 from psyki.logic.prolog import TuProlog
 from test.psyki.injectors import set_trainable_rules
-from test.resources.data import get_splice_junction_processed_dataset, SpliceJunction
+from test.resources.data import SpliceJunction
 from test.utils import get_mlp, Conditions
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 
@@ -20,13 +20,13 @@ class TestKinsOnSpliceJunction(unittest.TestCase):
     knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
     trainable = ['intron_exon', 'exon_intron', 'pyramidine_rich', 'class']
     knowledge = set_trainable_rules(trainable, knowledge)
-    data = get_splice_junction_processed_dataset('splice-junction-data.csv')
-    theory = Theory(knowledge, data, SpliceJunction.class_mapping)
+    dataset = SpliceJunction.get_train()
+    theory = Theory(knowledge, dataset, SpliceJunction.class_mapping)
 
     def test_on_dataset(self):
         set_seed(0)
         # Split data
-        train, test = train_test_split(self.data, train_size=1000, random_state=0, stratify=self.data.iloc[:, -1])
+        train, test = train_test_split(self.dataset, train_size=1000, random_state=0, stratify=self.dataset.iloc[:, -1])
         train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1:]
         test_x, test_y = test.iloc[:, :-1], test.iloc[:, -1:]
         # Setup predictor

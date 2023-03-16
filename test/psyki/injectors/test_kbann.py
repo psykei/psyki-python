@@ -4,14 +4,11 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import Input, Model
 from tensorflow.python.framework.random_seed import set_seed
-
 from psyki.logic import Theory
 from psyki.ski import Injector, EnrichedModel
-from psyki.logic.prolog import TuProlog
 from test.psyki.injectors import set_trainable_rules
-from test.resources.data import get_splice_junction_processed_dataset, SpliceJunction
+from test.resources.data import SpliceJunction
 from test.utils import get_mlp, Conditions
-from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 
 
 class TestKbannOnSpliceJunction(unittest.TestCase):
@@ -19,17 +16,17 @@ class TestKbannOnSpliceJunction(unittest.TestCase):
     batch_size = 64
     verbose = 0
     acceptable_accuracy = 0.8
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
+    knowledge = SpliceJunction.get_knowledge()
     trainable = ['intron_exon', 'exon_intron', 'pyramidine_rich', 'class']
     knowledge = set_trainable_rules(trainable, knowledge)
     for k in knowledge:
         k.optimize()
         k.trainable = True
-    data = get_splice_junction_processed_dataset('splice-junction-data.csv')
-    theory = Theory(knowledge, data, SpliceJunction.class_mapping)
+    dataset = SpliceJunction.get_train()
+    theory = Theory(knowledge, dataset, SpliceJunction.class_mapping)
 
     def prepare_data(self, seed: int):
-        train, test = train_test_split(self.data, train_size=1000, random_state=seed, stratify=self.data.iloc[:, -1])
+        train, test = train_test_split(self.dataset, train_size=1000, random_state=seed, stratify=self.dataset.iloc[:, -1])
         train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1:]
         test_x, test_y = test.iloc[:, :-1], test.iloc[:, -1:]
         y = train_y
@@ -60,7 +57,7 @@ class TestKbannOnSpliceJunction(unittest.TestCase):
         set_seed(seed)
         # Split data
         train_x, train_y, test_x, test_y, y = self.prepare_data(seed)
-        input_layer = Input((self.data.shape[1] - 1,))
+        input_layer = Input((self.dataset.shape[1] - 1,))
         predictor = Model(input_layer, get_mlp(input_layer, 3, 3, [64, 32], 'relu', 'softmax', dropout=True))
         injector = Injector.kbann(predictor, 'towell', omega=4, gamma=0)
         new_predictor: EnrichedModel = injector.inject(self.theory)

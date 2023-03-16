@@ -4,6 +4,7 @@ import subprocess
 import distutils.cmd
 
 # current directory
+from test.resources.data import DATASETS
 
 here = pathlib.Path(__file__).parent.resolve()
 
@@ -60,6 +61,23 @@ class GetVersionCommand(distutils.cmd.Command):
         print(version)
 
 
+class DownloadDatasets(distutils.cmd.Command):
+    """A custom command to download the datasets used in the examples."""
+
+    description = 'downloads the datasets used in the examples'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        for dataset in DATASETS:
+            dataset.download()
+
+
 setup(
     name='psyki',  # Required
     version=version,
@@ -103,5 +121,6 @@ setup(
     },
     cmdclass={
         'get_project_version': GetVersionCommand,
+        'download_datasets': DownloadDatasets
     },
 )

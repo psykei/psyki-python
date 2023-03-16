@@ -1,10 +1,9 @@
 import unittest
-from test.resources.knowledge import PATH as KNOWLEDGE_PATH
-from psyki.logic.prolog import TuProlog
+from test.resources.data import SpliceJunction
 
 
 class TestFormulaOptimization(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
+    knowledge = SpliceJunction.get_knowledge()
 
     def test_conjunction(self):
         first_formula = self.knowledge[0]

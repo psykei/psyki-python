@@ -6,7 +6,7 @@ from tensorflow import constant, float32, reshape, cast, stack, assert_equal, ti
 from tensorflow.python.ops.array_ops import gather_nd
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 from psyki.logic.prolog import TuProlog
-from test.resources.data import get_dataset, SpliceJunction, get_splice_junction_processed_dataset, Poker
+from test.resources.data import SpliceJunction, Poker
 
 
 class TestLukasiewiczSimple(unittest.TestCase):
@@ -61,8 +61,8 @@ class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
     functions = fuzzifier.visit(knowledge)
 
     def test_on_dataset(self):
-        data = get_splice_junction_processed_dataset('splice-junction-data.csv')
-        x, y = data.iloc[:, :-1], data.iloc[:, -1:]
+        dataset = SpliceJunction.get_train()
+        x, y = dataset.iloc[:, :-1], dataset.iloc[:, -1:]
         y = np.eye(3)[y.astype(int)].reshape([y.shape[0], 3])
         x, y = cast(x, dtype=float32), cast(y, dtype=float32)
         functions = [self.functions[name] for name, _ in sorted(SpliceJunction.class_mapping.items(), key=lambda i: i[1])]
@@ -76,7 +76,7 @@ class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
 
 
 class TestLukasiewiczOnPoker(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'poker.pl')
+    knowledge = Poker.get_knowledge()
     fuzzifier = Fuzzifier.get('lukasiewicz')([Poker.class_mapping, Poker.feature_mapping])
     functions = fuzzifier.visit(knowledge)
     true = tile(reshape(constant(0.), [1, 1]), [1, 1])
@@ -199,7 +199,7 @@ class TestLukasiewiczOnPoker(unittest.TestCase):
         return result1, result2, result3, result4
 
     def test_on_dataset(self):
-        poker_training = get_dataset('poker-train.csv')
+        poker_training = Poker.get_train()
         functions = [self.functions[name] for name, _ in sorted(Poker.class_mapping.items(), key=lambda i: i[1])]
         train_x = poker_training.iloc[:, :-1]
         train_y = poker_training.iloc[:, -1]

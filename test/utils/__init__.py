@@ -6,6 +6,7 @@ from tensorflow.keras import Model, Input
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.callbacks import Callback
 from sklearn.metrics import f1_score
+import psyki
 
 
 def get_mlp(input_layer: Tensor, output: int, layers: int, neurons: int or list[int], activation_function, last_activation_function, dropout: bool = False):
@@ -101,4 +102,4 @@ class Conditions(Callback):
 
     def on_train_end(self, logs=None):
         if self.stopped_epoch > 0:
-            print("Epoch %05d: early stopping" % (self.stopped_epoch + 1))
+            psyki.logger.info("Epoch %05d: early stopping" % (self.stopped_epoch + 1))
