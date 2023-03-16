@@ -10,7 +10,7 @@ from test.resources.data import get_dataset, SpliceJunction, get_splice_junction
 
 
 class TestLukasiewiczSimple(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'simple.pl').formulae
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'simple.pl')
     fuzzifier = Fuzzifier.get('lukasiewicz')([{'no': 0, 'yes': 1}, {'X': 0, 'Y': 1}])
     functions = fuzzifier.visit(knowledge)
     predicted_output_yes = constant([0, 1], dtype=float32)
@@ -56,7 +56,7 @@ class TestLukasiewiczSimple(unittest.TestCase):
 
 
 class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
     fuzzifier = Fuzzifier.get('lukasiewicz')([SpliceJunction.class_mapping, SpliceJunction.feature_mapping])
     functions = fuzzifier.visit(knowledge)
 
@@ -76,7 +76,7 @@ class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
 
 
 class TestLukasiewiczOnPoker(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'poker.pl').formulae
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'poker.pl')
     fuzzifier = Fuzzifier.get('lukasiewicz')([Poker.class_mapping, Poker.feature_mapping])
     functions = fuzzifier.visit(knowledge)
     true = tile(reshape(constant(0.), [1, 1]), [1, 1])

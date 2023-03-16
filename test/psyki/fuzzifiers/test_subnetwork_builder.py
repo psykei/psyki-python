@@ -8,7 +8,7 @@ from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 
 
 class TestSubnetworkBuilderSimple(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'simple.pl').formulae
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'simple.pl')
     net_input = Input((2,))
     fuzzifier = Fuzzifier.get('netbuilder')([net_input, {'X': 0, 'Y': 1}])
     module = fuzzifier.visit(knowledge)
@@ -36,7 +36,7 @@ class TestSubnetworkBuilderOnSpliceJunction(unittest.TestCase):
     data = x.join(y)
     inputs = Input((240,))
     fuzzifier = Fuzzifier.get('netbuilder')([inputs, SpliceJunction.feature_mapping])
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
     modules = fuzzifier.visit(knowledge)
 
     def test_on_dataset(self):

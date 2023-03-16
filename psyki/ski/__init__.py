@@ -4,7 +4,7 @@ from typing import Any, List
 from psyki.utils import model_deep_copy
 from tensorflow.keras import Model
 from tensorflow.keras.utils import custom_object_scope
-from psyki.logic import Formula
+from psyki.logic import Formula, Theory
 from pathlib import Path
 
 
@@ -20,36 +20,32 @@ class Injector(ABC):
     _predictor: Any  # Any class that has methods fit and predict
 
     @abstractmethod
-    def inject(self, rules: List[Formula]) -> Any:
+    def inject(self, theory: Theory) -> Any:
         """
-        @param rules: list of logic knowledge that represents the prior knowledge to be injected.
+        @param theory: the theory to inject.
         """
         pass
 
     @staticmethod
     def kill(model: Model,
-             class_mapping: dict[str, int],
-             feature_mapping: dict[str, int],
              fuzzifier: str = 'lukasiewicz') -> Injector:
         from psyki.ski.kill import LambdaLayer
-        return LambdaLayer(model, class_mapping, feature_mapping, fuzzifier)
+        return LambdaLayer(model, fuzzifier)
 
     @staticmethod
     def kins(model: Model,
-             feature_mapping: dict[str, int],
              fuzzifier: str = 'netbuilder',
              injection_layer: int = 0) -> Injector:
-        from psyki.ski.kins import NetworkStructurer
-        return NetworkStructurer(model, feature_mapping, fuzzifier, injection_layer)
+        from psyki.ski.kins import KINS
+        return KINS(model, fuzzifier, injection_layer)
 
     @staticmethod
     def kbann(model: Model,
-              feature_mapping: dict[str, int],
               fuzzifier: str = 'towell',
               omega: float = 4.,
               gamma: float = 0.) -> Injector:
         from psyki.ski.kbann import KBANN
-        return KBANN(model, feature_mapping, fuzzifier, omega, gamma)
+        return KBANN(model, fuzzifier, omega, gamma)
 
 
 class EnrichedModel(Model):

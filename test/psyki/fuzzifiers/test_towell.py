@@ -13,7 +13,7 @@ class TestTowellOnSpliceJunction(unittest.TestCase):
     data = x.join(y)
     inputs = Input((240,))
     fuzzifier = Fuzzifier.get('towell')([inputs, SpliceJunction.feature_mapping])
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
     modules = fuzzifier.visit(knowledge)
 
     def test_on_dataset(self):

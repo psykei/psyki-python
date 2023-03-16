@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras import Input, Model
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.python.framework.random_seed import set_seed
+
+from psyki.logic import Theory
 from psyki.ski import Injector
 from psyki.ski.kill import LambdaLayer
 from psyki.logic.prolog import TuProlog
@@ -19,7 +21,7 @@ class TestKillOnSpliceJunction(unittest.TestCase):
     batch_size = 32
     verbose = 0
     acceptable_accuracy = 0.9
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
     for k in knowledge:
         k.trainable = True
         k.optimize()
@@ -27,6 +29,7 @@ class TestKillOnSpliceJunction(unittest.TestCase):
     x, y = data.iloc[:, :-1], data.iloc[:, -1:]
     y.columns = [x.shape[1]]
     data = x.join(y)
+    theory = Theory(knowledge, data, SpliceJunction.class_mapping)
 
     def test_on_dataset(self):
         set_seed(0)
@@ -37,8 +40,8 @@ class TestKillOnSpliceJunction(unittest.TestCase):
         # Setup predictor
         input_layer = Input((train_x.shape[1],))
         predictor = Model(input_layer, get_mlp(input_layer, 3, 3, [64, 32], 'relu', 'softmax', dropout=True))
-        injector = Injector.kill(predictor, SpliceJunction.class_mapping, SpliceJunction.feature_mapping)
-        new_predictor: LambdaLayer.ConstrainedModel = injector.inject(self.knowledge)
+        injector = Injector.kill(predictor)
+        new_predictor: LambdaLayer.ConstrainedModel = injector.inject(self.theory)
         new_predictor.compile('adam', loss=SparseCategoricalCrossentropy(), metrics=['accuracy'])
         callbacks = Conditions(train_x, train_y)
         # Train
@@ -55,9 +58,10 @@ class TestKillOnPoker(unittest.TestCase):
     batch_size = 32
     verbose = 0
     acceptable_accuracy = 0.9
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'poker.pl').formulae
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'poker.pl')
     train = get_dataset('poker-train.csv')
     test = get_dataset('poker-test.csv')
+    theory = Theory(knowledge, train, Poker.class_mapping)
 
     # Extremely slow, for the time being don't test it!
     def do_not_test_on_dataset(self):
@@ -70,8 +74,8 @@ class TestKillOnPoker(unittest.TestCase):
         # Setup predictor
         input_layer = Input((train_x.shape[1],))
         predictor = Model(input_layer, get_mlp(input_layer, 10, 3, [64, 32], 'relu', 'softmax', dropout=True))
-        injector = Injector.kill(predictor, Poker.class_mapping, Poker.feature_mapping)
-        new_predictor: LambdaLayer.ConstrainedModel = injector.inject(self.knowledge)
+        injector = Injector.kill(predictor)
+        new_predictor: LambdaLayer.ConstrainedModel = injector.inject(self.theory)
         new_predictor.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
         # Train
         new_predictor.fit(train_x, train_y, epochs=self.epochs, batch_size=self.batch_size, verbose=self.verbose)

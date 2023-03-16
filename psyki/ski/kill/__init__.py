@@ -1,38 +1,24 @@
 from __future__ import annotations
-from typing import Iterable, Callable, List
+from typing import Iterable, Callable
 from tensorflow import Tensor, stack
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Lambda
 from tensorflow.keras.utils import custom_object_scope
 from psyki.ski import Injector, EnrichedModel
-from psyki.logic import Formula
+from psyki.logic import Theory
 from psyki.fuzzifiers import Fuzzifier
 from psyki.utils import model_deep_copy
 
 
 class LambdaLayer(Injector):
 
-    def __init__(self, predictor: Model, class_mapping: dict[str, int], feature_mapping: dict[str, int], fuzzifier: str):
+    def __init__(self, predictor: Model,  fuzzifier: str):
         """
         @param predictor: the predictor.
-        @param class_mapping: a map between constants representing the expected class in the logic formulae and the
-        corresponding index for the predictor. Example:
-            - 'setosa': 0,
-            - 'virginica': 1,
-            - 'versicolor': 2.
-        @param feature_mapping: a map between variables in the logic formulae and indices of dataset features. Example:
-            - 'PetalLength': 0,
-            - 'PetalWidth': 1,
-            - 'SepalLength': 2,
-            - 'SepalWidth': 3.
-        @param fuzzifier: the fuzzifiers used to map the knowledge.
+        @param fuzzifier: the fuzzifier used to map the knowledge.
         """
         self._predictor: Model = model_deep_copy(predictor)
-        self._class_mapping: dict[str, int] = class_mapping
         self._fuzzifier_name = fuzzifier
-        self._feature_mapping = feature_mapping
-        self._fuzzifier = Fuzzifier.get(fuzzifier)([class_mapping, feature_mapping])
-        self._fuzzy_functions: Iterable[Callable] = ()
 
     class ConstrainedModel(EnrichedModel):
 
@@ -49,7 +35,6 @@ class LambdaLayer(Injector):
             """
             Remove the lambda layer obtained by the injected knowledge.
             """
-            # Layer -3 is the layer before the lambda layer (last original layer -> lambda -> output).
             return Model(self.input, self.layers[-3].output)
 
         def copy(self) -> EnrichedModel:
@@ -63,17 +48,14 @@ class LambdaLayer(Injector):
             cost = stack([function(x, 1 - y) for function in self._constraints], axis=1)
             return y * (1 + cost)
 
-    def inject(self, rules: List[Formula]) -> Model:
+    def inject(self, theory: Theory) -> Model:
         self._clear()
-        dict_functions = self._fuzzifier.visit(rules)
+        fuzzifier = Fuzzifier.get(self._fuzzifier_name)([theory.class_mapping, theory.feature_mapping])
+        dict_functions = fuzzifier.visit(theory.formulae)
         # To ensure that every function refers to the right class we check the associated class name.
-        self._fuzzy_functions = [dict_functions[name] for name, _ in
-                                 sorted(self._class_mapping.items(), key=lambda i: i[1])]
-        return self.ConstrainedModel(model_deep_copy(self._predictor),
-                                     self._fuzzy_functions,
-                                     self._fuzzifier.custom_objects)
+        sorted_class_mapping = sorted(theory.class_mapping.items(), key=lambda i: i[1])
+        fuzzy_functions = [dict_functions[name] for name, _ in sorted_class_mapping]
+        return self.ConstrainedModel(model_deep_copy(self._predictor), fuzzy_functions, fuzzifier.custom_objects)
 
     def _clear(self):
         self._predictor: Model = model_deep_copy(self._predictor)
-        self._fuzzy_functions = {}
-        self._fuzzifier = Fuzzifier.get(self._fuzzifier_name)([self._class_mapping, self._feature_mapping])

@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras import Input, Model
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.python.framework.random_seed import set_seed
+from psyki.logic import Theory
 from psyki.ski import Injector
 from psyki.logic.prolog import TuProlog
 from test.psyki.injectors import set_trainable_rules
@@ -16,10 +17,11 @@ class TestKinsOnSpliceJunction(unittest.TestCase):
     batch_size = 32
     verbose = 0
     acceptable_accuracy = 0.9
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
     trainable = ['intron_exon', 'exon_intron', 'pyramidine_rich', 'class']
     knowledge = set_trainable_rules(trainable, knowledge)
     data = get_splice_junction_processed_dataset('splice-junction-data.csv')
+    theory = Theory(knowledge, data, SpliceJunction.class_mapping)
 
     def test_on_dataset(self):
         set_seed(0)
@@ -30,8 +32,8 @@ class TestKinsOnSpliceJunction(unittest.TestCase):
         # Setup predictor
         input_layer = Input((train_x.shape[1],))
         predictor = Model(input_layer, get_mlp(input_layer, 3, 3, [64, 32], 'relu', 'softmax', dropout=True))
-        injector = Injector.kins(predictor, SpliceJunction.feature_mapping)
-        new_predictor = injector.inject(self.knowledge)
+        injector = Injector.kins(predictor)
+        new_predictor = injector.inject(self.theory)
         new_predictor.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         callbacks = Conditions(train_x, train_y)
         # Train

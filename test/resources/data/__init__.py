@@ -71,6 +71,7 @@ def get_splice_junction_processed_dataset(filename: str) -> pd.DataFrame:
     y = _data_to_int(data.iloc[:, -1:], SpliceJunction.class_mapping)
     x = _get_binary_data(data.iloc[:, :-1], SpliceJunction.aggregate_feature_mapping)
     y.columns = [x.shape[1]]
+    x.columns = SpliceJunction.feature_mapping.keys()
     return x.join(y)
 
 

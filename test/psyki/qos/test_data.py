@@ -1,5 +1,7 @@
 import unittest
 from tensorflow.python.framework.random_seed import set_seed
+
+from psyki.logic import Theory
 from psyki.logic.prolog import TuProlog
 from psyki.qos.data import DataEfficiency
 from psyki.ski import Injector
@@ -11,8 +13,9 @@ from test.utils import create_standard_fully_connected_nn
 
 class TestDataOnSplice(unittest.TestCase):
     seed = 0
-    formulae = TuProlog.from_file(str(KNOWLEDGE_PATH / 'splice-junction.pl')).formulae
+    formulae = TuProlog.from_file(str(KNOWLEDGE_PATH / 'splice-junction.pl'))
     dataset = get_splice_junction_processed_dataset('splice-junction-data.csv')
+    theory = Theory(formulae, dataset)
     dataset1 = split_dataset(dataset)
     dataset2 = split_dataset(dataset, test_size=0.5)
     model = create_standard_fully_connected_nn(input_size=240, output_size=3, layers=3, neurons=128)
@@ -33,8 +36,8 @@ class TestDataOnSplice(unittest.TestCase):
             'test_x2': self.dataset2['test_x'],
             'test_y2': self.dataset2['test_y'],
         }
-        injector = Injector.kins(self.model, feature_mapping=SpliceJunction.feature_mapping)
-        educated_predictor = injector.inject(self.formulae)
+        injector = Injector.kins(self.model)
+        educated_predictor = injector.inject(self.theory)
         data_efficiency = evaluate_metric(self.model, educated_predictor, self.dataset1, DataEfficiency.compute_during_training, additional_params)
         print(data_efficiency)
         self.assertTrue(isinstance(data_efficiency, float))
@@ -53,8 +56,8 @@ class TestDataOnSplice(unittest.TestCase):
             'train_x2': self.dataset2['train_x'],
             'train_y2': self.dataset2['train_y'],
         }
-        injector = Injector.kins(self.model, feature_mapping=SpliceJunction.feature_mapping)
-        educated_predictor = injector.inject(self.formulae)
+        injector = Injector.kins(self.model)
+        educated_predictor = injector.inject(self.theory)
         data_efficiency = evaluate_metric(self.model, educated_predictor, self.dataset1, DataEfficiency.compute_during_inference, additional_params)
         print(data_efficiency)
         self.assertTrue(isinstance(data_efficiency, float))

@@ -2,42 +2,68 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Iterable
+import pandas as pd
 import psyki.logic.operators
-
+from psyki.utils.exceptions import KnowledgeException
 
 PATH = Path(__file__).parents[0]
 
 
-class TheoryAdapter(ABC):
+class KnowledgeAdapter(ABC):
     """
     Abstract adapter to convert a legacy logic theory into a Theory that can be used by injectors.
     """
 
     @staticmethod
     @abstractmethod
-    def from_legacy_theory(legacy_theory: Any) -> Theory:
+    def from_legacy_theory(legacy_theory: Any) -> list[Formula]:
         raise NotImplementedError()
 
     @staticmethod
     @abstractmethod
-    def from_file(filename: str) -> Theory:
+    def from_file(filename: str) -> list[Formula]:
         raise NotImplementedError()
 
     @staticmethod
     @abstractmethod
-    def from_string(textual_theory: str) -> Theory:
+    def from_string(textual_theory: str) -> list[Formula]:
         raise NotImplementedError()
 
 
 class Theory:
     """
-    Uniformized logic theory that can be used by injectors.
+    Uniformed logic theory that can be used by injectors.
     """
 
-    def __init__(self, formulae: list[Formula] = None):
-        self.formulae: list[Formula] = formulae
+    def __init__(self, knowledge: list[Formula] or str, dataset: pd.DataFrame, class_mapping: dict[str, int] = None):
+        """
+        @param knowledge: list of logic knowledge that represents the prior knowledge to be injected.
+                          Or a string that represents a path to a file containing the knowledge.
+                          Or a string that represents the knowledge itself.
+        @param dataset: dataset containing the domain data.
+        @param class_mapping: optional, mapping between class names and class indices.
+        """
+        if isinstance(knowledge, str):
+            if Path(knowledge).exists():
+                self.formulae: list[Formula] = KnowledgeAdapter.from_file(knowledge)
+            else:
+                try:
+                    self.formulae: list[Formula] = KnowledgeAdapter.from_string(knowledge)
+                except Exception as e:
+                    raise KnowledgeException.not_parsable(knowledge, e)
+        else:
+            self.formulae: list[Formula] = knowledge
+        self.feature_mapping: dict[str, int] = {f: i for i, f in enumerate(dataset.columns[:-1])}
+        if class_mapping is None:
+            self.class_mapping: dict[str, int] = {c: i for i, c in enumerate(sorted(dataset.iloc[:, -1].unique()))}
+        else:
+            self.class_mapping: dict[str, int] = class_mapping
 
     def __add__(self, other: Theory):
+        """
+        Add the knowledge of another theory to this one.
+        @param other: other theory to be added to this one.
+        """
         self.formulae += other.formulae
 
     def __repr__(self) -> str:
@@ -47,7 +73,8 @@ class Theory:
         return '\n'.join(str(f) for f in self.formulae)
 
     def __eq__(self, other: Theory):
-        return all(f1 == f2 for f1, f2 in zip(self.formulae, other.formulae))
+        return all(f1 == f2 for f1, f2 in zip(self.formulae, other.formulae)) \
+               and self.feature_mapping == other.feature_mapping and self.class_mapping == other.class_mapping
 
     def __hash__(self):
         raise hash(self.formulae)
@@ -94,10 +121,6 @@ def optimize_formula(formula: Formula) -> None:
                 optimize_formula(child)
                 for clause in child.unfolded_arguments:
                     father.unfolded_arguments.append(clause)
-                # if father.lhs == child:
-                #     father.lhs = None
-                # elif father.rhs == child:
-                #     father.rhs = None
             else:
                 father.unfolded_arguments.append(child)
         else:

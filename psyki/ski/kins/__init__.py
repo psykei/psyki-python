@@ -1,51 +1,41 @@
 from __future__ import annotations
-from typing import Callable, Iterable, List
 import tensorflow as tf
 from tensorflow import Tensor
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate
 from psyki.ski import Injector
-from psyki.logic import Formula
+from psyki.logic import Theory
 from psyki.fuzzifiers import Fuzzifier
 from psyki.utils import model_deep_copy
 
 
-class NetworkStructurer(Injector):
+class KINS(Injector):
     """
-    This injectors builds a set of moduls, aka ad-hoc layers, and inserts them into the predictor (a neural network).
+    This injector builds a set of moduls, aka ad-hoc layers, and inserts them into the predictor (a neural network).
     In this way the predictor can exploit the knowledge via these modules which mimic the logic formulae.
-    With the default fuzzifiers this is the implementation of KINS: Knowledge injection via network structuring.
+    With the default fuzzifier this is the implementation of KINS: Knowledge injection via network structuring.
     """
 
-    def __init__(self, predictor: Model, feature_mapping: dict[str, int], fuzzifier: str, layer: int = 0):
+    def __init__(self, predictor: Model, fuzzifier: str, layer: int = 0):
         """
         @param predictor: the predictor.
-        @param feature_mapping: a map between variables in the logic formulae and indices of dataset features. Example:
-            - 'PetalLength': 0,
-            - 'PetalWidth': 1,
-            - 'SepalLength': 2,
-            - 'SepalWidth': 3.
         @param layer: the level of the layer where to perform the injection.
-        @param fuzzifier: the fuzzifiers used to map the knowledge (by default it is SubNetworkBuilder).
+        @param fuzzifier: the fuzzifier used to map the knowledge (by default it is SubNetworkBuilder).
         """
         self._base = model_deep_copy(predictor)
         self._predictor: Model = model_deep_copy(predictor)
-        # self.feature_mapping: dict[str, int] = feature_mapping
         if layer < 0 or layer > len(predictor.layers) - 2:
             raise Exception('Cannot inject knowledge into layer ' + str(layer) +
                             '.\nYou can inject from layer 0 to ' + str(len(predictor.layers) - 2))
         self._layer = layer
         self._fuzzifier_name = fuzzifier
-        self._feature_mapping = feature_mapping
-        # Use as default fuzzifiers SubNetworkBuilder.
-        self._fuzzifier = Fuzzifier.get(fuzzifier)([self._predictor.input, self._feature_mapping])
-        self._fuzzy_functions: Iterable[Callable] = ()
         self._latest_predictor = None
 
-    def inject(self, rules: List[Formula]) -> Model:
+    def inject(self, theory: Theory) -> Model:
         self._clear()
+        fuzzifier = Fuzzifier.get(self._fuzzifier_name)([self._predictor.input, theory.feature_mapping])
         predictor_input: Tensor = self._predictor.input
-        modules = self._fuzzifier.visit(rules)
+        modules = fuzzifier.visit(theory.formulae)
         if self._layer == 0:
             # Injection!
             x = Concatenate(axis=1)([predictor_input] + modules)
@@ -92,7 +82,7 @@ class NetworkStructurer(Injector):
             print("[WARNING]: fail to keep the original weights. This can be ignored if the base NN is not trained.")
         """
 
-        return self._fuzzifier.enriched_model(new_predictor)
+        return fuzzifier.enriched_model(new_predictor)
 
     def _get_weights_and_bias(self, layer1, layer2, x):
         old_weights = layer1.weights[0]
@@ -110,5 +100,3 @@ class NetworkStructurer(Injector):
 
     def _clear(self):
         self._predictor: Model = model_deep_copy(self._base)
-        self._fuzzifier = Fuzzifier.get(self._fuzzifier_name)([self._predictor.input, self._feature_mapping])
-        self._fuzzy_functions = ()

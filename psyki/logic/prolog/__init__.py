@@ -5,17 +5,17 @@ from tuprolog.theory.parsing import parse_theory
 from psyki.logic.operators import LogicOperator, Conjunction, LogicNegation
 
 
-class TuProlog(TheoryAdapter):
+class TuProlog(KnowledgeAdapter):
     """Adapter for 2ppy library: https://github.com/tuProlog/2ppy"""
 
     @staticmethod
-    def _from_file(filename: str) -> PrologTheory:
+    def _from_file(filename: str) -> list[Formula]:
         with open(filename, 'r', encoding="utf8") as file:
             textual_rule = file.read()
         return TuProlog._from_string(textual_rule)
 
     @staticmethod
-    def _from_string(textual_theory: str) -> PrologTheory:
+    def _from_string(textual_theory: str) -> list[Formula]:
         return parse_theory(textual_theory)
 
     @staticmethod
@@ -64,13 +64,13 @@ class TuProlog(TheoryAdapter):
         return DefinitionFormula(DefinitionClause(name, args), rhs)
 
     @staticmethod
-    def from_legacy_theory(legacy_theory: PrologTheory) -> Theory:
-        return Theory([TuProlog._convert_clause(clause) for clause in mutable_theory(legacy_theory).clauses])
+    def from_legacy_theory(legacy_theory: PrologTheory) -> list[Formula]:
+        return [TuProlog._convert_clause(clause) for clause in mutable_theory(legacy_theory).clauses]
 
     @staticmethod
-    def from_file(filename: str) -> Theory:
+    def from_file(filename: str) -> list[Formula]:
         return TuProlog.from_legacy_theory(TuProlog._from_file(filename))
 
     @staticmethod
-    def from_string(textual_theory: str) -> Theory:
+    def from_string(textual_theory: str) -> list[Formula]:
         return TuProlog.from_legacy_theory(TuProlog._from_string(textual_theory))

@@ -4,7 +4,7 @@ from psyki.logic.prolog import TuProlog
 
 
 class TestFormulaOptimization(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl').formulae
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
 
     def test_conjunction(self):
         first_formula = self.knowledge[0]
