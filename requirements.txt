@@ -1,9 +1,9 @@
 build>=0.6.0
 twine>=3.4.2
 2ppy>=0.4.0
-antlr4-python3-runtime~=4.9.3
 tensorflow~=2.7.0
 numpy>=1.22.3
 pandas>=1.4.2
 scikit-learn>=1.0.2
 setuptools>=59.8.0
+codecarbon~=2.1.4

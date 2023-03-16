@@ -1,9 +1,16 @@
 VERSION
 
 psyki/utils/fuzzification/
+tmp/
 .idea/
 .vscode/
 .DS_Store
+test/resources/data/poker/
+!test/resources/data/poker/__init__.py
+*.data
+test/resources/data/*.csv
+test/resources/data/*.txt
+demo/
 
 *~
 *.jar

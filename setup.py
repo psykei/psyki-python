@@ -60,29 +60,6 @@ class GetVersionCommand(distutils.cmd.Command):
         print(version)
 
 
-class GenerateAntlr4Parser(distutils.cmd.Command):
-    """A custom command to generate an Antlr4 parser class for a given grammar."""
-
-    description = 'generate the Antlr4 parser for a given grammar'
-    user_options = [('file=', 'f', 'grammar file name')]
-
-    def initialize_options(self):
-        from psyki.resources import PATH
-        self.file = str(PATH / 'Datalog.g4')
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import re
-        from os import system, popen
-        antlr4_version = re.split(r'=', popen('cat requirements.txt | grep antlr4').read())[1][:-1]
-        system('wget https://www.antlr.org/download/antlr-' + antlr4_version + '-complete.jar')
-        system('export CLASSPATH="./antlr-' + antlr4_version + '-complete.jar:$CLASSPATH"')
-        system('java -jar ./antlr-' + antlr4_version + '-complete.jar -Dlanguage=Python3 ' + self.file + ' -visitor -o psyki/resources/dist')
-        system('rm ./antlr-' + antlr4_version + '-complete.jar')
-
-
 setup(
     name='psyki',  # Required
     version=version,
@@ -110,13 +87,11 @@ setup(
     include_package_data=True,
     python_requires='>=3.9.0, <3.10',
     install_requires=[
-        'antlr4-python3-runtime~=4.9.3',
         'tensorflow>=2.7.0',
         'numpy>=1.22.3',
         'scikit-learn>=1.0.2',
         'pandas>=1.4.2',
-        # 'skl2onnx~=1.10.0',
-        # 'onnxruntime~=1.9.0'
+        'codecarbon>=2.1.4'
     ],  # Optional
     zip_safe = False,
     platforms = "Independant",
@@ -128,6 +103,5 @@ setup(
     },
     cmdclass={
         'get_project_version': GetVersionCommand,
-        'generate_antlr4_parser': GenerateAntlr4Parser,
     },
 )

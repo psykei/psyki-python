@@ -6,6 +6,25 @@ Some quick links:
 * [PyPi Repository](https://pypi.org/project/psyki/)
 * [Issues](https://github.com/psykei/psyki-python/issues)
 
+### Reference paper
+
+> Matteo Magnini, Giovanni Ciatto, Andrea Omicini. "[On the Design of PSyKI: A Platform for Symbolic Knowledge Injection into Sub-Symbolic Predictors]", in: Proceedings of the 4th International Workshop on EXplainable and TRAnsparent AI and Multi-Agent Systems, 2022.
+
+Bibtex: 
+```bibtex
+@inproceedings{PsykiExtraamas2022,
+	keywords = {Symbolic Knowledge Injection,  Explainable AI, XAI, Neural Networks, PSyKI},
+	year = 2022,
+	talk = {Talks.PsykiExtraamas2022},
+	author = {Magnini, Matteo and Ciatto, Giovanni and Omicini, Andrea},
+	venue_e = {Events.Extraamas2022},
+	sort = {inproceedings},
+	publisher = {Springer},
+	status = {In press},
+	title = {On the Design of PSyKI: a Platform for Symbolic Knowledge Injection into Sub-Symbolic Predictors},
+	booktitle = {Proceedings of the 4th International Workshop on EXplainable and TRAnsparent AI and Multi-Agent Systems}
+}
+```
 
 ## Intro
 
@@ -28,9 +47,9 @@ To generate/edit the class diagram browse the URL above, after replacing `svg` w
 
 Currently, implemented injectors are:
 
+ - `KBANN`, one of the first injector introduced in literature;
  - `LambdaLayer`, performs injection into NN of any shape via constraining;
  - `NetworkComposer`, performs injection into NN of any shape via structuring.
-
 
 ## Users
 
@@ -42,18 +61,13 @@ pip install psyki
 ### Requirements
 
 - python 3.9+
-- java 11 (for test and demo)
-- antlr4-python3-runtime 4.9.3 (for test and demo)
-- tensorflow 2.6.2
-- numpy 1.19.2
-- scikit-learn 1.0.1
-- pandas 1.3.4
+- java 11
+- tensorflow 2.7.0
+- numpy 1.22.3
+- scikit-learn 1.0.2
+- pandas 1.4.2
 
-### Demo
-
-`demo/demo.ipynb` is a notebook that shows how injection is applied to a network for poker hand classification task.
-Rules are defined in `resources/rules/poker.csv`.
-
+### Examples
 
 Example of injection:
 ```python
@@ -122,3 +136,4 @@ Contributions to this project are welcome. Just some rules:
 #### Issue tracking
 If you meet some problem in using or developing PSyKE, you are encouraged to signal it through the project
 ["Issues" section](https://github.com/psykei/psyki-python/issues) on GitHub.
+
