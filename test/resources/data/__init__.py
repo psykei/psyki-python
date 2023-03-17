@@ -31,10 +31,10 @@ class Dataset(ABCMeta):
     def download(mcs) -> None:
         if mcs.need_download:
             d = pd.DataFrame = pd.read_csv(mcs.data_url, sep=r",\s*", header=None, encoding='utf8')
-            d.to_csv(PATH / mcs.filename, index=False)
+            d.to_csv(PATH / mcs.filename, index=False, header=False)
             if mcs.data_url_test is not None:
                 d = pd.DataFrame = pd.read_csv(mcs.data_url_test, sep=r",\s*", header=None, encoding='utf8')
-                d.to_csv(PATH / mcs.test_filename, index=False)
+                d.to_csv(PATH / mcs.test_filename, index=False, header=False)
 
     @classmethod
     def get_knowledge(mcs) -> list[Formula]:
