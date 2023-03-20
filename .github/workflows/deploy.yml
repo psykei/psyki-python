@@ -28,7 +28,7 @@ jobs:
 
       - name: Get Python Version
         id: get-python-version
-        run: echo ::set-output name=version::$(cat .python-version)
+        run: echo "name=version::$(cat .python-version)" >> $GITHUB_OUTPUT
 
       - name: Setup Python
         uses: actions/setup-python@v3
@@ -59,7 +59,7 @@ jobs:
 
       - name: Get Version
         id: get-version
-        run: echo ::set-output name=version::$(python setup.py get_project_version | tail -n 1)
+        run: echo "name=version::$(python setup.py get_project_version | tail -n 1)" >> $GITHUB_OUTPUT
 
       - name: Release Assets
         id: upload-release-assets

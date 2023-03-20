@@ -4,7 +4,6 @@ import subprocess
 import distutils.cmd
 
 # current directory
-from test.resources.data import DATASETS
 
 here = pathlib.Path(__file__).parent.resolve()
 
@@ -74,8 +73,14 @@ class DownloadDatasets(distutils.cmd.Command):
         pass
 
     def run(self):
-        for dataset in DATASETS:
-            dataset.download()
+        import psyki
+        try:
+            from test.resources.data import DATASETS
+
+            for dataset in DATASETS:
+                dataset.download()
+        except ImportError:
+            psyki.logger.log("Cannot import test.resources.data.DATASETS.")
 
 
 setup(
