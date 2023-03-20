@@ -29,8 +29,8 @@ class Injector(ABC):
     @staticmethod
     def kill(model: Model,
              fuzzifier: str = 'lukasiewicz') -> Injector:
-        from psyki.ski.kill import LambdaLayer
-        return LambdaLayer(model, fuzzifier)
+        from psyki.ski.kill import KILL
+        return KILL(model, fuzzifier)
 
     @staticmethod
     def kins(model: Model,

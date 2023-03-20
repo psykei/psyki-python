@@ -7,11 +7,9 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.python.framework.random_seed import set_seed
 from psyki.logic import Theory
 from psyki.ski import Injector
-from psyki.ski.kill import LambdaLayer
-from psyki.logic.prolog import TuProlog
+from psyki.ski.kill import KILL
 from test.resources.data import SpliceJunction, Poker
 from test.utils import get_mlp, Conditions
-from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 
 
 class TestKillOnSpliceJunction(unittest.TestCase):
@@ -36,7 +34,7 @@ class TestKillOnSpliceJunction(unittest.TestCase):
         input_layer = Input((train_x.shape[1],))
         predictor = Model(input_layer, get_mlp(input_layer, 3, 3, [64, 32], 'relu', 'softmax', dropout=True))
         injector = Injector.kill(predictor)
-        new_predictor: LambdaLayer.ConstrainedModel = injector.inject(self.theory)
+        new_predictor: KILL.ConstrainedModel = injector.inject(self.theory)
         new_predictor.compile('adam', loss=SparseCategoricalCrossentropy(), metrics=['accuracy'])
         callbacks = Conditions(train_x, train_y)
         # Train
@@ -69,7 +67,7 @@ class TestKillOnPoker(unittest.TestCase):
         input_layer = Input((train_x.shape[1],))
         predictor = Model(input_layer, get_mlp(input_layer, 10, 3, [64, 32], 'relu', 'softmax', dropout=True))
         injector = Injector.kill(predictor)
-        new_predictor: LambdaLayer.ConstrainedModel = injector.inject(self.theory)
+        new_predictor: KILL.ConstrainedModel = injector.inject(self.theory)
         new_predictor.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
         # Train
         new_predictor.fit(train_x, train_y, epochs=self.epochs, batch_size=self.batch_size, verbose=self.verbose)

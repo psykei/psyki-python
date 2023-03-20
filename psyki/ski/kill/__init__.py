@@ -10,7 +10,7 @@ from psyki.fuzzifiers import Fuzzifier
 from psyki.utils import model_deep_copy
 
 
-class LambdaLayer(Injector):
+class KILL(Injector):
 
     def __init__(self, predictor: Model,  fuzzifier: str):
         """
@@ -40,7 +40,7 @@ class LambdaLayer(Injector):
         def copy(self) -> EnrichedModel:
             with custom_object_scope(self.custom_objects):
                 model = model_deep_copy(self.remove_constraints())
-                return LambdaLayer.ConstrainedModel(model, self._constraints, self.custom_objects)
+                return KILL.ConstrainedModel(model, self._constraints, self.custom_objects)
 
         def _cost(self, output_layer: Tensor) -> Tensor:
             input_len = self._input_shape[1]
