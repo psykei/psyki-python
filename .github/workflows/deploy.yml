@@ -19,7 +19,7 @@ jobs:
     name: Deploy on PyPI and create release
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0 # all history
 
@@ -31,7 +31,7 @@ jobs:
         run: echo ::set-output name=version::$(cat .python-version)
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ steps.get-python-version.outputs.version }}
 
@@ -46,7 +46,7 @@ jobs:
 
       - name: Archive Dist Artifacts
         if: failure() || success()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dist
           path: './dist'
