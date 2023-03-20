@@ -17,7 +17,9 @@ class KBANN(Injector):
     Implementation of KBANN algorithm described by G. Towell in https://doi.org/10.1016/0004-3702(94)90105-8
     """
 
-    def __init__(self, predictor: Model, fuzzifier: str, omega: float = 4., gamma: float = 0.):
+    def __init__(
+        self, predictor: Model, fuzzifier: str, omega: float = 4.0, gamma: float = 0.0
+    ):
         """
         @param predictor: the predictor.
         @param fuzzifier: the fuzzifier used to map the knowledge (by default it is SubNetworkBuilder).
@@ -25,14 +27,13 @@ class KBANN(Injector):
         @param gamma: weight for the constraining variant of the algorithm. If 0 no constrain is applied.
         """
         # TODO: analyse this warning that sometimes comes out, this should not be armful.
-        tf.get_logger().setLevel('ERROR')
+        tf.get_logger().setLevel("ERROR")
         self._fuzzifier_name = fuzzifier
         self.omega = omega
         self._predictor = predictor
         self.gamma = gamma
 
     class ConstrainedModel(EnrichedModel):
-
         def __init__(self, model: Model, gamma: float, custom_objects: dict):
             super().__init__(model, custom_objects)
             self.custom_objects = custom_objects
@@ -40,8 +41,9 @@ class KBANN(Injector):
             self.init_weights = copy.deepcopy(self.weights)
 
         class CustomLoss(Loss):
-
-            def __init__(self, original_loss: Callable, model: Model, init_weights, gamma: float):
+            def __init__(
+                self, original_loss: Callable, model: Model, init_weights, gamma: float
+            ):
                 self.original_loss = original_loss
                 self.model = model
                 self.init_weights = init_weights
@@ -52,12 +54,19 @@ class KBANN(Injector):
                 if self.gamma is None or self.gamma == 0:
                     return self.original_loss(y_true, y_pred)
                 else:
-                    return self.original_loss(y_true, y_pred) + self.gamma * self._cost_factor()
+                    return (
+                        self.original_loss(y_true, y_pred)
+                        + self.gamma * self._cost_factor()
+                    )
 
             def _cost_factor(self):
                 weights_quadratic_diff = 0
-                for init_weight, current_weight in zip(self.init_weights, self.model.weights):
-                    weights_quadratic_diff += tf.math.reduce_sum((init_weight - current_weight) ** 2)
+                for init_weight, current_weight in zip(
+                    self.init_weights, self.model.weights
+                ):
+                    weights_quadratic_diff += tf.math.reduce_sum(
+                        (init_weight - current_weight) ** 2
+                    )
                 return weights_quadratic_diff / (1 + weights_quadratic_diff)
 
         def copy(self) -> EnrichedModel:
@@ -66,16 +75,22 @@ class KBANN(Injector):
                 return KBANN.ConstrainedModel(model, self.gamma, self.custom_objects)
 
         def loss_function(self, original_function: Callable) -> Callable:
-            return self.CustomLoss(original_function, self, self.init_weights, self.gamma)
+            return self.CustomLoss(
+                original_function, self, self.init_weights, self.gamma
+            )
 
     def inject(self, theory: Theory) -> Model:
         self._clear()
-        fuzzifier = Fuzzifier.get(self._fuzzifier_name)([self._predictor.input, theory.feature_mapping, self.omega])
+        fuzzifier = Fuzzifier.get(self._fuzzifier_name)(
+            [self._predictor.input, theory.feature_mapping, self.omega]
+        )
         predictor_input: Tensor = self._predictor.input
         modules: list[Tensor] = fuzzifier.visit(theory.formulae)
         x = Concatenate(axis=1)(modules)
         # return self._fuzzifier.enriched_model(Model(predictor_input, x))
-        return self.ConstrainedModel(Model(predictor_input, x), self.gamma, fuzzifier.custom_objects)
+        return self.ConstrainedModel(
+            Model(predictor_input, x), self.gamma, fuzzifier.custom_objects
+        )
 
     def _clear(self):
         self._predictor: Model = model_deep_copy(self._predictor)

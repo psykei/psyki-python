@@ -35,7 +35,12 @@ class Theory:
     Uniformed logic theory that can be used by injectors.
     """
 
-    def __init__(self, knowledge: list[Formula] or str, dataset: pd.DataFrame, class_mapping: dict[str, int] = None):
+    def __init__(
+        self,
+        knowledge: list[Formula] or str,
+        dataset: pd.DataFrame,
+        class_mapping: dict[str, int] = None,
+    ):
         """
         @param knowledge: list of logic knowledge that represents the prior knowledge to be injected.
                           Or a string that represents a path to a file containing the knowledge.
@@ -48,14 +53,20 @@ class Theory:
                 self.formulae: list[Formula] = KnowledgeAdapter.from_file(knowledge)
             else:
                 try:
-                    self.formulae: list[Formula] = KnowledgeAdapter.from_string(knowledge)
+                    self.formulae: list[Formula] = KnowledgeAdapter.from_string(
+                        knowledge
+                    )
                 except Exception as e:
                     raise KnowledgeException.not_parsable(knowledge, e)
         else:
             self.formulae: list[Formula] = knowledge
-        self.feature_mapping: dict[str, int] = {f: i for i, f in enumerate(dataset.columns[:-1])}
+        self.feature_mapping: dict[str, int] = {
+            f: i for i, f in enumerate(dataset.columns[:-1])
+        }
         if class_mapping is None:
-            self.class_mapping: dict[str, int] = {c: i for i, c in enumerate(sorted(dataset.iloc[:, -1].unique()))}
+            self.class_mapping: dict[str, int] = {
+                c: i for i, c in enumerate(sorted(dataset.iloc[:, -1].unique()))
+            }
         else:
             self.class_mapping: dict[str, int] = class_mapping
 
@@ -70,11 +81,14 @@ class Theory:
         return repr(self.formulae)
 
     def __str__(self) -> str:
-        return '\n'.join(str(f) for f in self.formulae)
+        return "\n".join(str(f) for f in self.formulae)
 
     def __eq__(self, other: Theory):
-        return all(f1 == f2 for f1, f2 in zip(self.formulae, other.formulae)) \
-               and self.feature_mapping == other.feature_mapping and self.class_mapping == other.class_mapping
+        return (
+            all(f1 == f2 for f1, f2 in zip(self.formulae, other.formulae))
+            and self.feature_mapping == other.feature_mapping
+            and self.class_mapping == other.class_mapping
+        )
 
     def __hash__(self):
         raise hash(self.formulae)
@@ -114,7 +128,6 @@ class Formula(ABC):
 
 
 def optimize_formula(formula: Formula) -> None:
-
     def optimize_child(child, operator, father):
         if isinstance(child, Expression):
             if child.op.name == operator.name:
@@ -137,11 +150,11 @@ def optimize_formula(formula: Formula) -> None:
             optimize_formula(lhs)
             optimize_formula(rhs)
     else:
-        if hasattr(formula, 'lhs'):
+        if hasattr(formula, "lhs"):
             optimize_formula(formula.lhs)
-        if hasattr(formula, 'rhs'):
+        if hasattr(formula, "rhs"):
             optimize_formula(formula.rhs)
-        if hasattr(formula, 'predicate'):
+        if hasattr(formula, "predicate"):
             optimize_formula(formula.predicate)
 
 
@@ -150,7 +163,8 @@ class DefinitionFormula(Formula):
     Logic rule with a left-hand side with variables and possibly a term representing a class or a real value.
     Right-hand side contains the logic clauses that must be satisfied to make the whole rule true.
     """
-    __definition_symbol: str = ':-'
+
+    __definition_symbol: str = ":-"
 
     def __init__(self, lhs: DefinitionClause, rhs: Clause, trainable: bool = False):
         self.lhs: DefinitionClause = lhs
@@ -158,7 +172,7 @@ class DefinitionFormula(Formula):
         self.trainable = trainable
 
     def __str__(self) -> str:
-        return str(self.lhs) + ' ' + self.__definition_symbol + ' ' + str(self.rhs)
+        return str(self.lhs) + " " + self.__definition_symbol + " " + str(self.rhs)
 
     def __repr__(self) -> str:
         return repr(self.lhs) + self.__definition_symbol + repr(self.rhs)
@@ -180,13 +194,19 @@ class DefinitionFormula(Formula):
     def is_optimized(self) -> bool:
         return self.rhs.is_optimized
 
-    def remove_variable_assignment(self, variables: Iterable[Variable]) -> DefinitionFormula:
+    def remove_variable_assignment(
+        self, variables: Iterable[Variable]
+    ) -> DefinitionFormula:
         """
         Return a new formula without 'is' expressions in the body.
         If a variable's name appears in variable_names then the expression is substituted with the true predicate.
         If the variable's name does not appear in variable_names then 'is' is substituted with the equivalence.
         """
-        return DefinitionFormula(self.lhs.copy(), self.rhs.remove_variable_assignment(variables), self.trainable)
+        return DefinitionFormula(
+            self.lhs.copy(),
+            self.rhs.remove_variable_assignment(variables),
+            self.trainable,
+        )
 
     def get_substitution(self, variable: Variable) -> Formula:
         """
@@ -206,10 +226,10 @@ class DefinitionClause(Formula):
         self.args: Argument = args
 
     def __repr__(self) -> str:
-        return self.predication + '(' + (repr(self.args)) + ')'
+        return self.predication + "(" + (repr(self.args)) + ")"
 
     def __str__(self) -> str:
-        return self.predication + '(' + (str(self.args)) + ')'
+        return self.predication + "(" + (str(self.args)) + ")"
 
     def __eq__(self, other: DefinitionClause) -> bool:
         return self.predication == other.predication and self.args == other.args
@@ -226,7 +246,6 @@ class DefinitionClause(Formula):
 
 
 class Clause(Formula, ABC):
-
     def remove_variable_assignment(self, variables: Iterable[Variable]) -> Clause:
         return self
 
@@ -238,6 +257,7 @@ class Expression(Clause):
     """
     Logic expression with arity 2, so it is composed of a left-hand side and a right-hand side plus the operator.
     """
+
     def __init__(self, lhs: Clause, rhs: Clause, op: operators.LogicOperator):
         self.lhs: Clause = lhs
         self.rhs: Clause = rhs
@@ -246,13 +266,25 @@ class Expression(Clause):
 
     def __repr__(self) -> str:
         if len(self.unfolded_arguments) > 0:
-            return "'" + repr(self.op) + "'(" + ','.join(repr(arg) for arg in self.unfolded_arguments) + ")"
+            return (
+                "'"
+                + repr(self.op)
+                + "'("
+                + ",".join(repr(arg) for arg in self.unfolded_arguments)
+                + ")"
+            )
         else:
             return repr(self.lhs) + repr(self.op) + repr(self.rhs)
 
     def __str__(self) -> str:
         if len(self.unfolded_arguments) > 0:
-            return "'" + str(self.op) + "'(" + ','.join(str(arg) for arg in self.unfolded_arguments) + ")"
+            return (
+                "'"
+                + str(self.op)
+                + "'("
+                + ",".join(str(arg) for arg in self.unfolded_arguments)
+                + ")"
+            )
         else:
             return str(self.lhs) + self.op.pretty_string + str(self.rhs)
 
@@ -284,11 +316,18 @@ class Expression(Clause):
             else:
                 return Expression(self.lhs.copy(), self.rhs.copy(), operators.Equal())
         else:
-            return Expression(self.lhs.remove_variable_assignment(variables),
-                              self.rhs.remove_variable_assignment(variables), self.op)
+            return Expression(
+                self.lhs.remove_variable_assignment(variables),
+                self.rhs.remove_variable_assignment(variables),
+                self.op,
+            )
 
     def get_substitution(self, variable: Variable) -> Formula:
-        if isinstance(self.lhs, Variable) and self.lhs == variable and self.op.symbol == operators.Assignment.symbol:
+        if (
+            isinstance(self.lhs, Variable)
+            and self.lhs == variable
+            and self.op.symbol == operators.Assignment.symbol
+        ):
             return self.rhs
         else:
             rhs = self.rhs.get_substitution(variable)
@@ -307,16 +346,17 @@ class Negation(Literal):
     """
     Negation of a predicate.
     """
+
     __negation_operator: operators.LogicOperator = operators.LogicNegation()
 
     def __init__(self, predicate: Clause):
         self.predicate: Clause = predicate
 
     def __repr__(self) -> str:
-        return self.__negation_operator.symbol + '(' + repr(self.predicate) + ')'
+        return self.__negation_operator.symbol + "(" + repr(self.predicate) + ")"
 
     def __str__(self) -> str:
-        return self.__negation_operator.pretty_string + '(' + str(self.predicate) + ')'
+        return self.__negation_operator.pretty_string + "(" + str(self.predicate) + ")"
 
     def __eq__(self, other: Negation) -> bool:
         return self.predicate == other.predicate
@@ -367,10 +407,10 @@ class Nary(Predicate):
         self.args: Argument = args
 
     def __repr__(self):
-        return repr(self.predicate) + '(' + repr(self.args) + ')'
+        return repr(self.predicate) + "(" + repr(self.args) + ")"
 
     def __str__(self) -> str:
-        return self.predicate + '(' + str(self.args) + ')'
+        return self.predicate + "(" + str(self.args) + ")"
 
     def __eq__(self, other: Nary) -> bool:
         return self.predicate == other.predicate and self.arity == other.arity
@@ -504,10 +544,12 @@ class Argument(Formula):
         self.args: Argument = args
 
     def __repr__(self) -> str:
-        return repr(self.term) + (',' + repr(self.args) if self.args is not None else '')
+        return repr(self.term) + (
+            "," + repr(self.args) if self.args is not None else ""
+        )
 
     def __str__(self) -> str:
-        return str(self.term) + (', ' + str(self.args) if self.args is not None else '')
+        return str(self.term) + (", " + str(self.args) if self.args is not None else "")
 
     def __eq__(self, other: Argument) -> bool:
         return self.term == other.term and self.args == other.args
@@ -540,10 +582,14 @@ class ComplexArgument(Formula):
         self.args: ComplexArgument = args
 
     def __repr__(self) -> str:
-        return str(self.clause) + (',' + str(self.args) if self.args is not None else '')
+        return str(self.clause) + (
+            "," + str(self.args) if self.args is not None else ""
+        )
 
     def __str__(self) -> str:
-        return str(self.clause) + (',' + str(self.args) if self.args is not None else '')
+        return str(self.clause) + (
+            "," + str(self.args) if self.args is not None else ""
+        )
 
     def __eq__(self, other: ComplexArgument) -> bool:
         return self.clause == other.clause and self.args == other.args

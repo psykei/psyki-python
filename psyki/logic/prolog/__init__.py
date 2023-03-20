@@ -10,7 +10,7 @@ class TuProlog(KnowledgeAdapter):
 
     @staticmethod
     def _from_file(filename: str) -> list[Formula]:
-        with open(filename, 'r', encoding="utf8") as file:
+        with open(filename, "r", encoding="utf8") as file:
             textual_rule = file.read()
         return TuProlog._from_string(textual_rule)
 
@@ -22,7 +22,11 @@ class TuProlog(KnowledgeAdapter):
     def _visit_element(elem: Any) -> Any:
         if isinstance(elem, list):
             if len(elem) > 1:
-                return Expression(TuProlog._visit_element(elem[0]), TuProlog._visit_element(elem[1:]), Conjunction())
+                return Expression(
+                    TuProlog._visit_element(elem[0]),
+                    TuProlog._visit_element(elem[1:]),
+                    Conjunction(),
+                )
             elif len(elem) == 1:
                 return TuProlog._visit_element(elem[0])
             else:
@@ -41,7 +45,11 @@ class TuProlog(KnowledgeAdapter):
             if operator is None:
                 return Nary(str(elem.functor), TuProlog._arg_from_list(list(elem.args)))
             if operator.arity == 2:
-                return Expression(TuProlog._visit_element(args[0]), TuProlog._visit_element(args[1]), operator)
+                return Expression(
+                    TuProlog._visit_element(args[0]),
+                    TuProlog._visit_element(args[1]),
+                    operator,
+                )
             elif operator.symbol == LogicNegation.symbol:
                 return Negation(TuProlog._visit_element(args))
             else:
@@ -52,7 +60,9 @@ class TuProlog(KnowledgeAdapter):
     @staticmethod
     def _arg_from_list(args: list[Any]) -> Argument:
         if len(args) > 0:
-            return Argument(TuProlog._visit_element(args[0]), TuProlog._arg_from_list(args[1:]))
+            return Argument(
+                TuProlog._visit_element(args[0]), TuProlog._arg_from_list(args[1:])
+            )
         else:
             return None
 
@@ -65,7 +75,10 @@ class TuProlog(KnowledgeAdapter):
 
     @staticmethod
     def from_legacy_theory(legacy_theory: PrologTheory) -> list[Formula]:
-        return [TuProlog._convert_clause(clause) for clause in mutable_theory(legacy_theory).clauses]
+        return [
+            TuProlog._convert_clause(clause)
+            for clause in mutable_theory(legacy_theory).clauses
+        ]
 
     @staticmethod
     def from_file(filename: str) -> list[Formula]:

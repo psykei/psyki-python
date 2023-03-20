@@ -36,11 +36,12 @@ class Fuzzifier(ABC):
         elif name == Towell.name:
             return lambda x: Towell(*x)
         else:
-            raise Exception('Fuzzifier ' + name + ' is not defined')
+            raise Exception("Fuzzifier " + name + " is not defined")
 
     @staticmethod
     def enriched_model(model: Model) -> Model:
         from psyki.ski import EnrichedModel
+
         return EnrichedModel(model, {})
 
     @staticmethod
@@ -53,6 +54,7 @@ class DatalogFuzzifier(Fuzzifier, ABC):
     """
     A fuzzifier supporting the Datalog logic language.
     """
+
     """
     A variable can be grounded in two different ways:
     - the variable appears in the head of the predicate, then its value is the one provided by the caller.
@@ -97,7 +99,9 @@ class DatalogFuzzifier(Fuzzifier, ABC):
     def visit(self, rules: List[Formula]) -> Any:
         self._clear()
 
-    def _visit(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
+    def _visit(
+        self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap
+    ) -> Any:
         cases = [
             (logic.DefinitionFormula, self._visit_formula),
             (logic.Expression, self._visit_expression),
@@ -107,7 +111,7 @@ class DatalogFuzzifier(Fuzzifier, ABC):
             (logic.Number, self._visit_number),
             (logic.Unary, self._visit_unary),
             (logic.Nary, self._visit_nary),
-            (type(formula), None)
+            (type(formula), None),
         ]
         matched = match_case(type(formula), cases)
         if matched is not None:
@@ -116,26 +120,40 @@ class DatalogFuzzifier(Fuzzifier, ABC):
             else:
                 return matched(formula, local_mapping, substitutions)
         else:
-            raise Exception('Unexpected formula')
+            raise Exception("Unexpected formula")
 
     @abstractmethod
-    def _visit_formula(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
+    def _visit_formula(
+        self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap
+    ) -> Any:
         pass
 
     @abstractmethod
-    def _visit_definition_clause(self, lhs: Formula, rhs: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
+    def _visit_definition_clause(
+        self,
+        lhs: Formula,
+        rhs: Formula,
+        local_mapping: VariableMap,
+        substitutions: SubMap,
+    ) -> Any:
         pass
 
     @abstractmethod
-    def _visit_expression(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
+    def _visit_expression(
+        self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap
+    ) -> Any:
         pass
 
     @abstractmethod
-    def _visit_negation(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
+    def _visit_negation(
+        self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap
+    ) -> Any:
         pass
 
     @abstractmethod
-    def _visit_variable(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap) -> Any:
+    def _visit_variable(
+        self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap
+    ) -> Any:
         pass
 
     @abstractmethod
@@ -151,10 +169,17 @@ class DatalogFuzzifier(Fuzzifier, ABC):
         pass
 
     @abstractmethod
-    def _assign_variables(self, mappings: list[tuple[Any, VariableMap]], local_mapping: VariableMap, substitutions: SubMap) -> Any:
+    def _assign_variables(
+        self,
+        mappings: list[tuple[Any, VariableMap]],
+        local_mapping: VariableMap,
+        substitutions: SubMap,
+    ) -> Any:
         pass
 
-    def _visit_nary(self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap):
+    def _visit_nary(
+        self, formula: Formula, local_mapping: VariableMap, substitutions: SubMap
+    ):
         assert isinstance(formula, Nary)
         # Check if all variables in the predicate are bounded.
         # If positive then just evaluate the predicate.
@@ -162,7 +187,13 @@ class DatalogFuzzifier(Fuzzifier, ABC):
         arguments: list[Term] = formula.args.unfolded
         keys = local_mapping.keys()
         subs = substitutions.keys()
-        all_grounded = all([arg in keys or arg in subs for arg in arguments if isinstance(arg, Variable)])  # or arg in subs
+        all_grounded = all(
+            [
+                arg in keys or arg in subs
+                for arg in arguments
+                if isinstance(arg, Variable)
+            ]
+        )  # or arg in subs
         # Check if the predicate has been defined
         predicate, local_variables = None, {}
         if formula.predicate in self.predicate_call_mapping.keys():
@@ -175,9 +206,17 @@ class DatalogFuzzifier(Fuzzifier, ABC):
                 # Only the class/value overall evaluation of the rule is considered.
                 return self.class_call[output_value]
             else:
-                raise Exception("Rule " + formula.predicate + "for class/regression " + output_value + " not found")
+                raise Exception(
+                    "Rule "
+                    + formula.predicate
+                    + "for class/regression "
+                    + output_value
+                    + " not found"
+                )
         # Update mapping with constants
-        tmp_mapping: dict[Term, Term] = {k: v for k, v in zip(arguments, local_variables)}
+        tmp_mapping: dict[Term, Term] = {
+            k: v for k, v in zip(arguments, local_variables)
+        }
         for k, v in tmp_mapping.items():
             if isinstance(k, Constant) and v not in local_mapping:
                 assert isinstance(v, Variable)
@@ -189,17 +228,33 @@ class DatalogFuzzifier(Fuzzifier, ABC):
             return predicate(local_mapping)(substitutions)
         else:
             # Variables assignment.
-            predicate_bodies: list[tuple[Clause, dict[Variable, Clause]]] = self.assignment_mapping[formula.predicate]
-            grounded = [arg for arg in arguments if isinstance(arg, Variable) and arg in keys]
-            not_grounded = [arg for arg in arguments if isinstance(arg, Variable) and arg not in grounded]
+            predicate_bodies: list[
+                tuple[Clause, dict[Variable, Clause]]
+            ] = self.assignment_mapping[formula.predicate]
+            grounded = [
+                arg for arg in arguments if isinstance(arg, Variable) and arg in keys
+            ]
+            not_grounded = [
+                arg
+                for arg in arguments
+                if isinstance(arg, Variable) and arg not in grounded
+            ]
             result: list[tuple[Clause, dict[Variable, Clause]]] = []
             new_mapping = {}
             for body, mapping in predicate_bodies:
                 old_keys = list(mapping.keys())
                 new_mapping = {old_keys[arguments.index(v)]: v for v in grounded}
-                new_mapping.update({old_keys[arguments.index(v)]: v for v in not_grounded})
-                new_body: Clause = body.remove_variable_assignment([k for k, v in new_mapping.items() if v in not_grounded])
-                subs_mapping = {v: body.get_substitution(k) for k, v in new_mapping.items() if v in not_grounded}
+                new_mapping.update(
+                    {old_keys[arguments.index(v)]: v for v in not_grounded}
+                )
+                new_body: Clause = body.remove_variable_assignment(
+                    [k for k, v in new_mapping.items() if v in not_grounded]
+                )
+                subs_mapping = {
+                    v: body.get_substitution(k)
+                    for k, v in new_mapping.items()
+                    if v in not_grounded
+                }
                 result.append((new_body, subs_mapping))
             return self._assign_variables(result, new_mapping, substitutions)
 

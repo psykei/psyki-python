@@ -11,8 +11,7 @@ from psyki.utils import model_deep_copy
 
 
 class KILL(Injector):
-
-    def __init__(self, predictor: Model,  fuzzifier: str):
+    def __init__(self, predictor: Model, fuzzifier: str):
         """
         @param predictor: the predictor.
         @param fuzzifier: the fuzzifier used to map the knowledge.
@@ -21,8 +20,12 @@ class KILL(Injector):
         self._fuzzifier_name = fuzzifier
 
     class ConstrainedModel(EnrichedModel):
-
-        def __init__(self, original_predictor: Model, constraints: Iterable[Callable], custom_objects: dict):
+        def __init__(
+            self,
+            original_predictor: Model,
+            constraints: Iterable[Callable],
+            custom_objects: dict,
+        ):
             self._constraints = constraints
             self._input_shape = original_predictor.input_shape
             predictor_output = original_predictor.layers[-1].output
@@ -40,7 +43,9 @@ class KILL(Injector):
         def copy(self) -> EnrichedModel:
             with custom_object_scope(self.custom_objects):
                 model = model_deep_copy(self.remove_constraints())
-                return KILL.ConstrainedModel(model, self._constraints, self.custom_objects)
+                return KILL.ConstrainedModel(
+                    model, self._constraints, self.custom_objects
+                )
 
         def _cost(self, output_layer: Tensor) -> Tensor:
             input_len = self._input_shape[1]
@@ -50,12 +55,16 @@ class KILL(Injector):
 
     def inject(self, theory: Theory) -> Model:
         self._clear()
-        fuzzifier = Fuzzifier.get(self._fuzzifier_name)([theory.class_mapping, theory.feature_mapping])
+        fuzzifier = Fuzzifier.get(self._fuzzifier_name)(
+            [theory.class_mapping, theory.feature_mapping]
+        )
         dict_functions = fuzzifier.visit(theory.formulae)
         # To ensure that every function refers to the right class we check the associated class name.
         sorted_class_mapping = sorted(theory.class_mapping.items(), key=lambda i: i[1])
         fuzzy_functions = [dict_functions[name] for name, _ in sorted_class_mapping]
-        return self.ConstrainedModel(model_deep_copy(self._predictor), fuzzy_functions, fuzzifier.custom_objects)
+        return self.ConstrainedModel(
+            model_deep_copy(self._predictor), fuzzy_functions, fuzzifier.custom_objects
+        )
 
     def _clear(self):
         self._predictor: Model = model_deep_copy(self._predictor)

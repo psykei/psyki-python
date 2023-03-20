@@ -25,15 +25,21 @@ class KINS(Injector):
         self._base = model_deep_copy(predictor)
         self._predictor: Model = model_deep_copy(predictor)
         if layer < 0 or layer > len(predictor.layers) - 2:
-            raise Exception('Cannot inject knowledge into layer ' + str(layer) +
-                            '.\nYou can inject from layer 0 to ' + str(len(predictor.layers) - 2))
+            raise Exception(
+                "Cannot inject knowledge into layer "
+                + str(layer)
+                + ".\nYou can inject from layer 0 to "
+                + str(len(predictor.layers) - 2)
+            )
         self._layer = layer
         self._fuzzifier_name = fuzzifier
         self._latest_predictor = None
 
     def inject(self, theory: Theory) -> Model:
         self._clear()
-        fuzzifier = Fuzzifier.get(self._fuzzifier_name)([self._predictor.input, theory.feature_mapping])
+        fuzzifier = Fuzzifier.get(self._fuzzifier_name)(
+            [self._predictor.input, theory.feature_mapping]
+        )
         predictor_input: Tensor = self._predictor.input
         modules = fuzzifier.visit(theory.formulae)
         if self._layer == 0:
@@ -44,13 +50,13 @@ class KINS(Injector):
                 x = layer(x)
         else:
             x = self._predictor.layers[1](predictor_input)
-            for layer in self._predictor.layers[2:self._layer + 1]:
+            for layer in self._predictor.layers[2 : self._layer + 1]:
                 x = layer(x)
             # Injection!
             x = Concatenate(axis=1)([x] + modules)
             self._predictor.layers[self._layer + 1].build(x.shape)
             x = self._predictor.layers[self._layer + 1](x)
-            for layer in self._predictor.layers[self._layer + 2:]:
+            for layer in self._predictor.layers[self._layer + 2 :]:
                 # Correct shape if needed (e.g., dropout layers)
                 if layer.input_shape != x.shape:
                     layer.build(x.shape)

@@ -8,7 +8,7 @@ from tensorflow.keras.layers import Concatenate
 from tensorflow.python.types.core import Tensor
 
 
-A = TypeVar('A')
+A = TypeVar("A")
 
 
 def match_case(match: A, cases: list[tuple[A, any]]) -> any:
@@ -22,7 +22,7 @@ def concat(layer):
 
 
 def eta(x: Tensor) -> Tensor:
-    return minimum(1., maximum(0., x))
+    return minimum(1.0, maximum(0.0, x))
 
 
 def eta_abs(x: Tensor) -> Tensor:
@@ -30,11 +30,11 @@ def eta_abs(x: Tensor) -> Tensor:
 
 
 def eta_abs_one(x: Tensor) -> Tensor:
-    return eta(abs(x - 1.))
+    return eta(abs(x - 1.0))
 
 
 def eta_one_abs(x: Tensor) -> Tensor:
-    return eta(1. - abs(x))
+    return eta(1.0 - abs(x))
 
 
 def model_deep_copy(predictor: Model) -> Model:

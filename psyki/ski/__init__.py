@@ -17,6 +17,7 @@ class Injector(ABC):
     The knowledge is provided via symbolic representation (e.g., logic knowledge).
     Usually, after the injection, the predictor must be trained like in a standard ML workflow.
     """
+
     _predictor: Any  # Any class that has methods fit and predict
 
     @abstractmethod
@@ -27,29 +28,29 @@ class Injector(ABC):
         pass
 
     @staticmethod
-    def kill(model: Model,
-             fuzzifier: str = 'lukasiewicz') -> Injector:
+    def kill(model: Model, fuzzifier: str = "lukasiewicz") -> Injector:
         from psyki.ski.kill import KILL
+
         return KILL(model, fuzzifier)
 
     @staticmethod
-    def kins(model: Model,
-             fuzzifier: str = 'netbuilder',
-             injection_layer: int = 0) -> Injector:
+    def kins(
+        model: Model, fuzzifier: str = "netbuilder", injection_layer: int = 0
+    ) -> Injector:
         from psyki.ski.kins import KINS
+
         return KINS(model, fuzzifier, injection_layer)
 
     @staticmethod
-    def kbann(model: Model,
-              fuzzifier: str = 'towell',
-              omega: float = 4.,
-              gamma: float = 0.) -> Injector:
+    def kbann(
+        model: Model, fuzzifier: str = "towell", omega: float = 4.0, gamma: float = 0.0
+    ) -> Injector:
         from psyki.ski.kbann import KBANN
+
         return KBANN(model, fuzzifier, omega, gamma)
 
 
 class EnrichedModel(Model):
-
     def _restore_from_tensors(self, restored_tensors):
         return super()._restore_from_tensors(restored_tensors)
 
@@ -57,7 +58,9 @@ class EnrichedModel(Model):
         super()._serialize_to_tensors()
 
     def __init__(self, original_predictor: Model, custom_objects: dict):
-        super(EnrichedModel, self).__init__(original_predictor.inputs, original_predictor.outputs)
+        super(EnrichedModel, self).__init__(
+            original_predictor.inputs, original_predictor.outputs
+        )
         self.custom_objects = custom_objects
 
     def call(self, inputs, training=None, mask=None):
@@ -70,6 +73,23 @@ class EnrichedModel(Model):
         with custom_object_scope(self.custom_objects):
             return EnrichedModel(model_deep_copy(self), self.custom_objects)
 
-    def save(self, filepath, overwrite=True, include_optimizer=True, save_format=None, signatures=None, options=None, save_traces=True):
+    def save(
+        self,
+        filepath,
+        overwrite=True,
+        include_optimizer=True,
+        save_format=None,
+        signatures=None,
+        options=None,
+        save_traces=True,
+    ):
         with custom_object_scope(self.custom_objects):
-            super().save(filepath, overwrite, include_optimizer, save_format, signatures, options, save_traces)
+            super().save(
+                filepath,
+                overwrite,
+                include_optimizer,
+                save_format,
+                signatures,
+                options,
+                save_traces,
+            )

@@ -27,15 +27,21 @@ class Latency(Metric):
             return self.delta_time
 
     @staticmethod
-    def compute_during_training(predictor1: Model, predictor2: Model, training_params: dict) -> float:
-        row_latency = Latency._compute_during_training(predictor1, predictor2, training_params, Latency.Tracker())
-        normaliser = training_params['x'].shape[0] * training_params['epochs']
+    def compute_during_training(
+        predictor1: Model, predictor2: Model, training_params: dict
+    ) -> float:
+        row_latency = Latency._compute_during_training(
+            predictor1, predictor2, training_params, Latency.Tracker()
+        )
+        normaliser = training_params["x"].shape[0] * training_params["epochs"]
         return row_latency / normaliser
 
     @staticmethod
-    def compute_during_inference(predictor1: Model, predictor2: Model, training_params: dict) -> float:
-        row_latency = Latency._compute_during_inference(predictor1, predictor2, training_params, Latency.Tracker())
-        normaliser = training_params['x'].shape[0]
+    def compute_during_inference(
+        predictor1: Model, predictor2: Model, training_params: dict
+    ) -> float:
+        row_latency = Latency._compute_during_inference(
+            predictor1, predictor2, training_params, Latency.Tracker()
+        )
+        normaliser = training_params["x"].shape[0]
         return row_latency / normaliser
-
-

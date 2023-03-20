@@ -11,22 +11,34 @@ class Metric(ABC, object):
 
     @staticmethod
     @abstractmethod
-    def compute_during_training(predictor1: Model, predictor2: Model, training_params: dict) -> float:
+    def compute_during_training(
+        predictor1: Model, predictor2: Model, training_params: dict
+    ) -> float:
         pass
 
     @staticmethod
     @abstractmethod
-    def compute_during_inference(predictor1: Model, predictor2: Model, training_params: dict) -> float:
+    def compute_during_inference(
+        predictor1: Model, predictor2: Model, training_params: dict
+    ) -> float:
         pass
 
     @staticmethod
-    def _compute_during_training(predictor1: Model, predictor2: Model, training_params: dict, tracker) -> float:
-        m1, m2 = measure_fit_with_tracker(predictor1, predictor2, training_params=training_params, tracker=tracker)
+    def _compute_during_training(
+        predictor1: Model, predictor2: Model, training_params: dict, tracker
+    ) -> float:
+        m1, m2 = measure_fit_with_tracker(
+            predictor1, predictor2, training_params=training_params, tracker=tracker
+        )
         m = m1 - m2
         return m
 
     @staticmethod
-    def _compute_during_inference(predictor1: Model, predictor2: Model, training_params: dict, tracker) -> float:
-        m1, m2 = measure_predict_with_tracker(predictor1, predictor2, training_params=training_params, tracker=tracker)
+    def _compute_during_inference(
+        predictor1: Model, predictor2: Model, training_params: dict, tracker
+    ) -> float:
+        m1, m2 = measure_predict_with_tracker(
+            predictor1, predictor2, training_params=training_params, tracker=tracker
+        )
         m = m1 - m2
         return m
