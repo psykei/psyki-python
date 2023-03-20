@@ -1,4 +1,12 @@
-# PSyKI
+<h1 align="center"> PSyKI </h1>
+<h2 align="center"><u>P</u>latform for <u>Sy</u>mbolic <u>K</u>nowledge <u>I</u>njection</h2>
+
+[![PyPI version](https://badge.fury.io/py/psyki.svg)](https://badge.fury.io/py/psyki)
+[![Test](https://github.com/psykei/psyki-python/actions/workflows/check.yml/badge.svg?event=push)]()
+[![Release](https://github.com/psykei/psyki-python/actions/workflows/deploy.yml/badge.svg?event=push)]()
+[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
 
 Some quick links:
 <!-- * [Home Page](https://apice.unibo.it/xwiki/bin/view/PSyKI/) -->
@@ -120,45 +128,6 @@ pip install psyki
 - pandas 1.4.2
 - codecarbon 2.1.4
 
-<!---
-### Examples
-
-Example of injection:
-```python
-injector = NetworkComposer(model, feature_mapping)
-predictor = injector.inject(formulae)
-predictor.compile(optimizer=Adam(), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-predictor.fit(train_x, train_y, verbose=1, batch_size=32, epochs=100)
-```
-
-Output:
-```text
-Epoch 1/100
-782/782 [==============================] - 3s 906us/step - loss: 1.0029 - accuracy: 0.5090
-Epoch 2/100
-782/782 [==============================] - 1s 902us/step - loss: 0.9579 - accuracy: 0.5381
-Epoch 3/100
-782/782 [==============================] - 1s 899us/step - loss: 0.9447 - accuracy: 0.5451
-Epoch 4/100
-782/782 [==============================] - 1s 903us/step - loss: 0.9347 - accuracy: 0.5534
-Epoch 5/100
-782/782 [==============================] - 1s 896us/step - loss: 0.9249 - accuracy: 0.5547
-Epoch 6/100
-782/782 [==============================] - 1s 897us/step - loss: 0.9153 - accuracy: 0.5625
-```
-
-```python
-loss, accuracy = predictor.evaluate(test_x, test_y)
-print('Loss: ' + str(loss))
-print('Accuracy: ' + str(accuracy))
-```
-Output:
-```text
-31250/31250 [==============================] - 26s 822us/step - loss: 0.0660 - accuracy: 0.9862
-Loss: 0.06597686558961868
-Accuracy: 0.9862030148506165
-```
--->
 
 ## Developers
 
