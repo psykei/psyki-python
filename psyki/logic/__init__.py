@@ -48,12 +48,13 @@ class Theory:
         @param dataset: dataset containing the domain data.
         @param class_mapping: optional, mapping between class names and class indices.
         """
+        from psyki.logic.prolog import TuProlog
         if isinstance(knowledge, str):
             if Path(knowledge).exists():
-                self.formulae: list[Formula] = KnowledgeAdapter.from_file(knowledge)
+                self.formulae: list[Formula] = TuProlog.from_file(knowledge)
             else:
                 try:
-                    self.formulae: list[Formula] = KnowledgeAdapter.from_string(
+                    self.formulae: list[Formula] = TuProlog.from_string(
                         knowledge
                     )
                 except Exception as e:

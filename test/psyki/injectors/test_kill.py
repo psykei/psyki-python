@@ -10,6 +10,7 @@ from psyki.ski import Injector
 from psyki.ski.kill import KILL
 from test.resources.data import SpliceJunction, Poker
 from test.utils import get_mlp, Conditions
+from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 
 
 class TestKillOnSpliceJunction(unittest.TestCase):
@@ -17,12 +18,8 @@ class TestKillOnSpliceJunction(unittest.TestCase):
     batch_size = 32
     verbose = 0
     acceptable_accuracy = 0.9
-    knowledge = SpliceJunction.get_knowledge()
-    for k in knowledge:
-        k.trainable = True
-        k.optimize()
     dataset = SpliceJunction.get_train()
-    theory = Theory(knowledge, dataset, SpliceJunction.class_mapping)
+    theory = Theory(str(KNOWLEDGE_PATH / SpliceJunction.knowledge_filename), dataset, SpliceJunction.class_mapping)
 
     def test_on_dataset(self):
         set_seed(0)
