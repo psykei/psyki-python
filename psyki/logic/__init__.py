@@ -49,14 +49,13 @@ class Theory:
         @param class_mapping: optional, mapping between class names and class indices.
         """
         from psyki.logic.prolog import TuProlog
+
         if isinstance(knowledge, str):
             if Path(knowledge).exists():
                 self.formulae: list[Formula] = TuProlog.from_file(knowledge)
             else:
                 try:
-                    self.formulae: list[Formula] = TuProlog.from_string(
-                        knowledge
-                    )
+                    self.formulae: list[Formula] = TuProlog.from_string(knowledge)
                 except Exception as e:
                     raise KnowledgeException.not_parsable(knowledge, e)
         else:

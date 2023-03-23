@@ -112,6 +112,7 @@ setup(
     install_requires=[
         'tensorflow>=2.7.0',
         'numpy>=1.22.3',
+        '2ppy>=0.4.0',
         'scikit-learn>=1.0.2',
         'pandas>=1.4.2',
         'codecarbon>=2.1.4'
