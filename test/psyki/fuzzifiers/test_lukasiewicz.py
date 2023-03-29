@@ -57,7 +57,7 @@ class TestLukasiewiczSimple(unittest.TestCase):
 
 class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
     knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
-    fuzzifier = Fuzzifier.get('lukasiewicz')([SpliceJunction.class_mapping, SpliceJunction.feature_mapping])
+    fuzzifier = Fuzzifier.get('lukasiewicz')([SpliceJunction.class_mapping, SpliceJunction.features])
     functions = fuzzifier.visit(knowledge)
 
     def test_on_dataset(self):
@@ -77,7 +77,7 @@ class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
 
 class TestLukasiewiczOnPoker(unittest.TestCase):
     knowledge = Poker.get_knowledge()
-    fuzzifier = Fuzzifier.get('lukasiewicz')([Poker.class_mapping, Poker.feature_mapping])
+    fuzzifier = Fuzzifier.get('lukasiewicz')([Poker.class_mapping, Poker.features])
     functions = fuzzifier.visit(knowledge)
     true = tile(reshape(constant(0.), [1, 1]), [1, 1])
     false = tile(reshape(constant(1.), [1, 1]), [1, 1])

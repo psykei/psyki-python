@@ -11,7 +11,7 @@ PATH = Path(__file__).parents[0]
 
 class KnowledgeAdapter(ABC):
     """
-    Abstract adapter to convert a legacy logic theory into a Theory that can be used by injectors.
+    Abstract adapter to convert a legacy logic theory into a Theory that can be used by ski.
     """
 
     @staticmethod
@@ -32,7 +32,7 @@ class KnowledgeAdapter(ABC):
 
 class Theory:
     """
-    Uniformed logic theory that can be used by injectors.
+    Uniformed logic theory that can be used by ski.
     """
 
     def __init__(
@@ -78,7 +78,7 @@ class Theory:
         self.formulae += other.formulae
 
     def __repr__(self) -> str:
-        return repr(self.formulae)
+        return '\n'.join([repr(f) for f in self.formulae])
 
     def __str__(self) -> str:
         return "\n".join(str(f) for f in self.formulae)
@@ -93,11 +93,51 @@ class Theory:
     def __hash__(self):
         raise hash(self.formulae)
 
+    @property
+    def static_formulae(self) -> list[Formula]:
+        """
+        Returns the list of static formulae (not trainable).
+        """
+        return [f for f in self.formulae if not f.trainable]
+
+    @property
+    def trainable_formulae(self) -> list[Formula]:
+        """
+        Returns the list of trainable formulae.
+        """
+        return [f for f in self.formulae if f.trainable]
+
+    def set_all_formulae_trainable(self):
+        """
+        Sets all formulae as trainable.
+        """
+        for f in self.formulae:
+            f.trainable = True
+
+    def set_all_formulae_static(self):
+        """
+        Sets all formulae as static.
+        """
+        for f in self.formulae:
+            f.trainable = False
+
+    def set_formulae_trainable(self, formula_names: list[str]):
+        """
+        Sets the formulae with the given names as trainable.
+        """
+        for f in self.formulae:
+            if isinstance(f, DefinitionFormula):
+                if f.lhs.predication in formula_names:
+                    f.trainable = True
+                else:
+                    f.trainable = False
+
 
 class Formula(ABC):
     """
     Data structure that represents a logic formula.
     """
+    trainable: bool = False
 
     @abstractmethod
     def copy(self) -> Formula:

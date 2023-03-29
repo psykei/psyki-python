@@ -13,7 +13,7 @@ PATH = Path(__file__).parents[0]
 
 class Injector(ABC):
     """
-    An injectors allows a sub-symbolic predictor to exploit prior symbolic knowledge.
+    An ski allows a sub-symbolic predictor to exploit prior symbolic knowledge.
     The knowledge is provided via symbolic representation (e.g., logic knowledge).
     Usually, after the injection, the predictor must be trained like in a standard ML workflow.
     """

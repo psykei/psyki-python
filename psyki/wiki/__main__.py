@@ -11,9 +11,9 @@ def commands() -> dict[str, Callable]:
     }
 
 
-def elicit(what: str = "injectors"):
+def elicit(what: str = "ski"):
     mapping_paths = {
-        "injectors": INJECTORS_PATH,
+        "ski": INJECTORS_PATH,
         "fuzzifiers": FUZZIFIERS_PATH,
     }
     path = mapping_paths[what]

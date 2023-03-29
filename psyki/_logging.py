@@ -36,3 +36,11 @@ def enable_logging(level: int = LOG_INFO):
     )
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+
+
+def disable_logging():
+    """
+    Disable logging.
+    """
+    logger.setLevel(logging.CRITICAL)
+    logger.handlers = []

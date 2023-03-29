@@ -5,7 +5,6 @@ from psyki.qos.data import DataEfficiency
 from psyki.ski import Injector
 from test.psyki.qos import split_dataset, evaluate_metric
 from test.resources.data import SpliceJunction
-from test.utils import create_standard_fully_connected_nn
 
 
 class TestDataOnSplice(unittest.TestCase):

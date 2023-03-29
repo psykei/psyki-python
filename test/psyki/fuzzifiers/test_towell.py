@@ -7,7 +7,7 @@ from psyki.fuzzifiers import Fuzzifier
 class TestTowellOnSpliceJunction(unittest.TestCase):
     dataset = SpliceJunction.get_train()
     inputs = Input((240,))
-    fuzzifier = Fuzzifier.get('towell')([inputs, SpliceJunction.feature_mapping])
+    fuzzifier = Fuzzifier.get('towell')([inputs, SpliceJunction.features])
     knowledge = SpliceJunction.get_knowledge()
     modules = fuzzifier.visit(knowledge)
 

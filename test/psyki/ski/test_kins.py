@@ -6,7 +6,7 @@ from tensorflow.python.framework.random_seed import set_seed
 from psyki.logic import Theory
 from psyki.ski import Injector
 from psyki.logic.prolog import TuProlog
-from test.psyki.injectors import set_trainable_rules
+from test.psyki.ski import set_trainable_rules
 from test.resources.data import SpliceJunction
 from test.utils import get_mlp, Conditions
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH

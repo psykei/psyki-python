@@ -1,36 +1,23 @@
 from typing import List
 import numpy as np
 from numpy import argmax
-from tensorflow import Tensor
 from tensorflow.keras import Model, Input
-from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.callbacks import Callback
 from sklearn.metrics import f1_score
 import psyki
 
 
-def get_mlp(input_layer: Tensor, output: int, layers: int, neurons: int or list[int], activation_function, last_activation_function, dropout: bool = False):
+def create_uneducated_predictor(input_shape: int, outputs: int, neurons_per_hidden_layer: list[int], activation: str, last_activation: str) -> Model:
     """
-    Generate a NN with the given parameters
+    Creates a simple neural network with the given parameters.
     """
-    neurons = (layers - 1) * [neurons] if isinstance(neurons, int) else neurons
-    x = Dense(neurons[0], activation=activation_function)(input_layer)
-    for i in range(2, layers):
-        if dropout:
-            x = Dropout(0.2)(x)
-        x = Dense(neurons[i-1], activation=activation_function)(x)
-    if dropout:
-        x = Dropout(0.2)(x)
-    return Dense(output, activation=last_activation_function)(x)
-
-
-def create_standard_fully_connected_nn(input_size: int, output_size, layers: int, neurons: int, activation: str = "relu") -> Model:
-    inputs = Input((input_size,))
-    x = Dense(neurons, activation=activation)(inputs)
-    for _ in range(1, layers):
+    predictor_input = Input((input_shape, ))
+    x = predictor_input
+    for neurons in neurons_per_hidden_layer:
         x = Dense(neurons, activation=activation)(x)
-    x = Dense(output_size, activation='softmax' if output_size > 1 else 'sigmoid')(x)
-    return Model(inputs, x)
+    x = Dense(outputs, activation=last_activation)(x)
+    return Model(predictor_input, x)
 
 
 def get_class_accuracy(predictor, x, y_expect) -> tuple[List[float], List[float]]:

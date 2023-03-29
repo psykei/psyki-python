@@ -23,18 +23,29 @@ class Dataset(ABCMeta):
     data_url: str = UCI_URL + "Dataset URL"
     data_url_test: str = UCI_URL + "Dataset test URL"
     class_mapping: dict[str, int] = {}
-    feature_mapping: dict[str, int] = {}
+    features: list[str] = []
+    target: list[str] = []
     preprocess: bool = False
     need_download: bool = True
 
     @classmethod
+    @property
+    def is_downloaded(mcs) -> bool:
+        return (PATH / mcs.filename).is_file()
+
+    @classmethod
+    @property
+    def is_test_downloaded(mcs) -> bool:
+        return (PATH / mcs.test_filename).is_file()
+
+    @classmethod
     def download(mcs) -> None:
-        if mcs.need_download:
+        if mcs.need_download and not mcs.is_downloaded:
             d = pd.DataFrame = pd.read_csv(mcs.data_url, sep=r",\s*", header=None, encoding='utf8')
             d.to_csv(PATH / mcs.filename, index=False, header=False)
-            if mcs.data_url_test is not None:
-                d = pd.DataFrame = pd.read_csv(mcs.data_url_test, sep=r",\s*", header=None, encoding='utf8')
-                d.to_csv(PATH / mcs.test_filename, index=False, header=False)
+        if mcs.data_url_test is not None and not mcs.is_test_downloaded:
+            d = pd.DataFrame = pd.read_csv(mcs.data_url_test, sep=r",\s*", header=None, encoding='utf8')
+            d.to_csv(PATH / mcs.test_filename, index=False, header=False)
 
     @classmethod
     def get_knowledge(mcs) -> list[Formula]:
@@ -66,12 +77,12 @@ class Dataset(ABCMeta):
 class SpliceJunction(Dataset):
     name = "Splice Junction"
     filename = "splice-junction.csv"
-    knowledge_filename = "splice-junction.pl"
+    knowledge_filename = str(KNOWLEDGE_PATH / "splice-junction.pl")
     data_url = UCI_URL + "molecular-biology/splice-junction-gene-sequences/splice.data"
     data_url_test = None
     class_mapping = {'ei': 0, 'ie': 1, 'n': 2}
-    feature_mapping = {'X' + ('_' if j < 0 else '') + str(abs(j)) + f: k + i * 4 for i, j in
-                       enumerate(list(range(-30, 0)) + list(range(1, 31))) for k, f in enumerate(['a', 'c', 'g', 't'])}
+    features = {'X' + ('_' if j < 0 else '') + str(abs(j)) + f: k + i * 4 for i, j in
+                enumerate(list(range(-30, 0)) + list(range(1, 31))) for k, f in enumerate(['a', 'c', 'g', 't'])}
     preprocess = True
 
     @staticmethod
@@ -113,7 +124,7 @@ class SpliceJunction(Dataset):
         y = _data_to_int(data.iloc[:, -1:], SpliceJunction.class_mapping)
         x = _get_binary_data(data.iloc[:, :-1], aggregate_mapping)
         y.columns = [x.shape[1]]
-        x.columns = SpliceJunction.feature_mapping.keys()
+        x.columns = SpliceJunction.features.keys()
         return x.join(y)
 
 
@@ -121,33 +132,40 @@ class Poker(Dataset):
     name = "Poker"
     filename = "poker-train.csv"
     test_filename = "poker-test.csv"
-    knowledge_filename = "poker.pl"
+    knowledge_filename = str(KNOWLEDGE_PATH / "poker.pl")
     data_url = UCI_URL + "poker/poker-hand-training-true.data"
     data_url_test = UCI_URL + "poker/poker-hand-testing.data"
-    feature_mapping = {f'{k}{math.ceil((i + 1) / 2)}': i for i, k in enumerate(5 * ['S', 'R'])}
+    features = [f'{k}{math.ceil((i + 1) / 2)}' for i, k in enumerate(5 * ['S', 'R'])]
     class_mapping = {k: v for v, k in enumerate(
         ['nothing', 'pair', 'two', 'three', 'straight', 'flush', 'full', 'four', 'straight_flush', 'royal_flush'])}
+    preprocess = True
+
+    @staticmethod
+    def get_processed_dataset(filename: str) -> pd.DataFrame:
+        data = pd.read_csv(PATH / filename)
+        data.columns = Poker.features + ['class']
+        return data
 
 
 class Iris(Dataset):
     name = "Iris"
     filename = None
     test_filename = None
-    knowledge_filename = "iris.pl"
+    knowledge_filename = str(KNOWLEDGE_PATH / "iris.pl")
     class_mapping = {'setosa': 0, 'virginica': 1, 'versicolor': 2}
-    feature_mapping = {'SepalLength': 0, 'SepalWidth': 1, 'PetalLength': 2, 'PetalWidth': 3}
+    features = ['SepalLength', 'SepalWidth', 'PetalLength', 'PetalWidth']
     need_download = False
 
-    @staticmethod
-    def get_train() -> pd.DataFrame:
+    @classmethod
+    def get_train(mcs) -> pd.DataFrame:
         x, y = load_iris(return_X_y=True, as_frame=True)
         encoder = OneHotEncoder(sparse=False)
         encoder.fit_transform([y])
-        x.columns = list(Iris.feature_mapping.keys())
+        x.columns = list(Iris.features)
         return x.join(y)
 
-    @staticmethod
-    def get_test() -> pd.DataFrame:
+    @classmethod
+    def get_test(mcs) -> pd.DataFrame:
         return Iris.get_train()
 
 

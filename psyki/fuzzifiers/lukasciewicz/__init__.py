@@ -223,6 +223,8 @@ class Lukasiewicz(ConstrainingFuzzifier):
         if node in substitutions.keys():
             return substitutions[node]
         else:
+            if node not in local_mapping.keys():
+                raise Exception(f"Unexpected state: {node} not in local_mapping keys: {local_mapping}")
             grounding = local_mapping[node]
             if isinstance(grounding, Variable):
                 if grounding.name in self.feature_mapping.keys():

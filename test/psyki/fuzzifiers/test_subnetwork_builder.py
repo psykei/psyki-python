@@ -32,7 +32,7 @@ class TestSubnetworkBuilderSimple(unittest.TestCase):
 class TestSubnetworkBuilderOnSpliceJunction(unittest.TestCase):
     dataset = SpliceJunction.get_train()
     inputs = Input((240,))
-    fuzzifier = Fuzzifier.get('netbuilder')([inputs, SpliceJunction.feature_mapping])
+    fuzzifier = Fuzzifier.get('netbuilder')([inputs, SpliceJunction.features])
     knowledge = SpliceJunction.get_knowledge()
     modules = fuzzifier.visit(knowledge)
 
