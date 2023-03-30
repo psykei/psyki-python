@@ -78,7 +78,7 @@ class Theory:
         self.formulae += other.formulae
 
     def __repr__(self) -> str:
-        return '\n'.join([repr(f) for f in self.formulae])
+        return "\n".join([repr(f) for f in self.formulae])
 
     def __str__(self) -> str:
         return "\n".join(str(f) for f in self.formulae)
@@ -137,6 +137,7 @@ class Formula(ABC):
     """
     Data structure that represents a logic formula.
     """
+
     trainable: bool = False
 
     @abstractmethod

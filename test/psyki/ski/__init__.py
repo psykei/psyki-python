@@ -20,7 +20,6 @@ VERBOSE = 0  # 0 = silent, 1 = progress bar, 2 = one line per epoch
 
 
 class TestInjector(unittest.TestCase):
-
     def _test_injection(self, injector: Injector, theory: Theory):
         psyki.logger.info(f"testing injection")
         time = datetime.now()
@@ -33,8 +32,10 @@ class TestInjector(unittest.TestCase):
         time = datetime.now()
         set_seed(SEED)
         train_x, train_y = dataset.iloc[:, :-1], to_categorical(dataset.iloc[:, -1:])
-        history = educated.fit(train_x, train_y, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=VERBOSE)
-        self.assertEqual(len(history.history['loss']), EPOCHS)
+        history = educated.fit(
+            train_x, train_y, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=VERBOSE
+        )
+        self.assertEqual(len(history.history["loss"]), EPOCHS)
         psyki.logger.info(f"test ended in {datetime.now() - time}")
 
     def _test_educated_is_cloneable(self, educated: Model):
@@ -44,14 +45,19 @@ class TestInjector(unittest.TestCase):
         self.assertIsInstance(educated_copy, Model)
         psyki.logger.info(f"test ended in {datetime.now() - time}")
 
-    def _test_equivalence_between_predictors(self, first_predictor: Model, second_predictor: Model, dataset: pd.DataFrame):
+    def _test_equivalence_between_predictors(
+        self, first_predictor: Model, second_predictor: Model, dataset: pd.DataFrame
+    ):
         psyki.logger.info(f"testing equivalence between predictors")
         time = datetime.now()
         psyki.logger.disabled = True
         self._test_educated_training(first_predictor, dataset)
         self._test_educated_training(second_predictor, dataset)
         psyki.logger.disabled = False
-        self.assertTrue(np.array_equal(first_predictor.predict(dataset.iloc[:, :-1]), second_predictor.predict(dataset.iloc[:, :-1])))
+        self.assertTrue(
+            np.array_equal(
+                first_predictor.predict(dataset.iloc[:, :-1]),
+                second_predictor.predict(dataset.iloc[:, :-1]),
+            )
+        )
         psyki.logger.info(f"test ended in {datetime.now() - time}")
-
-

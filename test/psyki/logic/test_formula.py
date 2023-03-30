@@ -21,5 +21,5 @@ class TestFormulaOptimization(unittest.TestCase):
         self.assertTrue(pyramidine_rich.is_optimized)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

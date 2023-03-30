@@ -10,19 +10,19 @@ from test.resources.data import SpliceJunction, Poker
 
 
 class TestLukasiewiczSimple(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'simple.pl')
-    fuzzifier = Fuzzifier.get('lukasiewicz')([{'no': 0, 'yes': 1}, {'X': 0, 'Y': 1}])
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / "simple.pl")
+    fuzzifier = Fuzzifier.get("lukasiewicz")([{"no": 0, "yes": 1}, {"X": 0, "Y": 1}])
     functions = fuzzifier.visit(knowledge)
     predicted_output_yes = constant([0, 1], dtype=float32)
     predicted_output_yes = reshape(predicted_output_yes, [1, 2])
     predicted_output_no = constant([1, 0], dtype=float32)
     predicted_output_no = reshape(predicted_output_no, [1, 2])
-    true = tile(reshape(constant(0.), [1, 1]), [1, 1])
-    false = tile(reshape(constant(1.), [1, 1]), [1, 1])
+    true = tile(reshape(constant(0.0), [1, 1]), [1, 1])
+    false = tile(reshape(constant(1.0), [1, 1]), [1, 1])
 
     def test_greater_yes(self):
-        function_yes = self.functions['yes']
-        function_no = self.functions['no']
+        function_yes = self.functions["yes"]
+        function_no = self.functions["no"]
         input_values = constant([3.4, 1.7], dtype=float32, shape=[1, 2])
 
         # Functions must output 0 (true) for both yes and no classes, because the prediction is correct.
@@ -38,8 +38,8 @@ class TestLukasiewiczSimple(unittest.TestCase):
         assert_equal(self.true, actual_output_yes)
 
     def test_greater_no(self):
-        function_yes = self.functions['yes']
-        function_no = self.functions['no']
+        function_yes = self.functions["yes"]
+        function_no = self.functions["no"]
         input_values = constant([-2.2, 5.7], dtype=float32, shape=[1, 2])
 
         # Functions must output 0 (true) for both yes and no classes, because the prediction is correct.
@@ -56,8 +56,10 @@ class TestLukasiewiczSimple(unittest.TestCase):
 
 
 class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
-    fuzzifier = Fuzzifier.get('lukasiewicz')([SpliceJunction.class_mapping, SpliceJunction.features])
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / "splice-junction.pl")
+    fuzzifier = Fuzzifier.get("lukasiewicz")(
+        [SpliceJunction.class_mapping, SpliceJunction.features]
+    )
     functions = fuzzifier.visit(knowledge)
 
     def test_on_dataset(self):
@@ -65,96 +67,122 @@ class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
         x, y = dataset.iloc[:, :-1], dataset.iloc[:, -1:]
         y = np.eye(3)[y.astype(int)].reshape([y.shape[0], 3])
         x, y = cast(x, dtype=float32), cast(y, dtype=float32)
-        functions = [self.functions[name] for name, _ in sorted(SpliceJunction.class_mapping.items(), key=lambda i: i[1])]
-        result = stack([reshape(function(x, y), [x.shape[0], 1]) for function in functions], axis=1)
+        functions = [
+            self.functions[name]
+            for name, _ in sorted(
+                SpliceJunction.class_mapping.items(), key=lambda i: i[1]
+            )
+        ]
+        result = stack(
+            [reshape(function(x, y), [x.shape[0], 1]) for function in functions], axis=1
+        )
         # Per class errors using the provided knowledge
         #         IE    EI     N
         #   IE   295     0   473    ->  errors = 473
         #   EI    25    31   711    ->  errors = 25 + 711 = 736
         #   N      3     0  1652    ->  errors = 3
-        self.assertTrue(np.all(sum(result) == constant([736, 473, 3], dtype=float32, shape=[3, 1])))
+        self.assertTrue(
+            np.all(sum(result) == constant([736, 473, 3], dtype=float32, shape=[3, 1]))
+        )
 
 
 class TestLukasiewiczOnPoker(unittest.TestCase):
-
     def setUp(self) -> None:
         self.theory = Poker.get_theory()
-        self.fuzzifier = Fuzzifier.get('lukasiewicz')([Poker.class_mapping, self.theory.feature_mapping])
+        self.fuzzifier = Fuzzifier.get("lukasiewicz")(
+            [Poker.class_mapping, self.theory.feature_mapping]
+        )
         self.functions = self.fuzzifier.visit(self.theory.formulae)
-        self.true = tile(reshape(constant(0.), [1, 1]), [1, 1])
-        self.false = tile(reshape(constant(1.), [1, 1]), [1, 1])
-    
+        self.true = tile(reshape(constant(0.0), [1, 1]), [1, 1])
+        self.false = tile(reshape(constant(1.0), [1, 1]), [1, 1])
+
     def test_nothing(self):
         hand1 = constant([2, 6, 2, 1, 4, 13, 2, 4, 4, 9], dtype=float32)
         hand2 = constant([4, 9, 3, 10, 4, 7, 4, 9, 3, 8], dtype=float32)
         output1 = constant([1, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=float32)
         output2 = constant([0, 1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=float32)
-        function = self.functions['nothing']
+        function = self.functions["nothing"]
 
-        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(
+            function, hand1, hand2, output1, output2
+        )
 
     def test_two(self):
         hand1 = constant([4, 9, 2, 2, 4, 2, 4, 6, 3, 9], dtype=float32)
         hand2 = constant([4, 1, 2, 2, 4, 7, 4, 10, 3, 9], dtype=float32)
         output1 = constant([0, 0, 1, 0, 0, 0, 0, 0, 0, 0], dtype=float32)
         output2 = constant([0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=float32)
-        function = self.functions['two']
+        function = self.functions["two"]
 
-        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(
+            function, hand1, hand2, output1, output2
+        )
 
     def test_flush(self):
         hand1 = constant([4, 4, 4, 13, 4, 7, 4, 11, 4, 1], dtype=float32)
         hand2 = constant([4, 4, 1, 13, 4, 7, 4, 11, 4, 1], dtype=float32)
         output1 = constant([0, 0, 0, 0, 0, 1, 0, 0, 0, 0], dtype=float32)
         output2 = constant([0, 0, 0, 0, 0, 0, 0, 1, 0, 0], dtype=float32)
-        function = self.functions['flush']
+        function = self.functions["flush"]
 
-        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(
+            function, hand1, hand2, output1, output2
+        )
 
     def test_full(self):
         hand1 = constant([3, 2, 1, 2, 3, 11, 1, 11, 4, 11], dtype=float32)
         hand2 = constant([4, 1, 4, 2, 4, 7, 4, 10, 4, 9], dtype=float32)
         output1 = constant([0, 0, 0, 0, 0, 0, 1, 0, 0, 0], dtype=float32)
         output2 = constant([0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=float32)
-        function = self.functions['full']
+        function = self.functions["full"]
 
-        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(
+            function, hand1, hand2, output1, output2
+        )
 
     def test_four(self):
         hand1 = constant([4, 9, 1, 9, 4, 7, 2, 9, 3, 9], dtype=float32)
         hand2 = constant([4, 9, 4, 5, 4, 7, 2, 9, 3, 9], dtype=float32)
         output1 = constant([0, 0, 0, 0, 0, 0, 0, 1, 0, 0], dtype=float32)
         output2 = constant([0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=float32)
-        function = self.functions['four']
+        function = self.functions["four"]
 
-        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(
+            function, hand1, hand2, output1, output2
+        )
 
     def test_three(self):
         hand1 = constant([4, 9, 4, 2, 4, 7, 3, 9, 1, 9], dtype=float32)
         hand2 = constant([4, 1, 4, 2, 4, 7, 4, 10, 1, 9], dtype=float32)
         output1 = constant([0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=float32)
         output2 = constant([0, 0, 0, 1, 0, 0, 0, 1, 0, 0], dtype=float32)
-        function = self.functions['three']
+        function = self.functions["three"]
 
-        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(
+            function, hand1, hand2, output1, output2
+        )
 
     def test_pair(self):
         hand1 = constant([4, 9, 4, 2, 4, 7, 4, 6, 2, 9], dtype=float32)
         hand2 = constant([4, 1, 4, 2, 4, 7, 4, 10, 2, 9], dtype=float32)
         output1 = constant([0, 1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=float32)
         output2 = constant([0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=float32)
-        function = self.functions['pair']
+        function = self.functions["pair"]
 
-        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(
+            function, hand1, hand2, output1, output2
+        )
 
     def test_straight(self):
         hand1 = constant([1, 9, 4, 10, 2, 7, 4, 6, 3, 8], dtype=float32)
         hand2 = constant([1, 1, 4, 2, 2, 7, 4, 10, 3, 9], dtype=float32)
         output1 = constant([0, 0, 0, 0, 1, 0, 0, 0, 0, 0], dtype=float32)
         output2 = constant([0, 0, 0, 0, 0, 0, 1, 0, 0, 0], dtype=float32)
-        function = self.functions['straight']
+        function = self.functions["straight"]
 
-        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(
+            function, hand1, hand2, output1, output2
+        )
 
         # Straight is also 10, 11, 12, 13, 1!
         hand3 = constant([1, 1, 4, 11, 2, 13, 4, 10, 3, 12], dtype=float32)
@@ -168,21 +196,29 @@ class TestLukasiewiczOnPoker(unittest.TestCase):
         hand2 = constant([4, 9, 3, 10, 4, 7, 4, 6, 3, 8], dtype=float32)
         output1 = constant([0, 0, 0, 0, 0, 0, 0, 0, 1, 0], dtype=float32)
         output2 = constant([0, 0, 0, 0, 0, 0, 1, 0, 0, 0], dtype=float32)
-        function = self.functions['straight_flush']
+        function = self.functions["straight_flush"]
 
-        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(
+            function, hand1, hand2, output1, output2
+        )
 
     def test_royal_flush(self):
         hand1 = constant([4, 10, 4, 11, 4, 1, 4, 13, 4, 12], dtype=float32)
         hand2 = constant([1, 9, 1, 11, 1, 13, 1, 10, 1, 12], dtype=float32)
         output1 = constant([0, 0, 0, 0, 0, 0, 0, 0, 0, 1], dtype=float32)
         output2 = constant([0, 0, 0, 0, 0, 0, 0, 0, 1, 0], dtype=float32)
-        function = self.functions['royal_flush']
+        function = self.functions["royal_flush"]
 
-        self._test_implication_hand_output_combinations(function, hand1, hand2, output1, output2)
+        self._test_implication_hand_output_combinations(
+            function, hand1, hand2, output1, output2
+        )
 
-    def _test_implication_hand_output_combinations(self, function, hand1, hand2, output1, output2) -> None:
-        result1, result2, result3, result4 = self._get_combination_values(function, hand1, hand2, output1, output2)
+    def _test_implication_hand_output_combinations(
+        self, function, hand1, hand2, output1, output2
+    ) -> None:
+        result1, result2, result3, result4 = self._get_combination_values(
+            function, hand1, hand2, output1, output2
+        )
         assert_equal(result1, self.true)
         assert_equal(result2, self.false)
         assert_equal(result3, self.true)
@@ -202,15 +238,20 @@ class TestLukasiewiczOnPoker(unittest.TestCase):
 
     def test_on_dataset(self):
         poker_training = Poker.get_train()
-        functions = [self.functions[name] for name, _ in sorted(Poker.class_mapping.items(), key=lambda i: i[1])]
+        functions = [
+            self.functions[name]
+            for name, _ in sorted(Poker.class_mapping.items(), key=lambda i: i[1])
+        ]
         train_x = poker_training.iloc[:, :-1]
         train_y = poker_training.iloc[:, -1]
         train_y = np.eye(10)[train_y.astype(int)]
         x, y = cast(train_x, dtype=float32), cast(train_y, dtype=float32)
-        result = stack([reshape(function(x, y), [x.shape[0], 1]) for function in functions], axis=1)
+        result = stack(
+            [reshape(function(x, y), [x.shape[0], 1]) for function in functions], axis=1
+        )
         indices = stack([range(0, x.shape[0]), argmax(train_y, axis=1)], axis=1)
-        assert_equal(gather_nd(result, indices), 0.)
+        assert_equal(gather_nd(result, indices), 0.0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

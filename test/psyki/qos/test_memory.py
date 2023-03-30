@@ -17,9 +17,14 @@ class TestMemoryOnIris(unittest.TestCase):
     educated_predictor = injector.inject(theory)
 
     def test_memory_fit(self):
-        psyki.logger.info(f'Test memory training using KILL on {Iris.name}')
+        psyki.logger.info(f"Test memory training using KILL on {Iris.name}")
         set_seed(0)
-        memory = evaluate_metric(self.model, self.educated_predictor, self.dataset, Memory.compute_during_training)
+        memory = evaluate_metric(
+            self.model,
+            self.educated_predictor,
+            self.dataset,
+            Memory.compute_during_training,
+        )
         self.assertTrue(isinstance(memory, int))
 
 
@@ -32,11 +37,16 @@ class TestMemoryOnSplice(unittest.TestCase):
     educated_predictor = injector.inject(theory)
 
     def test_memory_fit(self):
-        psyki.logger.info(f'Test memory training using KINS on {SpliceJunction.name}')
+        psyki.logger.info(f"Test memory training using KINS on {SpliceJunction.name}")
         set_seed(0)
-        memory = evaluate_metric(self.model, self.educated_predictor, self.dataset, Memory.compute_during_training)
+        memory = evaluate_metric(
+            self.model,
+            self.educated_predictor,
+            self.dataset,
+            Memory.compute_during_training,
+        )
         self.assertTrue(isinstance(memory, int))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

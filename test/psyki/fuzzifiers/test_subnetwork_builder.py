@@ -8,16 +8,16 @@ from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 
 
 class TestSubnetworkBuilderSimple(unittest.TestCase):
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'simple.pl')
+    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / "simple.pl")
     net_input = Input((2,))
-    fuzzifier = Fuzzifier.get('netbuilder')([net_input, {'X': 0, 'Y': 1}])
+    fuzzifier = Fuzzifier.get("netbuilder")([net_input, {"X": 0, "Y": 1}])
     module = fuzzifier.visit(knowledge)
     predicted_output_yes = constant([0, 1], dtype=float32)
     predicted_output_yes = reshape(predicted_output_yes, [1, 2])
     predicted_output_no = constant([1, 0], dtype=float32)
     predicted_output_no = reshape(predicted_output_no, [1, 2])
-    true = tile(reshape(constant(1.), [1, 1]), [1, 1])
-    false = tile(reshape(constant(0.), [1, 1]), [1, 1])
+    true = tile(reshape(constant(1.0), [1, 1]), [1, 1])
+    false = tile(reshape(constant(0.0), [1, 1]), [1, 1])
 
     def test_greater_yes(self):
         input_values = constant([3.4, 1.7], dtype=float32, shape=[1, 2])
@@ -30,12 +30,13 @@ class TestSubnetworkBuilderSimple(unittest.TestCase):
 
 
 class TestSubnetworkBuilderOnSpliceJunction(unittest.TestCase):
-
     def setUp(self) -> None:
         self.dataset = SpliceJunction.get_train()
         self.theory = SpliceJunction.get_theory()
-        self.inputs = Input((self.dataset.shape[1]-1,))
-        self.fuzzifier = Fuzzifier.get('netbuilder')([self.inputs, self.theory.feature_mapping])
+        self.inputs = Input((self.dataset.shape[1] - 1,))
+        self.fuzzifier = Fuzzifier.get("netbuilder")(
+            [self.inputs, self.theory.feature_mapping]
+        )
         self.modules = self.fuzzifier.visit(self.theory.formulae)
 
     def test_on_dataset(self):
@@ -57,12 +58,32 @@ class TestSubnetworkBuilderOnSpliceJunction(unittest.TestCase):
         #        323    31  2836
         #
         # Check positive (sum of the columns)
-        self.assertEqual([sum(result_ie), sum(result_ei), sum(result_n)], [323, 31, 2836])
+        self.assertEqual(
+            [sum(result_ie), sum(result_ei), sum(result_n)], [323, 31, 2836]
+        )
         # Check true positive (diagonal values of the matrix)
-        self.assertEqual(sum(result_ie & (self.dataset.iloc[:, -1] == SpliceJunction.class_mapping['ie'])), 295)
-        self.assertEqual(sum(result_ei & (self.dataset.iloc[:, -1] == SpliceJunction.class_mapping['ei'])), 31)
-        self.assertEqual(sum(result_n & (self.dataset.iloc[:, -1] == SpliceJunction.class_mapping['n'])), 1652)
+        self.assertEqual(
+            sum(
+                result_ie
+                & (self.dataset.iloc[:, -1] == SpliceJunction.class_mapping["ie"])
+            ),
+            295,
+        )
+        self.assertEqual(
+            sum(
+                result_ei
+                & (self.dataset.iloc[:, -1] == SpliceJunction.class_mapping["ei"])
+            ),
+            31,
+        )
+        self.assertEqual(
+            sum(
+                result_n
+                & (self.dataset.iloc[:, -1] == SpliceJunction.class_mapping["n"])
+            ),
+            1652,
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
