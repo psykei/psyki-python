@@ -8,10 +8,13 @@ from test.utils import create_uneducated_predictor
 
 
 class TestKbann(TestInjector):
-    dataset = SpliceJunction.get_train()
-    theory = Theory(SpliceJunction.knowledge_filename, dataset, SpliceJunction.class_mapping)
-    uneducated = create_uneducated_predictor(dataset.shape[1] - 1, len(SpliceJunction.class_mapping), [20], 'relu', 'softmax')
-    injector = Injector.kbann(uneducated)
+
+    def setUp(self):
+        self.dataset = SpliceJunction.get_train()
+        self.theory = Theory(SpliceJunction.knowledge_filename, self.dataset, SpliceJunction.class_mapping)
+        self.theory.set_formulae_trainable(['intron_exon', 'exon_intron', 'pyramidine_rich', 'class'])
+        self.uneducated = create_uneducated_predictor(self.dataset.shape[1] - 1, len(SpliceJunction.class_mapping), [], 'relu', 'softmax')
+        self.injector = Injector.kbann(self.uneducated)
 
     def test_injection_kbann(self):
         psyki.logger.info('Testing injection of KBANN with splice junction dataset')
@@ -28,13 +31,13 @@ class TestKbann(TestInjector):
         educated = self.injector.inject(self.theory)
         self._test_educated_is_cloneable(educated)
 
-    # This is not granted for KBANN
-    # def test_equivalence_between_educated_and_its_copy_kbann(self):
-    #     educated = self.injector.inject(self.theory)
-    #     educated_copy = educated.copy()
-    #     educated.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    #     educated_copy.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    #     self._test_equivalence_between_predictors(educated, educated_copy, self.dataset)
+    def test_equivalence_between_educated_and_its_copy_kbann(self):
+        psyki.logger.info('Testing if KBANN and its clone are equivalent')
+        educated = self.injector.inject(self.theory)
+        educated_copy = educated.copy()
+        educated.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        educated_copy.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        self._test_equivalence_between_predictors(educated, educated_copy, self.dataset)
 
 
 if __name__ == '__main__':

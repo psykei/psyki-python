@@ -1,46 +1,43 @@
 import unittest
-from sklearn.model_selection import train_test_split
-from tensorflow.keras import Input, Model
-from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.python.framework.random_seed import set_seed
+import psyki
 from psyki.logic import Theory
 from psyki.ski import Injector
-from psyki.logic.prolog import TuProlog
-from test.psyki.ski import set_trainable_rules
+from test.psyki.ski import TestInjector
 from test.resources.data import SpliceJunction
-from test.utils import get_mlp, Conditions
-from test.resources.knowledge import PATH as KNOWLEDGE_PATH
+from test.utils import create_uneducated_predictor
 
 
-class TestKinsOnSpliceJunction(unittest.TestCase):
-    epochs = 100
-    batch_size = 32
-    verbose = 0
-    acceptable_accuracy = 0.9
-    knowledge = TuProlog.from_file(KNOWLEDGE_PATH / 'splice-junction.pl')
-    trainable = ['intron_exon', 'exon_intron', 'pyramidine_rich', 'class']
-    knowledge = set_trainable_rules(trainable, knowledge)
-    dataset = SpliceJunction.get_train()
-    theory = Theory(knowledge, dataset, SpliceJunction.class_mapping)
+class TestKins(TestInjector):
 
-    def test_on_dataset(self):
-        set_seed(0)
-        # Split data
-        train, test = train_test_split(self.dataset, train_size=1000, random_state=0, stratify=self.dataset.iloc[:, -1])
-        train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1:]
-        test_x, test_y = test.iloc[:, :-1], test.iloc[:, -1:]
-        # Setup predictor
-        input_layer = Input((train_x.shape[1],))
-        predictor = Model(input_layer, get_mlp(input_layer, 3, 3, [64, 32], 'relu', 'softmax', dropout=True))
-        injector = Injector.kins(predictor)
-        new_predictor = injector.inject(self.theory)
-        new_predictor.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        callbacks = Conditions(train_x, train_y)
-        # Train
-        new_predictor.fit(train_x, train_y, epochs=self.epochs, batch_size=self.batch_size, verbose=self.verbose, callbacks=callbacks)
-        new_predictor.compile('adam', loss=SparseCategoricalCrossentropy(), metrics=['accuracy'])
-        _, accuracy = new_predictor.evaluate(test_x, test_y, verbose=self.verbose)
-        self.assertTrue(accuracy > self.acceptable_accuracy)
+    def setUp(self):
+        self.dataset = SpliceJunction.get_train()
+        self.theory = Theory(SpliceJunction.knowledge_filename, self.dataset, SpliceJunction.class_mapping)
+        self.theory.set_formulae_trainable(['intron_exon', 'exon_intron', 'pyramidine_rich', 'class'])
+        self.uneducated = create_uneducated_predictor(self.dataset.shape[1] - 1, len(SpliceJunction.class_mapping), [20], 'relu', 'softmax')
+        self.injector = Injector.kins(self.uneducated)
+
+    def test_injection_kins(self):
+        psyki.logger.info('Testing injection of KINS with splice junction dataset')
+        self._test_injection(self.injector, self.theory)
+
+    def test_educated_training_kins(self):
+        psyki.logger.info('Testing educated KINS training with splice junction dataset')
+        educated = self.injector.inject(self.theory)
+        educated.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        self._test_educated_training(educated, self.dataset)
+
+    def test_educated_is_cloneable_kins(self):
+        psyki.logger.info('Testing if KINS is cloneable')
+        educated = self.injector.inject(self.theory)
+        self._test_educated_is_cloneable(educated)
+
+    def test_equivalence_between_educated_and_its_copy_kins(self):
+        psyki.logger.info('Testing if KINS and its clone are equivalent')
+        educated = self.injector.inject(self.theory)
+        educated_copy = educated.copy()
+        educated.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        educated_copy.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        self._test_equivalence_between_predictors(educated, educated_copy, self.dataset)
 
 
 if __name__ == '__main__':

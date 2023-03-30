@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+from tensorflow.python.framework.random_seed import set_seed
 import psyki
 import pandas as pd
 from datetime import datetime
@@ -30,6 +31,7 @@ class TestInjector(unittest.TestCase):
     def _test_educated_training(self, educated: Model, dataset: pd.DataFrame):
         psyki.logger.info(f"testing educated training")
         time = datetime.now()
+        set_seed(SEED)
         train_x, train_y = dataset.iloc[:, :-1], to_categorical(dataset.iloc[:, -1:])
         history = educated.fit(train_x, train_y, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=VERBOSE)
         self.assertEqual(len(history.history['loss']), EPOCHS)

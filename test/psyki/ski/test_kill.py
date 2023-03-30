@@ -8,10 +8,12 @@ from test.utils import create_uneducated_predictor
 
 
 class TestKillOnSpliceJunction(TestInjector):
-    splice_junction_dataset = SpliceJunction.get_train()
-    poker_dataset = Poker.get_train()
-    splice_junction_theory = Theory(SpliceJunction.knowledge_filename, splice_junction_dataset, SpliceJunction.class_mapping)
-    poker_theory = Theory(Poker.knowledge_filename, poker_dataset, Poker.class_mapping)
+
+    def setUp(self):
+        self.splice_junction_dataset = SpliceJunction.get_train()
+        self.splice_junction_theory = Theory(SpliceJunction.knowledge_filename, self.splice_junction_dataset, SpliceJunction.class_mapping)
+        self.poker_dataset = Poker.get_train()
+        self.poker_theory = Theory(Poker.knowledge_filename, self.poker_dataset, Poker.class_mapping)
 
     def test_injection_kill(self):
         psyki.logger.info('Testing injection of KILL with splice junction dataset')
@@ -42,11 +44,11 @@ class TestKillOnSpliceJunction(TestInjector):
         uneducated = create_uneducated_predictor(self.splice_junction_dataset.shape[1] - 1,
                                                  len(SpliceJunction.class_mapping), [20], 'relu', 'softmax')
         injector = Injector.kill(uneducated)
-        educated = injector.inject(self.poker_theory)
+        educated = injector.inject(self.splice_junction_theory)
         educated_copy = educated.copy()
         educated.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
         educated_copy.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
-        self._test_equivalence_between_predictors(educated, educated_copy, self.poker_dataset)
+        self._test_equivalence_between_predictors(educated, educated_copy, self.splice_junction_dataset)
 
 
 if __name__ == '__main__':

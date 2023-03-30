@@ -1,17 +1,17 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from typing import Any, List
+from abc import abstractmethod
+from typing import Any
 from psyki.utils import model_deep_copy
 from tensorflow.keras import Model
 from tensorflow.keras.utils import custom_object_scope
-from psyki.logic import Formula, Theory
+from psyki.logic import Theory
 from pathlib import Path
 
 
 PATH = Path(__file__).parents[0]
 
 
-class Injector(ABC):
+class Injector:
     """
     An ski allows a sub-symbolic predictor to exploit prior symbolic knowledge.
     The knowledge is provided via symbolic representation (e.g., logic knowledge).

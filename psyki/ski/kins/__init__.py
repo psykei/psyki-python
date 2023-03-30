@@ -22,6 +22,8 @@ class KINS(Injector):
         @param layer: the level of the layer where to perform the injection.
         @param fuzzifier: the fuzzifier used to map the knowledge (by default it is SubNetworkBuilder).
         """
+        # TODO: analyse this warning that sometimes comes out, this should not be armful (same as kbann).
+        tf.get_logger().setLevel("ERROR")
         self._base = model_deep_copy(predictor)
         self._predictor: Model = model_deep_copy(predictor)
         if layer < 0 or layer > len(predictor.layers) - 2:
