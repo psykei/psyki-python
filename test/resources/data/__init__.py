@@ -20,8 +20,8 @@ class Dataset(ABCMeta):
     filename: str = "Dataset filename"
     test_filename: str = "Dataset test filename"
     knowledge_filename: str = "Dataset knowledge filename"
-    data_url: str = UCI_URL + "Dataset URL"
-    data_url_test: str = UCI_URL + "Dataset test URL"
+    data_url: str = None
+    data_url_test: str = None
     class_mapping: dict[str, int] = {}
     features: list[str] = []
     target: list[str] = []
@@ -36,17 +36,17 @@ class Dataset(ABCMeta):
     @classmethod
     @property
     def is_test_downloaded(mcs) -> bool:
-        return (PATH / mcs.test_filename).is_file()
+        return (PATH / mcs.test_filename).is_file() if mcs.test_filename is not None else False
 
     @classmethod
     def download(mcs) -> None:
         if mcs.need_download and not mcs.is_downloaded:
-            d = pd.DataFrame = pd.read_csv(
+            d: pd.DataFrame = pd.read_csv(
                 mcs.data_url, sep=r",\s*", header=None, encoding="utf8"
             )
             d.to_csv(PATH / mcs.filename, index=False, header=False)
         if mcs.data_url_test is not None and not mcs.is_test_downloaded:
-            d = pd.DataFrame = pd.read_csv(
+            d: pd.DataFrame = pd.read_csv(
                 mcs.data_url_test, sep=r",\s*", header=None, encoding="utf8"
             )
             d.to_csv(PATH / mcs.test_filename, index=False, header=False)
@@ -97,7 +97,7 @@ class SpliceJunction(Dataset):
         def _data_to_int(d: pd.DataFrame, mapping: dict[str:int]) -> pd.DataFrame:
             return d.applymap(lambda x: mapping[x] if x in mapping.keys() else x)
 
-        def _get_values(mapping: dict[str : set[str]]) -> Iterable[str]:
+        def _get_values(mapping: dict[str: set[str]]) -> Iterable[str]:
             result = set()
             for values_set in mapping.values():
                 for value in values_set:
@@ -105,7 +105,7 @@ class SpliceJunction(Dataset):
             return result
 
         def _get_binary_data(
-            d: pd.DataFrame, mapping: dict[str : set[str]]
+                d: pd.DataFrame, mapping: dict[str: set[str]]
         ) -> pd.DataFrame:
             sub_features = sorted(_get_values(mapping))
             results = []
