@@ -5,11 +5,12 @@ from psyki.fuzzifiers import Fuzzifier
 
 
 class TestTowellOnSpliceJunction(unittest.TestCase):
-    dataset = SpliceJunction.get_train()
-    inputs = Input((240,))
-    fuzzifier = Fuzzifier.get('towell')([inputs, SpliceJunction.features])
-    knowledge = SpliceJunction.get_knowledge()
-    modules = fuzzifier.visit(knowledge)
+    def setUp(self) -> None:
+        self.dataset = SpliceJunction.get_train()
+        self.theory = SpliceJunction.get_theory()
+        self.inputs = Input((self.dataset.shape[1]-1,))
+        self.fuzzifier = Fuzzifier.get('towell')([self.inputs, self.theory.feature_mapping])
+        self.modules = self.fuzzifier.visit(self.theory.formulae)
 
     def test_on_dataset(self):
         predict_ie = Model(self.inputs, self.modules[1])

@@ -5,6 +5,7 @@ from psyki.qos.data import DataEfficiency
 from psyki.ski import Injector
 from test.psyki.qos import split_dataset, evaluate_metric
 from test.resources.data import SpliceJunction
+from test.utils import create_uneducated_predictor
 
 
 class TestDataOnSplice(unittest.TestCase):
@@ -13,7 +14,7 @@ class TestDataOnSplice(unittest.TestCase):
     dataset = SpliceJunction.get_train()
     dataset1 = split_dataset(dataset)
     dataset2 = split_dataset(dataset, test_size=0.5)
-    model = create_standard_fully_connected_nn(input_size=240, output_size=3, layers=3, neurons=128)
+    model = create_uneducated_predictor(240, 3, [60], "relu", "softmax")
 
     def test_data_fit_with_kins(self):
 

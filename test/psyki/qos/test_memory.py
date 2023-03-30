@@ -4,15 +4,15 @@ import psyki
 from psyki.ski import Injector
 from test.psyki.qos import split_dataset, evaluate_metric
 from test.resources.data import Iris, SpliceJunction
-from test.utils import create_standard_fully_connected_nn
 from psyki.qos.memory import Memory
+from test.utils import create_uneducated_predictor
 
 
 class TestMemoryOnIris(unittest.TestCase):
     theory = Iris.get_theory()
     dataset = Iris.get_train()
     dataset = split_dataset(dataset)
-    model = create_standard_fully_connected_nn(input_size=4, output_size=3, layers=3, neurons=128, activation='relu')
+    model = create_uneducated_predictor(240, 3, [60], "relu", "softmax")
     injector = Injector.kill(model)
     educated_predictor = injector.inject(theory)
 
@@ -27,7 +27,7 @@ class TestMemoryOnSplice(unittest.TestCase):
     dataset = SpliceJunction.get_train()
     theory = SpliceJunction.get_theory()
     dataset = split_dataset(dataset)
-    model = create_standard_fully_connected_nn(input_size=240, output_size=3, layers=3, neurons=128)
+    model = create_uneducated_predictor(240, 3, [60], "relu", "softmax")
     injector = Injector.kins(model)
     educated_predictor = injector.inject(theory)
 

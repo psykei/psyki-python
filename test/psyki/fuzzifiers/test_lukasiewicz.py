@@ -76,11 +76,13 @@ class TestLukasiewiczOnSpliceJunction(unittest.TestCase):
 
 
 class TestLukasiewiczOnPoker(unittest.TestCase):
-    knowledge = Poker.get_knowledge()
-    fuzzifier = Fuzzifier.get('lukasiewicz')([Poker.class_mapping, Poker.features])
-    functions = fuzzifier.visit(knowledge)
-    true = tile(reshape(constant(0.), [1, 1]), [1, 1])
-    false = tile(reshape(constant(1.), [1, 1]), [1, 1])
+
+    def setUp(self) -> None:
+        self.theory = Poker.get_theory()
+        self.fuzzifier = Fuzzifier.get('lukasiewicz')([Poker.class_mapping, self.theory.feature_mapping])
+        self.functions = self.fuzzifier.visit(self.theory.formulae)
+        self.true = tile(reshape(constant(0.), [1, 1]), [1, 1])
+        self.false = tile(reshape(constant(1.), [1, 1]), [1, 1])
     
     def test_nothing(self):
         hand1 = constant([2, 6, 2, 1, 4, 13, 2, 4, 4, 9], dtype=float32)
