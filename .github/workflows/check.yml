@@ -23,7 +23,7 @@ jobs:
           - '3.9.13'
     runs-on: ${{ matrix.os }}
     name: Run tests on Python ${{ matrix.python-version }}, on ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: 60
     concurrency:
       group: ${{ github.workflow }}-run-unit-tests-${{ matrix.python-version }}-${{ matrix.os }}-${{ github.event.number || github.ref }}
       cancel-in-progress: true
@@ -48,9 +48,6 @@ jobs:
 
       - name: Download datasets
         run: python -m setup download_datasets
-
-      - name: Test
-        run: python -m unittest discover -s test -t .
 
       - name: Generate coverage report
         run: |
