@@ -3,6 +3,7 @@
 
 [![PyPI version](https://badge.fury.io/py/psyki.svg)](https://badge.fury.io/py/psyki)
 [![Test](https://github.com/psykei/psyki-python/actions/workflows/check.yml/badge.svg?event=push)]()
+![Codecov](https://img.shields.io/codecov/c/github/psykei/psyki-python)
 [![Release](https://github.com/psykei/psyki-python/actions/workflows/deploy.yml/badge.svg?event=push)]()
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
