@@ -36,7 +36,11 @@ class Dataset(ABCMeta):
     @classmethod
     @property
     def is_test_downloaded(mcs) -> bool:
-        return (PATH / mcs.test_filename).is_file() if mcs.test_filename is not None else False
+        return (
+            (PATH / mcs.test_filename).is_file()
+            if mcs.test_filename is not None
+            else False
+        )
 
     @classmethod
     def download(mcs) -> None:
@@ -97,7 +101,7 @@ class SpliceJunction(Dataset):
         def _data_to_int(d: pd.DataFrame, mapping: dict[str:int]) -> pd.DataFrame:
             return d.applymap(lambda x: mapping[x] if x in mapping.keys() else x)
 
-        def _get_values(mapping: dict[str: set[str]]) -> Iterable[str]:
+        def _get_values(mapping: dict[str : set[str]]) -> Iterable[str]:
             result = set()
             for values_set in mapping.values():
                 for value in values_set:
@@ -105,7 +109,7 @@ class SpliceJunction(Dataset):
             return result
 
         def _get_binary_data(
-                d: pd.DataFrame, mapping: dict[str: set[str]]
+            d: pd.DataFrame, mapping: dict[str : set[str]]
         ) -> pd.DataFrame:
             sub_features = sorted(_get_values(mapping))
             results = []

@@ -110,9 +110,11 @@ educated = injector.inject(theory)            # inject knowledge into the NN
 # From now on you can use the educated predictor as you would use the uneducated one
 ```
 
+For more detailed examples, please refer to the demos in the [demo-psyki-python](https://github.com/psykei/demo-psyki-python) repository.
+
 ## Users
 
-PSyKI is deployed as a library on Pypi, and it can therefore be installed as Python pachage by running:
+PSyKI is deployed as a library on Pypi, and it can therefore be installed as Python package by running:
 ```text
 pip install psyki
 ```
