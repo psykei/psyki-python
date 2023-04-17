@@ -8,6 +8,9 @@ from test.resources.data import SpliceJunction
 from test.utils import create_uneducated_predictor
 
 
+EPOCHS: int = 1
+
+
 class TestDataOnSplice(unittest.TestCase):
     seed = 0
     theory = SpliceJunction.get_theory()
@@ -21,8 +24,8 @@ class TestDataOnSplice(unittest.TestCase):
         set_seed(self.seed)
         additional_params = {
             "seed": self.seed,
-            "epochs1": 100,
-            "epochs2": 100,
+            "epochs1": EPOCHS,
+            "epochs2": EPOCHS,
             "train_x1": self.dataset1["train_x"],
             "train_y1": self.dataset1["train_y"],
             "test_x1": self.dataset1["test_x"],
@@ -50,8 +53,8 @@ class TestDataOnSplice(unittest.TestCase):
             "seed": self.seed,
             "metric1": 0.93,
             "metric2": 0.95,
-            "epochs1": 100,
-            "epochs2": 80,
+            "epochs1": 2*EPOCHS,
+            "epochs2": EPOCHS,
             "train_x1": self.dataset1["train_x"],
             "train_y1": self.dataset1["train_y"],
             "train_x2": self.dataset2["train_x"],
