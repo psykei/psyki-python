@@ -1,5 +1,5 @@
 <h1 align="center"> PSyKI </h1>
-<h2 align="center"><u>P</u>latform for <u>Sy</u>mbolic <u>K</u>nowledge <u>I</u>njection</h2>
+<h2 align="center">Platform for Symbolic Knowledge Injection</h2>
 
 [![PyPI version](https://badge.fury.io/py/psyki.svg)](https://badge.fury.io/py/psyki)
 [![Test](https://github.com/psykei/psyki-python/actions/workflows/check.yml/badge.svg?event=push)]()
@@ -56,7 +56,7 @@ It is worth noting that each injector may have its own requirements on the knowl
 
 List of available injectors:
 
- - [`KBANN`](http://www.aaai.org/Library/AAAI/1990/aaai90-129.php), one of the first injector introduced in literature;
+ - [`KBANN`](https://www.sciencedirect.com/science/article/pii/0004370294901058), one of the first injector introduced in literature;
  - [`KILL`](http://ceur-ws.org/Vol-3261/paper5.pdf), constrains a NN by altering its predictions using the knowledge;
  - [`KINS`](http://ceur-ws.org/Vol-3204/paper_25.pdf), structure the knowledge adding ad-hoc layers into a NN.
 

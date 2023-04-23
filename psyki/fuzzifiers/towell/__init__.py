@@ -371,13 +371,21 @@ class Towell(StructuringFuzzifier):
         previous_layers = [
             self._visit(arg, local_mapping, substitutions) for arg in args[1:]
         ]
+        new_previous_layers = []
         w = (len(args) - 1) * [self.omega]
+        for i, element in enumerate(previous_layers):
+            if hasattr(element, "__len__"):
+                new_element, new_w = element
+                new_previous_layers.append(new_element)
+                w[i] = new_w
+            else:
+                new_previous_layers.append(element)
         bias_initializer = constant_initializer(int(m.value) - 0.5 * self.omega)
         layer = Towell.CustomDense(
             kernel_initializer=constant_initializer(w),
             trainable=self._trainable,
             bias_initializer=bias_initializer,
-        )(concat(previous_layers))
+        )(concat(new_previous_layers))
         return layer, self.omega
 
     def _clear(self):

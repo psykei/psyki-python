@@ -11,7 +11,7 @@ class TestFormulaOptimization(unittest.TestCase):
         self.assertTrue(first_formula.is_optimized)
 
     def test_plus(self):
-        m_of_n = self.knowledge[21]
+        m_of_n = self.knowledge[18]
         m_of_n.optimize()
         self.assertTrue(m_of_n.is_optimized)
 

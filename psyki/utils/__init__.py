@@ -1,6 +1,7 @@
 from __future__ import annotations
 import sys
 from typing import Callable, TypeVar
+import tensorflow as tf
 from tensorflow import minimum, maximum, abs
 from tensorflow.keras import Model
 from tensorflow.keras.models import clone_model
@@ -21,18 +22,22 @@ def concat(layer):
     return Concatenate(axis=1)(layer)
 
 
+@tf.function
 def eta(x: Tensor) -> Tensor:
     return minimum(1.0, maximum(0.0, x))
 
 
+@tf.function
 def eta_abs(x: Tensor) -> Tensor:
     return eta(abs(x))
 
 
+@tf.function
 def eta_abs_one(x: Tensor) -> Tensor:
     return eta(abs(x - 1.0))
 
 
+@tf.function
 def eta_one_abs(x: Tensor) -> Tensor:
     return eta(1.0 - abs(x))
 
