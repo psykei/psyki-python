@@ -7,3 +7,4 @@ pandas>=1.4.2
 scikit-learn>=1.0.2
 setuptools>=59.8.0
 codecarbon>=2.1.4
+pyparsing~=3.0.9
