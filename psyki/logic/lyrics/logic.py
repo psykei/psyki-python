@@ -1,8 +1,7 @@
 import tensorflow as tf
 from psyki.logic.lyrics import *
-from world import World
-from compiler import FormulaTensor
-
+from psyki.logic.lyrics.compiler import FormulaTensor
+from psyki.logic.lyrics.world import World
 
 EPSILON = 1e-12
 FRANK = "FRANK"
