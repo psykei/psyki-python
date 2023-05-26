@@ -53,7 +53,7 @@ class TestDataOnSplice(unittest.TestCase):
             "seed": self.seed,
             "metric1": 0.93,
             "metric2": 0.95,
-            "epochs1": 2*EPOCHS,
+            "epochs1": 2 * EPOCHS,
             "epochs2": EPOCHS,
             "train_x1": self.dataset1["train_x"],
             "train_y1": self.dataset1["train_y"],
