@@ -25,7 +25,7 @@ class Towell(StructuringFuzzifier):
     special_predicates: list[str] = ["m_of_n"]
 
     def __init__(
-        self, predictor_input: Tensor, feature_mapping: dict[str, int], omega: float = 4
+            self, predictor_input: Tensor, feature_mapping: dict[str, int], omega: float = 4
     ):
         super().__init__()
         self.predictor_input = predictor_input
@@ -70,7 +70,7 @@ class Towell(StructuringFuzzifier):
 
     # All the following _visit* functions should return a neuron and the weights to initialise it.
     def _visit_definition_clause(
-        self, lhs: DefinitionClause, rhs: Clause, local_mapping, substitutions
+            self, lhs: DefinitionClause, rhs: Clause, local_mapping, substitutions
     ):
         predicate_name = lhs.predication
         output_value = str(lhs.args.last)
@@ -124,8 +124,8 @@ class Towell(StructuringFuzzifier):
                     self.assignment_mapping[predicate_name] = [subs]
                 else:
                     self.assignment_mapping[predicate_name] = self.assignment_mapping[
-                        predicate_name
-                    ] + [subs]
+                                                                  predicate_name
+                                                              ] + [subs]
             if predicate_name not in self.predicate_call_mapping.keys():
                 local_args = [
                     var for var in lhs.args.unfolded if isinstance(var, Variable)
@@ -153,7 +153,7 @@ class Towell(StructuringFuzzifier):
                 self.predicate_call_mapping[predicate_name] = predicate, local_args
 
     def _visit_expression(
-        self, node: Expression, local_mapping, substitutions
+            self, node: Expression, local_mapping, substitutions
     ) -> tuple[any, float]:
         """
         @return the corresponding antecedent network and the omega weight
@@ -260,7 +260,6 @@ class Towell(StructuringFuzzifier):
                 else:
                     subs[k] = ([body], [v])
         for k, v in subs.items():
-
             def index(v):
                 return argmax(
                     [self._visit(b, loc_copy, sub_copy)[0] for b in v], axis=0
@@ -283,13 +282,13 @@ class Towell(StructuringFuzzifier):
         return Maximum()(layers)
 
     def _visit_variable(
-        self, node: Variable, local_mapping, substitutions
+            self, node: Variable, local_mapping, substitutions
     ) -> tuple[any, float]:
         """
         @return the corresponding antecedent network and the omega weight
         """
         if node in substitutions.keys():
-            return substitutions[node]  # (self.predictor_input)
+            return substitutions[node], self.omega  # (self.predictor_input)
         else:
             grounding = local_mapping[node]
             if isinstance(grounding, Variable):
@@ -303,9 +302,9 @@ class Towell(StructuringFuzzifier):
                         self.omega,
                     )
                 else:
-                    return self._visit_variable(grounding, local_mapping, substitutions)
+                    return self._visit_variable(grounding, local_mapping, substitutions), self.omega
             else:
-                return self._visit(local_mapping[node], local_mapping, substitutions)
+                return self._visit(local_mapping[node], local_mapping, substitutions), self.omega
 
     def _visit_boolean(self, node: Boolean):
         return (
@@ -341,7 +340,7 @@ class Towell(StructuringFuzzifier):
         return self.predicate_call_mapping[node.predicate][1]({}), self.omega
 
     def _visit_negation(
-        self, node: Negation, local_mapping, substitutions
+            self, node: Negation, local_mapping, substitutions
     ) -> tuple[any, float]:
         """
         @return the corresponding antecedent network and its weight with negative symbol
