@@ -9,6 +9,7 @@ on:
       - master
       - main
       - develop
+  workflow_dispatch:
 env:
   PROJECT_NAME: psyki-python
   WORKFLOW: deploy
