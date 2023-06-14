@@ -1,6 +1,7 @@
 VERSION
 
 psyki/utils/fuzzification/
+local/
 tmp/
 .idea/
 .vscode/
