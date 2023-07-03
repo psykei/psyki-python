@@ -115,7 +115,8 @@ setup(
         '2ppy>=0.4.0',
         'scikit-learn>=1.0.2',
         'pandas>=1.4.2',
-        'codecarbon>=2.1.4'
+        'codecarbon>=2.1.4',
+        'prometheus_client>=0.17.0'
     ],  # Optional
     zip_safe = False,
     platforms = "Independant",
