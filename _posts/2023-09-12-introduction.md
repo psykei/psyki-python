@@ -1,20 +1,25 @@
 ---
 title: Introduction
-author: Matteo Magnini
+author: mmagnini
 date: 2023-09-12 12:00:00 +0100
 categories: [Technology, Documentation]
 tags: [PSyKI]
+img_path: /assets/img/
+pin: true
+math: true
+mermaid: true
 ---
 
 ### What is PSyKI?
 
-PSyKI (<u>**P**</u>latform for <u>**Sy**</u>mbolic <u>**K**</u>nowledge <u>**I**</u>njection) is a python library for symbolic knowledge injection (**SKI**).
-SKI is a particular subclass of neuro-symbolic (**NeSy**) integration techniques.
-PSyKI offers SKI algorithms (a.k.a. **injectors**) along with quality of service metrics (**QoS**).
+PSyKI (<u><b>P</b></u>latform for <u><b>Sy</b></u>mbolic <u><b>K</b></u>nowledge <u><b>I</b></u>njection) is a python library for symbolic knowledge injection (<b>SKI</b>).
+SKI is a particular subclass of neuro-symbolic (<b>NeSy</b>) integration techniques.
+PSyKI offers SKI algorithms (a.k.a. <b>injectors</b>) along with quality of service metrics (<b>QoS</b>).
 
-You can have a look at the original paper of this technology [here](https://link.springer.com/chapter/10.1007/978-3-031-15565-9_6).
+[Here](https://link.springer.com/chapter/10.1007/978-3-031-15565-9_6) you can have a look at the original paper for more details.
 
 If you use one or more of the features provided by PSyKI, please consider citing this work.
+
 Bibtex: 
 ```bibtex
 @incollection{psyki-extraamas2022,
@@ -45,16 +50,41 @@ Bibtex:
 }
 ```
 
-### Architecture overview
+## Overview
+
+Premise: the knowledge that we consider is symbolic, and it is represented with formal logic.
+In particular, we use the Prolog formalism to express logic rules.
+
+Note: some aspects of the <b>Prolog</b> language are not fully supported.
+Generally, every SKI method specifies which kind of knowledge can support.
+
+### SKI workflow
+
+SKI methods require common steps for knowledge preprocessing.
+First, the knowledge is parsed into a visitable data structure (e.g., abstract syntax tree).
+Then, it is fuzzified.
+This means that from a <i>crispy</i> domain -- logic rules can be only true or false -- the knowledge becomes <i>fuzzy</i> --- there can be multiple degree of truth.
+Finally, the knowledge can be injected into the neural network.
+
+In the literature, there are mainly two families of SKI methods:
+- <b>structuring</b>, the knowledge is mapped into new neurons and connections of the neural network.
+The new components mimic the behaviour of the prior knowledge.
+After the injection, the network is still trained (knowledge fitting).
+![SKI structuring](injection-structuring.png)
+- <b>constraining</b>, the knowledge is embedded in the loss function.
+Typically, a cost factor is added to the loss function.
+The cost factor is higher the higher is the violation of the knowledge.
+In this way, the network learn to avoid predictions that violates the prior knowledge during the training phase.
+![SKI constraining](injection-constraining.png)
+
+### Architecture
 
 
+## Features
 ### Injectors
-
 
 ### QoS
 
 
-### Collaborators
+## Collaborators
 
-
-###

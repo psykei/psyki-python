@@ -40,7 +40,8 @@ layout: default
 {% endif %}
 
 {% capture content %}
-  {% for post in posts %}
+  {% assign sortedPosts = posts | sort: 'date' %}
+  {% for post in sortedPosts reversed %}
     <article class="card-wrapper">
       <a href="{{ post.url | relative_url }}" class="card post-preview flex-md-row-reverse">
         {% if post.image %}

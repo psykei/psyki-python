@@ -26,7 +26,7 @@ description: >- # used by seo meta and the atom feed
   A python library of methods and metrics for symbolic knowledge injection.
 
 # fill in the protocol & hostname for your site, e.g., 'https://username.github.io'
-url: ""
+url: "https://github.com/psykei/psyki-python.io"
 
 github:
   username: MatteoMagnini # change to your github username
@@ -69,10 +69,10 @@ theme_mode: # [light|dark]
 # will be added to all image (site avatar & posts' images) paths starting with '/'
 #
 # e.g. 'https://cdn.com'
-img_cdn: "https://chirpy-img.netlify.app"
+# img_cdn: "https://chirpy-img.netlify.app"
 
 # the avatar on sidebar, support local or CORS resources
-avatar: "/commons/avatar.jpg"
+avatar: "assets/img/favicons/android-chrome-512x512.png"
 
 # boolean type, the global switch for TOC in posts.
 toc: true
