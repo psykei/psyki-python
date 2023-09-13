@@ -9,8 +9,7 @@ pin: true
 math: true
 mermaid: true
 ---
-
-### What is PSyKI?
+## What is PSyKI?
 
 PSyKI (<u><b>P</b></u>latform for <u><b>Sy</b></u>mbolic <u><b>K</b></u>nowledge <u><b>I</b></u>njection) is a python library for symbolic knowledge injection (<b>SKI</b>).
 SKI is a particular subclass of neuro-symbolic (<b>NeSy</b>) integration techniques.
