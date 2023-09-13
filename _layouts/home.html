@@ -41,7 +41,7 @@ layout: default
 
 {% capture content %}
   {% assign sortedPosts = posts | sort: 'date' %}
-  {% for post in sortedPosts reversed %}
+  {% for post in sortedPosts %}
     <article class="card-wrapper">
       <a href="{{ post.url | relative_url }}" class="card post-preview flex-md-row-reverse">
         {% if post.image %}

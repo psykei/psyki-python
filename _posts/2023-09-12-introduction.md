@@ -98,7 +98,7 @@ Each `Injector` has one `Fuzzifier`.
 The `Fuzzifier` is used to transform the `Theory` into a sub-symbolic data structure (e.g., ad-hoc layers of a NN).
 Different fuzzifiers encode the knowledge in different ways.
 
-To avoid confusion, we use the following terminology:
+Name convention:
 
  - <b>rule</b> is a single logic clause;
  - <b>knowledge</b> is the set of rules;
@@ -106,10 +106,61 @@ To avoid confusion, we use the following terminology:
 
 
 ## Features
+
 ### Injectors
+
+- <b><i>KBANN</i></b>: Knowledge-Based Artificial Network Networks (see [post]({% post_url 2023-09-13-kbann %}))
+- <b><i>KINS</i></b>: Knowledge Injection via Network Structuring (see [post]({% post_url 2023-09-13-kins %}))
+- <b><i>KINS</i></b>: Knowledge Injection via Lambda Layer (see [post]({% post_url 2023-09-13-kill %}))
 
 ### QoS
 
+- <b><i>Memory Footprint</i></b>
+- <b><i>Energy Consumption</i></b>
+- <b><i>Latency</i></b>
+- <b><i>Data Efficiency</i></b>
 
-## Collaborators
+For more details about QoS have a look at the corresponding [post]({% post_url 2023-09-13-metrics %}).
 
+## Additional information
+
+### Demo
+
+See the [demo post]({% post_url 2023-09-13-demo %}) to learn how to quickly use PSyKI in your projects.
+
+### Contributors
+
+See the [contributors post]({% post_url 2023-09-13-contributors %}). 
+
+### Developers
+
+External contributions are welcome!
+Working with PSyKI codebase requires a number of tools to be installed:
+* Python 3.9+
+* JDK 11+ (please ensure the `JAVA_HOME` environment variable is properly configured)
+* Git 2.20+
+
+#### Develop PSyKI with PyCharm
+
+To participate in the development of PSyKI, we suggest the [PyCharm](https://www.jetbrains.com/pycharm/) IDE.
+
+#### Importing the project
+
+1. Clone this repository in a folder of your preference using `git_clone` appropriately
+2. Open PyCharm
+3. Select `Open`
+4. Navigate your file system and find the folder where you cloned the repository
+5. Click `Open`
+
+#### Developing the project
+
+Contributions to this project are welcome. Just some rules:
+* We use [git flow](https://github.com/nvie/gitflow), so if you write new features, please do so in a separate `feature/` branch
+* We recommend forking the project, developing your stuff, then contributing back vie pull request
+* Commit often
+* Stay in sync with the `develop` (or `main`) branch (pull frequently if the build passes)
+* Do not introduce low quality or untested code
+
+#### Issue tracking
+If you meet some problem in using or developing PSyKI, you are encouraged to signal it through the project
+["Issues" section](https://github.com/psykei/psyki-python/issues) on GitHub.
