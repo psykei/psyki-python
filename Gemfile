@@ -26,3 +26,9 @@ gem "http_parser.rb", "~> 0.6.0", :platforms => [:jruby]
 if RUBY_PLATFORM =~ /linux-musl/
   gem "jekyll-sass-converter", "~> 2.0"
 end
+
+# gem "jekyll"
+gem "jekyll", "~> 3.9.3"
+
+# gem "github-pages"
+gem "github-pages", "~> 228", group: :jekyll_plugins
