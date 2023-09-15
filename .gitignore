@@ -12,6 +12,8 @@ test/resources/data/poker/
 test/resources/data/*.csv
 test/resources/data/*.txt
 demo/
+Gemfile.lock
+docs
 
 *~
 *.jar
