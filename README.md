@@ -126,6 +126,165 @@ educated = injector.inject(theory)            # inject knowledge into the NN
 
 For more detailed examples, please refer to the demos in the [demo-psyki-python](https://github.com/psykei/demo-psyki-python) repository.
 
+---------------------------------------------------------------------------------
+
+##  Injection Assessment 🎯
+
+Knowledge injection methods aim to enhance the sustainability of machine learning by minimizing the learning time required. This accelerated learning can possibly lead to improvements in model accuracy as well. Additionally, by incorporating prior knowledge, the data requirements for effective training may be loosened, allowing for smaller datasets to be utilized. Injecting knowledge has also the potential to increase model interpretability by preventing the predictor from becoming a black-box.
+
+Most existing works on knowledge injection techniques showcase standard evaluation metrics that aim to quantify these potential benefits. However, accurately quantifying sustainability, accuracy improvements, dataset needs, and interpretability in a consistent manner remains an open challenge.
+
+## <b> Standard assessment: </b>
+
+Given:
+
+- an injection procedure $I$,
+- some symbolic knowledge $K$,
+- a sub-symbolic predictor $N$
+
+We define the “educated” predictor as:
+
+$$\hat{N} = I(K,N)$$
+
+and the standard assessment of this predictor is given by:
+
+$$\epsilon = \pi(\hat{N}) - \pi(N)$$
+
+where $\pi$ is a performance score of choice, i.e. accuracy, MSE, etc.
+
+## Efficiency metrics: 
+
+- **Memory footprint**, i.e., the size of the predictor under examination;
+- **Data efficiency**, i.e., the amount of data required to train the predictor;
+- **Latency**, i.e., the time required to run a predictor for inference;
+- **Energy consumption**, i.e., the amount of energy required to train/run the predictor;
+
+### <b>💾 Memory Footprint </b>
+<u><i>Intuition:</i></u> injected knowledge can reduce the amount of notions to be learnt data-drivenly.
+
+<u><i>Idea:</i></u> measure the amount of total operations (FLOPs or MACs) required by the model.
+
+#### Formulation:
+
+$$\mu_{\Psi, K, N}(\mathcal{I}) = \Psi(N) - \Psi(\hat{N})$$
+
+where $\hat{N} = \mathcal{I}(K, N)$ represents the educated predictor attained by injecting $K$ into $N$, and $\Psi$ is a memory footprint metric of choice (FLOPs or MACs).
+
+### <b>🗂️ Data Efficiency </b>
+<u><i>Intuition:</i></u> several concepts are injected → some portions of training data are not required.
+
+<u><i>Idea:</i></u> reducing the size of the training set $D$ for the educated predictor by letting the input knowledge $K$ compensate for such lack of data.
+
+#### Formulation:
+
+$$\Delta_\pi(e, N, D, T) = \frac{e}{\pi(N, T)} \sum_{d \in D} \beta(d)$$
+
+where $d$ is a single training sample, $\beta(d)$ is the amount of bytes required for its in-memory representation, and $\pi$ is some performance score of choice.
+
+The *data-efficiency gain* is equal to:
+
+$$\delta_{e, K, N, D, D', T}(\mathcal{I}) = \Delta_\pi(e, N, D, T) - \Delta_\pi(e, \hat{N}, D', T)$$
+
+### <b>⏳ Latency </b>
+<u><i>Intuition:</i></u> knowledge injection remove unnecessary computations required to draw a prediction.
+
+<u><i>Idea:</i></u> measures the average time required to draw a single prediction from a dataset $T$.
+
+#### Formulation:
+
+$$\Lambda(N, T) = \frac{1}{\vert T \vert} \sum_{t \in T} \Theta(N, t)$$
+
+where $\Theta(N, t)$ represents the time required to draw a prediction from $N$ on the input $t$.
+
+The *latency improvement* is equal to:
+
+$$\lambda_{K, N, T}(\mathcal{I}) = \Lambda(N, T) - \Lambda(\hat{N}, T)$$
+
+where $\hat{N} = \mathcal{I}(K, N)$ represents the educated predictor attained by injecting $K$ into $N$.
+
+### <b>⚡ Energy Consumption </b> 
+<u><i>Intuition:</i></u> knowledge injection reduces learning complexity → reduces amount of computations for training and running a model.
+
+<u><i>Idea:</i></u> i) measures the average energy consumption (mW) for a single update, on a training dataset $T$; ii) measures the average energy consumption (mW) of a single forward on a test dataset $T$ composed by several samples.
+
+#### Formulation:
+- Energy consumed by N on a per-single-inference basis:
+$$\upsilon^\mathsf{i}_{\upsilon}(N, T) = \frac{1}{\vert T \vert} \sum_{t \in T} \upsilon(N, t)$$
+
+where $\upsilon(N, t)$ measures the energy consumption of a single forward run of N on a single sample $t$.
+
+- Energy consumed by N during training:
+
+$$\upsilon^\mathsf{t}_{\upsilon, \gamma}(e, N, T) = \frac{\gamma(e, N, T)}{e \cdot \vert T \vert} -  \usilon^\mathsf{i}_\upsilon(N, T)$$
+
+where $\gamma(e, N, T)$ measures the overall energy consumed by the training phase as whole.
+
+- The *energy consumption improvement* is equal to:
+
+$$\varepsilon^\mathsf{i}_{\upsilon, K, N, T}(\mathcal{I}) = \upsilon^\mathsf{i}_{\upsilon}(N, T) - \upsilon^\mathsf{i}_{\upsilon}(\mathcal{I}(K, N), T)$$
+
+$$\varepsilon^\mathsf{t}_{\upsilon, \gamma, e, K, N, T}(\mathcal{I}) = \upsilon^\mathsf{t}_{\upsilon, \gamma}(e, N, T) - \upsilon^\mathsf{t}_{\upsilon, \gamma}(e, \mathcal{I}(K, N), T)$$
+
+## Example
+The following example shows how to use QoS metrics.
+
+```python
+
+from psyki.qos.energy import Energy
+
+# Model training
+model1 = ... # create model 1
+model2 = ... # create model 2
+
+X_train, y_train = ... # get training data
+
+model1.fit(X_train, y_train) 
+model2.fit(X_train, y_train)
+
+# Compute energy
+params = {'x': X_train, 'y': y_train, 'epochs': 100}
+training_energy = Energy.compute_during_training(model1, model2, params)
+
+
+# Model inference
+X_test, y_test = ... # get test data 
+
+model1_preds = model1.predict(X_test)
+model2_preds = model2.predict(X_test)
+
+# Compute energy
+params = {'x': X_test}  
+inference_energy = Energy.compute_during_inference(model1, model2, params)
+
+# The process for the other metrics (data efficiency, latency, and memory) is the same.
+```
+
+### Reference paper
+
+> Andrea Agiollo, Andrea Rafanelli, Matteo Magnini, Giovanni Ciatto, Andrea Omicini. "[Symbolic knowledge injection meets intelligent agents: QoS metrics and experiments]", in:  Autonomous Agents and Multi-Agent Systems, 2023.
+
+Bibtex: 
+```bibtex
+@article{ski-qos23,
+  author       = {Andrea Agiollo and
+                  Andrea Rafanelli and
+                  Matteo Magnini and
+                  Giovanni Ciatto and
+                  Andrea Omicini},
+  title        = {Symbolic knowledge injection meets intelligent agents: QoS metrics
+                  and experiments},
+  journal      = {Auton. Agents Multi Agent Syst.},
+  volume       = {37},
+  number       = {2},
+  pages        = {27},
+  year         = {2023},
+  url          = {https://doi.org/10.1007/s10458-023-09609-6},
+  doi          = {10.1007/S10458-023-09609-6},
+  timestamp    = {Tue, 12 Sep 2023 07:57:44 +0200},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+```
+------------------------------------------------------------------
 ## Users
 
 PSyKI is deployed as a library on Pypi, and it can therefore be installed as Python package by running:
