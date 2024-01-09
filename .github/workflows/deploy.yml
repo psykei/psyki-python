@@ -72,6 +72,7 @@ jobs:
             echo "Releasing $A"
           done
           RELEASE_TAG='${{ steps.get-version.outputs.version }}'
+          sudo apt-get update && sudo apt-get install -y hub
           hub release create "${ASSETS[@]}" -m "$RELEASE_TAG" "$RELEASE_TAG"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
