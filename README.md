@@ -15,6 +15,12 @@ Some quick links:
 * [PyPi Repository](https://pypi.org/project/psyki/)
 * [Issues](https://github.com/psykei/psyki-python/issues)
 
+## Intro
+
+PSyKI (<u><b>P</b></u>latform for <u><b>Sy</b></u>mbolic <u><b>K</b></u>nowledge <u><b>I</b></u>njection) is a python library for symbolic knowledge injection (<b>SKI</b>).
+SKI is a particular subclass of neuro-symbolic (<b>NeSy</b>) integration techniques.
+PSyKI offers SKI algorithms (a.k.a. <b>injectors</b>) along with quality of service metrics (<b>QoS</b>).
+
 ### Reference paper
 
 > Matteo Magnini, Giovanni Ciatto, Andrea Omicini. "[On the Design of PSyKI: A Platform for Symbolic Knowledge Injection into Sub-Symbolic Predictors]", in: Proceedings of the 4th International Workshop on EXplainable and TRAnsparent AI and Multi-Agent Systems, 2022.
@@ -48,12 +54,6 @@ Bibtex:
     year = 2022
 }
 ```
-
-## Intro
-
-PSyKI (<u><b>P</b></u>latform for <u><b>Sy</b></u>mbolic <u><b>K</b></u>nowledge <u><b>I</b></u>njection) is a python library for symbolic knowledge injection (<b>SKI</b>).
-SKI is a particular subclass of neuro-symbolic (<b>NeSy</b>) integration techniques.
-PSyKI offers SKI algorithms (a.k.a. <b>injectors</b>) along with quality of service metrics (<b>QoS</b>).
 
 ### More in detail
 
@@ -128,11 +128,64 @@ For more detailed examples, please refer to the demos in the [demo-psyki-python]
 
 ---------------------------------------------------------------------------------
 
-##  Injection Assessment 🎯
+##  Injection Assessment 
 
 Knowledge injection methods aim to enhance the sustainability of machine learning by minimizing the learning time required. This accelerated learning can possibly lead to improvements in model accuracy as well. Additionally, by incorporating prior knowledge, the data requirements for effective training may be loosened, allowing for smaller datasets to be utilized. Injecting knowledge has also the potential to increase model interpretability by preventing the predictor from becoming a black-box.
 
 Most existing works on knowledge injection techniques showcase standard evaluation metrics that aim to quantify these potential benefits. However, accurately quantifying sustainability, accuracy improvements, dataset needs, and interpretability in a consistent manner remains an open challenge.
+
+### Reference papers
+
+> Andrea Agiollo, Andrea Rafanelli, Matteo Magnini, Giovanni Ciatto, Andrea Omicini. "[Symbolic knowledge injection meets intelligent agents: QoS metrics and experiments]", in:  Autonomous Agents and Multi-Agent Systems, 2023.
+
+Bibtex: 
+```bibtex
+@article{ski-qos23,
+  author       = {Andrea Agiollo and
+                  Andrea Rafanelli and
+                  Matteo Magnini and
+                  Giovanni Ciatto and
+                  Andrea Omicini},
+  title        = {Symbolic knowledge injection meets intelligent agents: QoS metrics
+                  and experiments},
+  journal      = {Auton. Agents Multi Agent Syst.},
+  volume       = {37},
+  number       = {2},
+  pages        = {27},
+  year         = {2023},
+  url          = {https://doi.org/10.1007/s10458-023-09609-6},
+  doi          = {10.1007/S10458-023-09609-6},
+  timestamp    = {Tue, 12 Sep 2023 07:57:44 +0200},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+```
+
+> Andrea Agiollo, Andrea Rafanelli, Andrea Omicini. "[Towards quality-of-service metrics for symbolic knowledge injection]", in:  WOA, 2022.
+Bibtex: 
+```bibtex
+
+
+@inproceedings{ski-qos22,
+  author       = {Andrea Agiollo and
+                  Andrea Rafanelli and
+                  Andrea Omicini},
+  editor       = {Angelo Ferrando and
+                  Viviana Mascardi},
+  title        = {Towards quality-of-service metrics for symbolic knowledge injection},
+  booktitle    = {Proceedings of the 23rd Workshop "From Objects to Agents", Genova,
+                  Italy, September 1-3, 2022},
+  series       = {{CEUR} Workshop Proceedings},
+  volume       = {3261},
+  pages        = {30--47},
+  publisher    = {CEUR-WS.org},
+  year         = {2022},
+  url          = {https://ceur-ws.org/Vol-3261/paper3.pdf},
+  timestamp    = {Fri, 10 Mar 2023 16:22:40 +0100},
+  biburl       = {https://dblp.org/rec/conf/woa/AgiolloRO22.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+```
 
 ## Efficiency metrics: 
 
@@ -195,32 +248,10 @@ inference_energy = Energy.compute_during_inference(model1, model2, params)
 # The process for the other metrics (data efficiency, latency, and memory) is the same.
 ```
 
-### Reference paper
 
-> Andrea Agiollo, Andrea Rafanelli, Matteo Magnini, Giovanni Ciatto, Andrea Omicini. "[Symbolic knowledge injection meets intelligent agents: QoS metrics and experiments]", in:  Autonomous Agents and Multi-Agent Systems, 2023.
-
-Bibtex: 
-```bibtex
-@article{ski-qos23,
-  author       = {Andrea Agiollo and
-                  Andrea Rafanelli and
-                  Matteo Magnini and
-                  Giovanni Ciatto and
-                  Andrea Omicini},
-  title        = {Symbolic knowledge injection meets intelligent agents: QoS metrics
-                  and experiments},
-  journal      = {Auton. Agents Multi Agent Syst.},
-  volume       = {37},
-  number       = {2},
-  pages        = {27},
-  year         = {2023},
-  url          = {https://doi.org/10.1007/s10458-023-09609-6},
-  doi          = {10.1007/S10458-023-09609-6},
-  timestamp    = {Tue, 12 Sep 2023 07:57:44 +0200},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-```
 ------------------------------------------------------------------
+
+
 ## Users
 
 PSyKI is deployed as a library on Pypi, and it can therefore be installed as Python package by running:
