@@ -196,7 +196,7 @@ class Iris(Dataset):
     @classmethod
     def get_train(mcs) -> pd.DataFrame:
         x, y = load_iris(return_X_y=True, as_frame=True)
-        encoder = OneHotEncoder(sparse=False)
+        encoder = OneHotEncoder(sparse_output=False)
         encoder.fit_transform([y])
         x.columns = list(Iris.features)
         return x.join(y)
