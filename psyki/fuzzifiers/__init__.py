@@ -228,9 +228,9 @@ class DatalogFuzzifier(Fuzzifier, ABC):
             return predicate(local_mapping)(substitutions)
         else:
             # Variables assignment.
-            predicate_bodies: list[
-                tuple[Clause, dict[Variable, Clause]]
-            ] = self.assignment_mapping[formula.predicate]
+            predicate_bodies: list[tuple[Clause, dict[Variable, Clause]]] = (
+                self.assignment_mapping[formula.predicate]
+            )
             grounded = [
                 arg for arg in arguments if isinstance(arg, Variable) and arg in keys
             ]
