@@ -11,10 +11,9 @@ from tensorflow.keras.layers import (
     Lambda,
     Layer,
 )
-from tensorflow.keras.backend import argmax, squeeze
-from tensorflow.python.ops.array_ops import gather, stack, transpose
-from tensorflow.python.ops.init_ops import Ones, constant_initializer, Zeros
-from tensorflow.python.ops.initializers_ns import ones
+import tensorflow as tf
+from tensorflow import squeeze, gather, stack, transpose, argmax
+from tensorflow.keras.initializers import Ones, constant, Zeros
 from psyki.logic import *
 from psyki.fuzzifiers import StructuringFuzzifier
 from psyki.logic.operators import *
@@ -213,7 +212,7 @@ class NetBuilder(StructuringFuzzifier):
                 Plus.symbol,
                 Dense(
                     1,
-                    kernel_initializer=ones(),
+                    kernel_initializer=Ones(),
                     activation="linear",
                     trainable=self._trainable,
                 ),
@@ -222,7 +221,7 @@ class NetBuilder(StructuringFuzzifier):
                 Equal.symbol,
                 Dense(
                     1,
-                    kernel_initializer=constant_initializer([1, -1]),
+                    kernel_initializer=constant([1, -1]),
                     trainable=self._trainable,
                     activation=eta_one_abs,
                 ),
@@ -231,9 +230,9 @@ class NetBuilder(StructuringFuzzifier):
                 Less.symbol,
                 Dense(
                     1,
-                    kernel_initializer=constant_initializer([-1, 1]),
+                    kernel_initializer=constant([-1, 1]),
                     trainable=self._trainable,
-                    bias_initializer=constant_initializer([0.5]),
+                    bias_initializer=constant([0.5]),
                     activation=eta,
                 ),
             ),
@@ -241,9 +240,9 @@ class NetBuilder(StructuringFuzzifier):
                 LessEqual.symbol,
                 Dense(
                     1,
-                    kernel_initializer=constant_initializer([-1, 1]),
+                    kernel_initializer=constant([-1, 1]),
                     trainable=self._trainable,
-                    bias_initializer=constant_initializer([1.0]),
+                    bias_initializer=constant([1.0]),
                     activation=eta,
                 ),
             ),
@@ -251,9 +250,9 @@ class NetBuilder(StructuringFuzzifier):
                 Greater.symbol,
                 Dense(
                     1,
-                    kernel_initializer=constant_initializer([1, -1]),
+                    kernel_initializer=constant([1, -1]),
                     trainable=self._trainable,
-                    bias_initializer=constant_initializer([0.5]),
+                    bias_initializer=constant([0.5]),
                     activation=eta,
                 ),
             ),
@@ -261,9 +260,9 @@ class NetBuilder(StructuringFuzzifier):
                 GreaterEqual.symbol,
                 Dense(
                     1,
-                    kernel_initializer=constant_initializer([1, -1]),
+                    kernel_initializer=constant([1, -1]),
                     trainable=self._trainable,
-                    bias_initializer=constant_initializer([1.0]),
+                    bias_initializer=constant([1.0]),
                     activation=eta,
                 ),
             ),
@@ -305,7 +304,7 @@ class NetBuilder(StructuringFuzzifier):
         return Dense(
             1,
             kernel_initializer=Zeros,
-            bias_initializer=constant_initializer(1.0 if node.is_true else 0.0),
+            bias_initializer=constant(1.0 if node.is_true else 0.0),
             trainable=False,
             activation="linear",
         )(self.predictor_input)
@@ -314,7 +313,7 @@ class NetBuilder(StructuringFuzzifier):
         return Dense(
             1,
             kernel_initializer=Zeros,
-            bias_initializer=constant_initializer(node.value),
+            bias_initializer=constant(node.value),
             trainable=False,
             activation="linear",
         )(self.predictor_input)

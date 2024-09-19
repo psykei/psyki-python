@@ -1,16 +1,17 @@
 from typing import Callable
+import tensorflow as tf
 from tensorflow.keras.layers import Maximum
 from tensorflow.keras import Model
-from tensorflow.keras.backend import argmax, stack
+from tensorflow import argmax, stack
+from tensorflow import gather, squeeze, transpose
 from psyki.logic import *
 from tensorflow.keras.layers import Dense, Lambda, Concatenate
-from tensorflow import Tensor, sigmoid, constant
-from tensorflow.python.ops.init_ops import constant_initializer, Constant, Zeros
+from tensorflow import Tensor, sigmoid
+from tensorflow.keras.initializers import constant, Zeros
 from psyki.fuzzifiers import StructuringFuzzifier
-from psyki.logic.operators import *
+from psyki.logic.operators import Disjunction, Conjunction, Equal, Less, LessEqual, Greater, GreaterEqual
 from psyki.ski import EnrichedModel
-from psyki.utils import eta_one_abs, eta, concat
-from tensorflow.python.ops.array_ops import gather, transpose, squeeze
+from psyki.utils import eta_one_abs, eta, concat, match_case
 
 
 class Towell(StructuringFuzzifier):
@@ -54,7 +55,7 @@ class Towell(StructuringFuzzifier):
             )
 
         def logistic_function(self, x: Tensor):
-            return sigmoid(x - constant(self.bias_initializer.value))
+            return sigmoid(x - self.bias_initializer.value)
 
     @staticmethod
     def enriched_model(model: Model) -> EnrichedModel:
@@ -62,7 +63,7 @@ class Towell(StructuringFuzzifier):
 
     def _compute_bias(self, w: Iterable) -> Constant:
         p = len([u for u in w if u > 0])
-        return constant_initializer((p - 0.5) * self.omega)
+        return constant((p - 0.5) * self.omega)
 
     def _visit_formula(self, node: DefinitionFormula, local_mapping, substitutions):
         self._trainable = node.trainable
@@ -103,9 +104,9 @@ class Towell(StructuringFuzzifier):
                     # new weights
                     w = len(self._class_calls[output_value]) * [self.omega]
                     neuron = Towell.CustomDense(
-                        kernel_initializer=constant_initializer(w),
+                        kernel_initializer=constant(w),
                         trainable=self._trainable,
-                        bias_initializer=constant_initializer(0.5 * self.omega),
+                        bias_initializer=constant(0.5 * self.omega),
                     )
                     neuron = neuron(concat(self._class_calls[output_value]))
                     self.class_call[output_value] = neuron
@@ -146,9 +147,9 @@ class Towell(StructuringFuzzifier):
                     [l(m)(s) for l in self._class_calls[predicate_name]]
                 )
                 predicate: Callable = lambda m: lambda s: Towell.CustomDense(
-                    kernel_initializer=constant_initializer(w),
+                    kernel_initializer=constant(w),
                     trainable=self._trainable,
-                    bias_initializer=constant_initializer(0.5 * self.omega),
+                    bias_initializer=constant(0.5 * self.omega),
                 )(layers(m)(s))
                 self.predicate_call_mapping[predicate_name] = predicate, local_args
 
@@ -176,15 +177,15 @@ class Towell(StructuringFuzzifier):
             (
                 Disjunction.symbol,
                 Towell.CustomDense(
-                    kernel_initializer=constant_initializer(w),
+                    kernel_initializer=constant(w),
                     trainable=self._trainable,
-                    bias_initializer=constant_initializer(0.5 * o),
+                    bias_initializer=constant(0.5 * o),
                 ),
             ),
             (
                 Conjunction.symbol,
                 Towell.CustomDense(
-                    kernel_initializer=constant_initializer(w),
+                    kernel_initializer=constant(w),
                     trainable=self._trainable,
                     bias_initializer=self._compute_bias(w),
                 ),
@@ -193,7 +194,7 @@ class Towell(StructuringFuzzifier):
                 Equal.symbol,
                 Dense(
                     1,
-                    kernel_initializer=constant_initializer([1, -1]),
+                    kernel_initializer=constant([1, -1]),
                     trainable=self._trainable,
                     activation=eta_one_abs,
                 ),
@@ -202,9 +203,9 @@ class Towell(StructuringFuzzifier):
                 Less.symbol,
                 Dense(
                     1,
-                    kernel_initializer=constant_initializer([-1, 1]),
+                    kernel_initializer=constant([-1, 1]),
                     trainable=self._trainable,
-                    bias_initializer=constant_initializer([0.5]),
+                    bias_initializer=constant([0.5]),
                     activation=eta,
                 ),
             ),
@@ -212,9 +213,9 @@ class Towell(StructuringFuzzifier):
                 LessEqual.symbol,
                 Dense(
                     1,
-                    kernel_initializer=constant_initializer([-1, 1]),
+                    kernel_initializer=constant([-1, 1]),
                     trainable=self._trainable,
-                    bias_initializer=constant_initializer([1.0]),
+                    bias_initializer=constant([1.0]),
                     activation=eta,
                 ),
             ),
@@ -222,9 +223,9 @@ class Towell(StructuringFuzzifier):
                 Greater.symbol,
                 Dense(
                     1,
-                    kernel_initializer=constant_initializer([1, -1]),
+                    kernel_initializer=constant([1, -1]),
                     trainable=self._trainable,
-                    bias_initializer=constant_initializer([0.5]),
+                    bias_initializer=constant([0.5]),
                     activation=eta,
                 ),
             ),
@@ -232,9 +233,9 @@ class Towell(StructuringFuzzifier):
                 GreaterEqual.symbol,
                 Dense(
                     1,
-                    kernel_initializer=constant_initializer([1, -1]),
+                    kernel_initializer=constant([1, -1]),
                     trainable=self._trainable,
-                    bias_initializer=constant_initializer([1.0]),
+                    bias_initializer=constant([1.0]),
                     activation=eta,
                 ),
             ),
@@ -318,7 +319,7 @@ class Towell(StructuringFuzzifier):
             Dense(
                 1,
                 kernel_initializer=Zeros,
-                bias_initializer=constant_initializer(1.0 if node.is_true else 0.0),
+                bias_initializer=constant(1.0 if node.is_true else 0.0),
                 trainable=True,
                 activation=None,
             )(self.predictor_input),
@@ -333,7 +334,7 @@ class Towell(StructuringFuzzifier):
             Dense(
                 1,
                 kernel_initializer=Zeros,
-                bias_initializer=constant_initializer(node.value),
+                bias_initializer=constant(node.value),
                 trainable=True,
                 activation=None,
             )(self.predictor_input),
@@ -386,9 +387,9 @@ class Towell(StructuringFuzzifier):
                 w[i] = new_w
             else:
                 new_previous_layers.append(element)
-        bias_initializer = constant_initializer(int(m.value) - 0.5 * self.omega)
+        bias_initializer = constant(int(m.value) - 0.5 * self.omega)
         layer = Towell.CustomDense(
-            kernel_initializer=constant_initializer(w),
+            kernel_initializer=constant(w),
             trainable=self._trainable,
             bias_initializer=bias_initializer,
         )(concat(new_previous_layers))

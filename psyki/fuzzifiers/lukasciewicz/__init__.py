@@ -13,16 +13,15 @@ from tensorflow import (
     reduce_max,
     tile,
 )
-from tensorflow.keras.backend import to_dense
-from tensorflow.python.ops.array_ops import shape
+from tensorflow.sparse import to_dense
+from tensorflow import shape
 from psyki.fuzzifiers import ConstrainingFuzzifier
 from psyki.logic.operators import *
 from psyki.ski import EnrichedModel
 from psyki.utils import eta
-from tensorflow.python.ops.numpy_ops import np_config
 
 
-np_config.enable_numpy_behavior()
+tf.experimental.numpy.experimental_enable_numpy_behavior()
 
 
 class Lukasiewicz(ConstrainingFuzzifier):

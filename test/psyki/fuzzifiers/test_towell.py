@@ -1,5 +1,4 @@
 import unittest
-
 from numpy import argmax
 from tensorflow.keras import Input, Model
 from test.resources.data import SpliceJunction

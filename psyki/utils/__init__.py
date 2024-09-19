@@ -6,7 +6,7 @@ from tensorflow import minimum, maximum, abs
 from tensorflow.keras import Model
 from tensorflow.keras.models import clone_model
 from tensorflow.keras.layers import Concatenate
-from tensorflow.python.types.core import Tensor
+from tensorflow import Tensor
 
 
 A = TypeVar("A")

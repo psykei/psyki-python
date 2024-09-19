@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import List, Callable
-from tensorflow.python.keras import Model
+from tensorflow.keras import Model
 from psyki import logic
 from psyki.logic import *
 from pathlib import Path

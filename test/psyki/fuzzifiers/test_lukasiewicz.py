@@ -1,9 +1,9 @@
 import unittest
 import numpy as np
 from psyki.fuzzifiers import Fuzzifier
-from tensorflow.python.ops.numpy_ops import argmax
+from tensorflow import argmax
 from tensorflow import constant, float32, reshape, cast, stack, assert_equal, tile
-from tensorflow.python.ops.array_ops import gather_nd
+from tensorflow import gather_nd
 from test.resources.knowledge import PATH as KNOWLEDGE_PATH
 from psyki.logic.prolog import TuProlog
 from test.resources.data import SpliceJunction, Poker
