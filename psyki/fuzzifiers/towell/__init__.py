@@ -9,7 +9,15 @@ from tensorflow.keras.layers import Dense, Lambda, Concatenate
 from tensorflow import Tensor, sigmoid
 from tensorflow.keras.initializers import constant, Zeros
 from psyki.fuzzifiers import StructuringFuzzifier
-from psyki.logic.operators import Disjunction, Conjunction, Equal, Less, LessEqual, Greater, GreaterEqual
+from psyki.logic.operators import (
+    Disjunction,
+    Conjunction,
+    Equal,
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual,
+)
 from psyki.ski import EnrichedModel
 from psyki.utils import eta_one_abs, eta, concat, match_case
 
