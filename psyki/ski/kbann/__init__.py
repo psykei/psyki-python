@@ -71,8 +71,8 @@ class KBANN(Injector):
 
         def copy(self) -> EnrichedModel:
             with custom_object_scope(self.custom_objects):
-                model = model_deep_copy(self)
-                return KBANN.ConstrainedModel(model, self.gamma, self.custom_objects)
+                # model = model_deep_copy(self)
+                return KBANN.ConstrainedModel(self, self.gamma, self.custom_objects)
 
         def loss_function(self, original_function: Callable) -> Callable:
             return self.CustomLoss(

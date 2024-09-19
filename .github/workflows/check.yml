@@ -5,6 +5,7 @@ on:
       - main
       - master
       - develop
+      - 'updates/**'
       - 'feature/**'
   workflow_dispatch:
 env:

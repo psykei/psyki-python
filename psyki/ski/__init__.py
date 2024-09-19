@@ -71,7 +71,8 @@ class EnrichedModel(Model):
 
     def copy(self) -> EnrichedModel:
         with custom_object_scope(self.custom_objects):
-            return EnrichedModel(model_deep_copy(self), self.custom_objects)
+            # return EnrichedModel(model_deep_copy(self), self.custom_objects)
+            return EnrichedModel(self, self.custom_objects)
 
     def save(
         self,
