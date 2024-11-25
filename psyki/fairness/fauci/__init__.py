@@ -9,7 +9,7 @@ from psyki.fairness.fauci.tf_metric import (
     continuous_equalized_odds,
     discrete_demographic_parity,
     discrete_disparate_impact,
-    discrete_equalized_odds
+    discrete_equalized_odds,
 )
 
 PATH = Path(__file__).parents[0]
@@ -17,11 +17,11 @@ epsilon = 1e-5
 
 
 def create_fauci_network(
-        model: Model,
-        protected_attribute: int,
-        type_protected_attribute: str,
-        fairness_metric: str,
-        lambda_value: float,
+    model: Model,
+    protected_attribute: int,
+    type_protected_attribute: str,
+    fairness_metric: str,
+    lambda_value: float,
 ) -> Model:
     """
     Create a neural network with a custom loss function.
@@ -35,23 +35,38 @@ def create_fauci_network(
 
     input_layer = model.input
     if type_protected_attribute == "continuous":
+
         def tf_demographic_parity(y_true, y_pred):
-            return continuous_demographic_parity(input_layer[:, protected_attribute], y_pred)
+            return continuous_demographic_parity(
+                input_layer[:, protected_attribute], y_pred
+            )
 
         def tf_disparate_impact(y_true, y_pred):
-            return continuous_disparate_impact(input_layer[:, protected_attribute], y_pred)
+            return continuous_disparate_impact(
+                input_layer[:, protected_attribute], y_pred
+            )
 
         def tf_equalized_odds(y_true, y_pred):
-            return continuous_equalized_odds(input_layer[:, protected_attribute], y_true, y_pred)
+            return continuous_equalized_odds(
+                input_layer[:, protected_attribute], y_true, y_pred
+            )
+
     else:
+
         def tf_demographic_parity(y_true, y_pred):
-            return discrete_demographic_parity(input_layer[:, protected_attribute], y_pred)
+            return discrete_demographic_parity(
+                input_layer[:, protected_attribute], y_pred
+            )
 
         def tf_disparate_impact(y_true, y_pred):
-            return discrete_disparate_impact(input_layer[:, protected_attribute], y_pred)
+            return discrete_disparate_impact(
+                input_layer[:, protected_attribute], y_pred
+            )
 
         def tf_equalized_odds(y_true, y_pred):
-            return discrete_equalized_odds(input_layer[:, protected_attribute], y_true, y_pred)
+            return discrete_equalized_odds(
+                input_layer[:, protected_attribute], y_true, y_pred
+            )
 
     if fairness_metric == "demographic_parity":
         fairness_metric_function = tf_demographic_parity
@@ -64,7 +79,9 @@ def create_fauci_network(
 
     def custom_loss(y_true, y_pred):
         fair_cost_factor = fairness_metric_function(y_true, y_pred)
-        return (1 - lambda_value) * tf.cast(binary_crossentropy(y_true, y_pred) + epsilon, tf.float64) + lambda_value * tf.cast(fair_cost_factor, tf.float64)
+        return (1 - lambda_value) * tf.cast(
+            binary_crossentropy(y_true, y_pred) + epsilon, tf.float64
+        ) + lambda_value * tf.cast(fair_cost_factor, tf.float64)
 
     model.compile(loss=custom_loss, optimizer=Adam(), metrics=["accuracy"])
     return model

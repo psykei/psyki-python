@@ -110,16 +110,18 @@ def demographic_parity(
             number_of_sample = np.sum(p == p_value)
 
             if strategy == Strategy.EQUAL:
-                parity += np.abs(conditional_probability - absolute_probability) / len(unique_p)
+                parity += np.abs(conditional_probability - absolute_probability) / len(
+                    unique_p
+                )
             elif strategy == Strategy.FREQUENCY:
                 parity += (
                     np.abs(conditional_probability - absolute_probability)
-                    * number_of_sample / len(p)
+                    * number_of_sample
+                    / len(p)
                 )
             elif strategy == Strategy.INVERSE_FREQUENCY:
-                parity += (
-                    np.abs(conditional_probability - absolute_probability)
-                    * ((1 - (number_of_sample / len(p))) / (len(unique_p) - 1))
+                parity += np.abs(conditional_probability - absolute_probability) * (
+                    (1 - (number_of_sample / len(p))) / (len(unique_p) - 1)
                 )
     return parity
 
@@ -191,7 +193,10 @@ def disparate_impact(
             if strategy == Strategy.FREQUENCY:
                 result = np.sum(impact * number_of_sample / len(p))
             elif strategy == Strategy.INVERSE_FREQUENCY:
-                result = np.sum(impact * ((1 - (number_of_sample / len(p))) / (len(unique_protected) - 1)))
+                result = np.sum(
+                    impact
+                    * ((1 - (number_of_sample / len(p))) / (len(unique_protected) - 1))
+                )
             else:
                 result = 0
         impact = result
@@ -302,5 +307,7 @@ def equalized_odds(
         elif strategy == Strategy.FREQUENCY:
             eo = np.sum(eo * number_of_samples) / np.sum(number_of_samples)
         elif strategy == Strategy.INVERSE_FREQUENCY:
-            eo = np.sum(eo * (1 - (number_of_samples / len(p))) / (len(unique_protected) - 1))
+            eo = np.sum(
+                eo * (1 - (number_of_samples / len(p))) / (len(unique_protected) - 1)
+            )
     return eo

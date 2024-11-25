@@ -49,7 +49,9 @@ class TestKbann(TestInjector):
         educated = self.injector.inject(self.theory)
         educated_copy = educated.copy()
         educated.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
-        educated_copy.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
+        educated_copy.compile(
+            "adam", loss="categorical_crossentropy", metrics=["accuracy"]
+        )
         self._test_equivalence_between_predictors(educated, educated_copy, self.dataset)
 
 

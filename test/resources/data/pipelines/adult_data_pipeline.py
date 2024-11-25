@@ -63,9 +63,9 @@ class AdultLoader:
                 for column in AdultLoader.categorical:
                     df[column] = df[column].astype("category").cat.codes
             df["Sex"] = df["Sex"].apply(
-                lambda x: 0
-                if x in ["Male", " Male", "Male ", " Male ", " Male."]
-                else 1
+                lambda x: (
+                    0 if x in ["Male", " Male", "Male ", " Male ", " Male."] else 1
+                )
             )
             # Boolean to float
             df = df.astype(float)
@@ -144,12 +144,16 @@ class AdultLoader:
         if all_datasets:
             df_train, df_test = self.load_all()
             df = pd.concat([df_train, df_test], axis=0)
-            df = self.processor.setup(df, one_hot=one_hot, preprocess=preprocess, min_max=min_max)
-            train, test = df.iloc[:len(df_train), ], df.iloc[len(df_train):, ]
+            df = self.processor.setup(
+                df, one_hot=one_hot, preprocess=preprocess, min_max=min_max
+            )
+            train, test = df.iloc[: len(df_train),], df.iloc[len(df_train) :,]
             return train, test
         else:
             df = self.load()
-            return self.processor.setup(df, one_hot=one_hot, preprocess=preprocess, min_max=min_max)
+            return self.processor.setup(
+                df, one_hot=one_hot, preprocess=preprocess, min_max=min_max
+            )
 
     def load_preprocessed_split(
         self,

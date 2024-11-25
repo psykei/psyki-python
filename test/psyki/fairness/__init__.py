@@ -10,11 +10,11 @@ from test.utils import create_predictor
 
 
 def _train_and_predict_tf(
-        model,
-        train: pd.DataFrame,
-        test: pd.DataFrame,
-        epochs: int,
-        batch_size: int,
+    model,
+    train: pd.DataFrame,
+    test: pd.DataFrame,
+    epochs: int,
+    batch_size: int,
 ) -> np.array:
     """
     Train the model and predict the test set.
@@ -38,10 +38,7 @@ def _train_and_predict_tf(
 
 
 def _compute_fairness_metric(
-        data: pd.DataFrame,
-        predictions: np.array,
-        protected: int,
-        fairness_metric: str
+    data: pd.DataFrame, predictions: np.array, protected: int, fairness_metric: str
 ) -> float:
     """
     Compute the fairness metric.
@@ -59,7 +56,9 @@ def _compute_fairness_metric(
     elif fairness_metric == "disparate_impact":
         return disparate_impact(protected_values, predictions, protected_type)
     elif fairness_metric == "equalized_odds":
-        return equalized_odds(protected_values, data.iloc[:, -1], predictions, protected_type)
+        return equalized_odds(
+            protected_values, data.iloc[:, -1], predictions, protected_type
+        )
     else:
         raise ValueError(f"Unknown fairness metric {fairness_metric}")
 
@@ -100,14 +99,15 @@ class TestFairnessMethod(unittest.TestCase):
             "relu",
             "sigmoid",
         )
-        self.base_model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
-        self.fair_model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+        self.base_model.compile(
+            optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
+        )
+        self.fair_model.compile(
+            optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
+        )
 
     def _assert_fairness(
-            self,
-            first_value: float,
-            second_value: float,
-            fairness_metric: str
+        self, first_value: float, second_value: float, fairness_metric: str
     ):
         """
         Assert that the first fairness metric is better than the second one.
@@ -127,25 +127,45 @@ class TestFairnessMethod(unittest.TestCase):
         else:
             raise ValueError(f"Unknown fairness metric {fairness_metric}")
 
-    def _test_fairness_vs_data(self, model, protected: int, fairness_metric: str, should_fail:bool=False):
+    def _test_fairness_vs_data(
+        self, model, protected: int, fairness_metric: str, should_fail: bool = False
+    ):
         psyki.logger.info(f"testing fairness")
         time = datetime.now()
-        data_fairness = _compute_fairness_metric(self.test, self.test.iloc[:, -1], protected, fairness_metric)
-        predictions = _train_and_predict_tf(model, self.train, self.test, self.epochs, self.batch_size)
-        model_fairness = _compute_fairness_metric(self.test, predictions, protected, fairness_metric)
+        data_fairness = _compute_fairness_metric(
+            self.test, self.test.iloc[:, -1], protected, fairness_metric
+        )
+        predictions = _train_and_predict_tf(
+            model, self.train, self.test, self.epochs, self.batch_size
+        )
+        model_fairness = _compute_fairness_metric(
+            self.test, predictions, protected, fairness_metric
+        )
         if should_fail:
             self._assert_fairness(data_fairness, model_fairness, fairness_metric)
         else:
             self._assert_fairness(model_fairness, data_fairness, fairness_metric)
         psyki.logger.info(f"test ended in {datetime.now() - time}")
 
-    def _test_fairness_vs_unfair_model(self, fair_model, unfair_model, protected: int, fairness_metric: str):
+    def _test_fairness_vs_unfair_model(
+        self, fair_model, unfair_model, protected: int, fairness_metric: str
+    ):
         psyki.logger.info(f"testing fair model against non-fair model")
         time = datetime.now()
         tf.random.set_seed(self.seed)
-        fair_model_predictions = _train_and_predict_tf(fair_model, self.train, self.test, self.epochs, self.batch_size)
-        unfair_model_predictions = _train_and_predict_tf(unfair_model, self.train, self.test, self.epochs, self.batch_size)
-        fair_model_fairness = _compute_fairness_metric(self.test, fair_model_predictions, protected, fairness_metric)
-        unfair_model_fairness = _compute_fairness_metric(self.test, unfair_model_predictions, protected, fairness_metric)
-        self._assert_fairness(fair_model_fairness, unfair_model_fairness, fairness_metric)
+        fair_model_predictions = _train_and_predict_tf(
+            fair_model, self.train, self.test, self.epochs, self.batch_size
+        )
+        unfair_model_predictions = _train_and_predict_tf(
+            unfair_model, self.train, self.test, self.epochs, self.batch_size
+        )
+        fair_model_fairness = _compute_fairness_metric(
+            self.test, fair_model_predictions, protected, fairness_metric
+        )
+        unfair_model_fairness = _compute_fairness_metric(
+            self.test, unfair_model_predictions, protected, fairness_metric
+        )
+        self._assert_fairness(
+            fair_model_fairness, unfair_model_fairness, fairness_metric
+        )
         psyki.logger.info(f"test ended in {datetime.now() - time}")

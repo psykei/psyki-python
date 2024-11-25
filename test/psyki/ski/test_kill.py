@@ -72,8 +72,12 @@ class TestKillOnSpliceJunction(TestInjector):
         educated = injector.inject(self.splice_junction_theory)
         educated_copy = educated.copy()
         educated.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
-        educated_copy.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
-        self._test_equivalence_between_predictors(educated, educated_copy, self.splice_junction_dataset)
+        educated_copy.compile(
+            "adam", loss="categorical_crossentropy", metrics=["accuracy"]
+        )
+        self._test_equivalence_between_predictors(
+            educated, educated_copy, self.splice_junction_dataset
+        )
 
 
 if __name__ == "__main__":

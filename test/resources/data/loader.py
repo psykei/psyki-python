@@ -11,7 +11,9 @@ def load_dataset(dataset_name: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
 
     if dataset_name == "adult":
-        train, test = AdultLoader().load_preprocessed_split(one_hot=False, validation=False)
+        train, test = AdultLoader().load_preprocessed_split(
+            one_hot=False, validation=False
+        )
     else:
         raise ValueError(f"Dataset {dataset_name} not supported.")
 
