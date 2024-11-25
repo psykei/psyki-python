@@ -111,7 +111,7 @@ setup(
     # package_dir={'': 'src'},  # Optional
     packages=find_packages(),  # Required
     include_package_data=True,
-    python_requires=">=3.9.13, <3.10",
+    python_requires=">=3.12",
     install_requires=[
         "tensorflow>=2.14.1,<2.15.0",
         "numpy>=1.22.3",

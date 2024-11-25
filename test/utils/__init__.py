@@ -2,10 +2,31 @@ from typing import List
 import numpy as np
 from numpy import argmax
 from tensorflow.keras import Model, Input
+from tensorflow.python.keras.models import Model as Model2
+from tensorflow.python.keras import Input as Input2
 from tensorflow.keras.layers import Dense
+from tensorflow.python.keras.layers import Dense as Dense2
 from tensorflow.keras.callbacks import Callback
 from sklearn.metrics import f1_score
 import psyki
+
+
+def create_predictor(
+    input_shape: int,
+    outputs: int,
+    neurons_per_hidden_layer: list[int],
+    activation: str,
+    last_activation: str,
+) -> Model2:
+    """
+    Creates a simple neural network with the given parameters.
+    """
+    predictor_input = Input2((input_shape,))
+    x = predictor_input
+    for neurons in neurons_per_hidden_layer:
+        x = Dense2(neurons, activation=activation)(x)
+    x = Dense2(outputs, activation=last_activation)(x)
+    return Model2(predictor_input, x)
 
 
 def create_uneducated_predictor(
