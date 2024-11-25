@@ -9,21 +9,27 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
 
+PSyKI (<u><b>P</b></u>latform for <u><b>Sy</b></u>mbolic <u><b>K</b></u>nowledge <u><b>I</b></u>njection) is a python library for symbolic knowledge injection (<b>SKI</b>).
+SKI is a particular subclass of neuro-symbolic (<b>NeSy</b>) integration techniques.
+PSyKI offers SKI algorithms (a.k.a. <b>injectors</b>) along with quality of service metrics (<b>QoS</b>).
+
 Some quick links:
 <!-- * [Home Page](https://apice.unibo.it/xwiki/bin/view/PSyKI/) -->
 * [GitHub Repository](https://github.com/psykei/psyki-python)
 * [PyPi Repository](https://pypi.org/project/psyki/)
 * [Issues](https://github.com/psykei/psyki-python/issues)
 
-## Intro
 
-PSyKI (<u><b>P</b></u>latform for <u><b>Sy</b></u>mbolic <u><b>K</b></u>nowledge <u><b>I</b></u>njection) is a python library for symbolic knowledge injection (<b>SKI</b>).
-SKI is a particular subclass of neuro-symbolic (<b>NeSy</b>) integration techniques.
-PSyKI offers SKI algorithms (a.k.a. <b>injectors</b>) along with quality of service metrics (<b>QoS</b>).
+**✨ Update [Nov. 2024]**: from version 0.4.1, PSyKI supports **FaUCI**, a novel fairness method to reduce bias in machine learning models.
 
-### Reference paper
 
-> Matteo Magnini, Giovanni Ciatto, Andrea Omicini. "[On the Design of PSyKI: A Platform for Symbolic Knowledge Injection into Sub-Symbolic Predictors]", in: Proceedings of the 4th International Workshop on EXplainable and TRAnsparent AI and Multi-Agent Systems, 2022.
+## Reference papers
+
+If you use this library in your research you must cite the **PSyKI** paper.
+Additionally, if you use one of the original injectors, fairness methods or QoS metrics, you must cite the respective paper.
+
+### PSyKI (main paper)
+> Matteo Magnini, Giovanni Ciatto, Andrea Omicini. "On the Design of PSyKI: A Platform for Symbolic Knowledge Injection into Sub-Symbolic Predictors", in: Proceedings of the 4th International Workshop on EXplainable and TRAnsparent AI and Multi-Agent Systems, 2022.
 
 Bibtex: 
 ```bibtex
@@ -55,7 +61,149 @@ Bibtex:
 }
 ```
 
-### More in detail
+### FaUCI fairness method
+
+> Matteo Magnini, Giovanni Ciatto, Roberta Calegari, and Andrea Omicini, “Enforcing fairness via constraint injection with fauci,” in Proceedings of the 2nd Workshop on Fairness and Bias in AI co-located with 27th European Conference on Artificial Intelligence (ECAI 2024), Santiago de Compostela, Spain, October 20th, 2024, R. Calegari, V. Dignum, and B. O’Sullivan, Eds., ser. CEUR Workshop Proceedings, vol. 3808, CEUR-WS.org, 2024.
+
+Bibtex: 
+```bibtex
+@inproceedings{DBLP:conf/aequitas/MagniniCCO24,
+  author       = {Matteo Magnini and
+                  Giovanni Ciatto and
+                  Roberta Calegari and
+                  Andrea Omicini},
+  editor       = {Roberta Calegari and
+                  Virginia Dignum and
+                  Barry O'Sullivan},
+  title        = {Enforcing Fairness via Constraint Injection with FaUCI},
+  booktitle    = {Proceedings of the 2nd Workshop on Fairness and Bias in {AI} co-located
+                  with 27th European Conference on Artificial Intelligence {(ECAI} 2024),
+                  Santiago de Compostela, Spain, October 20th, 2024},
+  series       = {{CEUR} Workshop Proceedings},
+  volume       = {3808},
+  publisher    = {CEUR-WS.org},
+  year         = {2024},
+  url          = {https://ceur-ws.org/Vol-3808/paper8.pdf},
+  timestamp    = {Fri, 08 Nov 2024 15:21:04 +0100},
+  biburl       = {https://dblp.org/rec/conf/aequitas/MagniniCCO24.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+```
+
+### KINS injector
+
+> Matteo Magnini, Giovanni Ciatto, and Andrea Omicini “Knowledge injection of datalog rules via neural network structuring with KINS,” J. Log. Comput., vol. 33, no. 8, pp. 1832–1850, 2023. doi: 10.1093/LOGCOM/
+EXAD037.
+
+Bibtex: 
+```bibtex
+@article{DBLP:journals/logcom/MagniniCO23,
+  author       = {Matteo Magnini and
+                  Giovanni Ciatto and
+                  Andrea Omicini},
+  title        = {Knowledge injection of Datalog rules via Neural Network Structuring
+                  with {KINS}},
+  journal      = {J. Log. Comput.},
+  volume       = {33},
+  number       = {8},
+  pages        = {1832--1850},
+  year         = {2023},
+  url          = {https://doi.org/10.1093/logcom/exad037},
+  doi          = {10.1093/LOGCOM/EXAD037},
+  timestamp    = {Tue, 02 Jan 2024 12:25:17 +0100},
+  biburl       = {https://dblp.org/rec/journals/logcom/MagniniCO23.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+```
+
+### KILL injector
+
+> Matteo Magnini, Giovanni Ciatto, and Andrea Omicini, “A view to a KILL: knowledge injection via lambda layer,” in Proceedings of the 23rd Workshop "From Objects to Agents", Genova, Italy, September 1-3, 2022, A. Ferrando and V. Mascardi, Eds., ser. CEUR Workshop Proceedings, vol. 3261, CEUR-WS.org, 2022, pp. 61–76.
+
+Bibtex: 
+```bibtex
+@inproceedings{DBLP:conf/woa/MagniniCO22,
+  author       = {Matteo Magnini and
+                  Giovanni Ciatto and
+                  Andrea Omicini},
+  editor       = {Angelo Ferrando and
+                  Viviana Mascardi},
+  title        = {A view to a {KILL:} knowledge injection via lambda layer},
+  booktitle    = {Proceedings of the 23rd Workshop "From Objects to Agents", Genova,
+                  Italy, September 1-3, 2022},
+  series       = {{CEUR} Workshop Proceedings},
+  volume       = {3261},
+  pages        = {61--76},
+  publisher    = {CEUR-WS.org},
+  year         = {2022},
+  url          = {https://ceur-ws.org/Vol-3261/paper5.pdf},
+  timestamp    = {Fri, 10 Mar 2023 16:22:40 +0100},
+  biburl       = {https://dblp.org/rec/conf/woa/MagniniCO22.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+```
+
+### QoS metrics
+
+> Andrea Agiollo, Andrea Rafanelli, Matteo Magnini, Giovanni Ciatto, Andrea Omicini. "Symbolic knowledge injection meets intelligent agents: QoS metrics and experiments", in:  Autonomous Agents and Multi-Agent Systems, 2023.
+
+Bibtex: 
+```bibtex
+@article{ski-qos23,
+  author       = {Andrea Agiollo and
+                  Andrea Rafanelli and
+                  Matteo Magnini and
+                  Giovanni Ciatto and
+                  Andrea Omicini},
+  title        = {Symbolic knowledge injection meets intelligent agents: QoS metrics
+                  and experiments},
+  journal      = {Auton. Agents Multi Agent Syst.},
+  volume       = {37},
+  number       = {2},
+  pages        = {27},
+  year         = {2023},
+  url          = {https://doi.org/10.1007/s10458-023-09609-6},
+  doi          = {10.1007/S10458-023-09609-6},
+  timestamp    = {Tue, 12 Sep 2023 07:57:44 +0200},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+```
+
+### Robustness metrics for symbolic knowledge injection
+
+> Andrea Rafanelli, Matteo Magnini, Andrea Agiollo, Giovanni Ciatto, and Andrea Omicini, “An empirical study on the robustness of knowledge injection techniques against data degradation,” in Proceedings of the 25th Workshop "From Objects to Agents", Bard (Aosta), Italy, July 8-10, 2024, M. Alderighi, M. Baldoni, C. Baroglio, R. Micalizio, and S. Tedeschi, Eds., ser. CEURWorkshop Proceedings, vol. 3735, CEUR-WS.org, 2024, pp. 20–32.
+
+Bibtex: 
+```bibtex
+@inproceedings{DBLP:conf/woa/RafanelliMACO24,
+  author       = {Andrea Rafanelli and
+                  Matteo Magnini and
+                  Andrea Agiollo and
+                  Giovanni Ciatto and
+                  Andrea Omicini},
+  editor       = {Marco Alderighi and
+                  Matteo Baldoni and
+                  Cristina Baroglio and
+                  Roberto Micalizio and
+                  Stefano Tedeschi},
+  title        = {An Empirical Study on the Robustness of Knowledge Injection Techniques
+                  Against Data Degradation},
+  booktitle    = {Proceedings of the 25th Workshop "From Objects to Agents", Bard (Aosta),
+                  Italy, July 8-10, 2024},
+  series       = {{CEUR} Workshop Proceedings},
+  volume       = {3735},
+  pages        = {20--32},
+  publisher    = {CEUR-WS.org},
+  year         = {2024},
+  url          = {https://ceur-ws.org/Vol-3735/paper\_02.pdf},
+  timestamp    = {Fri, 26 Jul 2024 22:35:03 +0200},
+  biburl       = {https://dblp.org/rec/conf/woa/RafanelliMACO24.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+```
+
+## More in detail
 
 An `Injector` is a SKI algorithm that may -- or may not -- take a sub-symbolic predictor in conjunction with prior symbolic knowledge to create a new predictor through the `inject` method.
 We refer to the new predictor as **educated**, while predictors that are not affected by symbolic knowledge are called **uneducated**.
@@ -134,65 +282,14 @@ Knowledge injection methods aim to enhance the sustainability of machine learnin
 
 Most existing works on knowledge injection techniques showcase standard evaluation metrics that aim to quantify these potential benefits. However, accurately quantifying sustainability, accuracy improvements, dataset needs, and interpretability in a consistent manner remains an open challenge.
 
-### Reference papers
-
-> Andrea Agiollo, Andrea Rafanelli, Matteo Magnini, Giovanni Ciatto, Andrea Omicini. "[Symbolic knowledge injection meets intelligent agents: QoS metrics and experiments]", in:  Autonomous Agents and Multi-Agent Systems, 2023.
-
-Bibtex: 
-```bibtex
-@article{ski-qos23,
-  author       = {Andrea Agiollo and
-                  Andrea Rafanelli and
-                  Matteo Magnini and
-                  Giovanni Ciatto and
-                  Andrea Omicini},
-  title        = {Symbolic knowledge injection meets intelligent agents: QoS metrics
-                  and experiments},
-  journal      = {Auton. Agents Multi Agent Syst.},
-  volume       = {37},
-  number       = {2},
-  pages        = {27},
-  year         = {2023},
-  url          = {https://doi.org/10.1007/s10458-023-09609-6},
-  doi          = {10.1007/S10458-023-09609-6},
-  timestamp    = {Tue, 12 Sep 2023 07:57:44 +0200},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-```
-
-> Andrea Agiollo, Andrea Rafanelli, Andrea Omicini. "[Towards quality-of-service metrics for symbolic knowledge injection]", in:  WOA, 2022.
-Bibtex: 
-```bibtex
-
-
-@inproceedings{ski-qos22,
-  author       = {Andrea Agiollo and
-                  Andrea Rafanelli and
-                  Andrea Omicini},
-  editor       = {Angelo Ferrando and
-                  Viviana Mascardi},
-  title        = {Towards quality-of-service metrics for symbolic knowledge injection},
-  booktitle    = {Proceedings of the 23rd Workshop "From Objects to Agents", Genova,
-                  Italy, September 1-3, 2022},
-  series       = {{CEUR} Workshop Proceedings},
-  volume       = {3261},
-  pages        = {30--47},
-  publisher    = {CEUR-WS.org},
-  year         = {2022},
-  url          = {https://ceur-ws.org/Vol-3261/paper3.pdf},
-  timestamp    = {Fri, 10 Mar 2023 16:22:40 +0100},
-  biburl       = {https://dblp.org/rec/conf/woa/AgiolloRO22.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-```
-
-## Efficiency metrics: 
+<!--
+**Efficiency metrics**: 
 
 - **Memory footprint**, i.e., the size of the predictor under examination;
 - **Data efficiency**, i.e., the amount of data required to train the predictor;
 - **Latency**, i.e., the time required to run a predictor for inference;
 - **Energy consumption**, i.e., the amount of energy required to train/run the predictor;
+-->
 
 ### <b>💾 Memory Footprint </b>
 <u><i>Intuition:</i></u> injected knowledge can reduce the amount of notions to be learnt data-drivenly.
@@ -264,7 +361,7 @@ pip install psyki
 - python 3.9+
 - java 11
 - 2ppy 0.4.0
-- tensorflow 2.7.0
+- tensorflow 2.13.1
 - numpy 1.22.3
 - scikit-learn 1.0.2
 - pandas 1.4.2
