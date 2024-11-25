@@ -127,13 +127,16 @@ class TestFairnessMethod(unittest.TestCase):
         else:
             raise ValueError(f"Unknown fairness metric {fairness_metric}")
 
-    def _test_fairness_vs_data(self, model, protected: int, fairness_metric: str):
+    def _test_fairness_vs_data(self, model, protected: int, fairness_metric: str, should_fail:bool=False):
         psyki.logger.info(f"testing fairness")
         time = datetime.now()
         data_fairness = _compute_fairness_metric(self.test, self.test.iloc[:, -1], protected, fairness_metric)
         predictions = _train_and_predict_tf(model, self.train, self.test, self.epochs, self.batch_size)
         model_fairness = _compute_fairness_metric(self.test, predictions, protected, fairness_metric)
-        self._assert_fairness(model_fairness, data_fairness, fairness_metric)
+        if should_fail:
+            self._assert_fairness(data_fairness, model_fairness, fairness_metric)
+        else:
+            self._assert_fairness(model_fairness, data_fairness, fairness_metric)
         psyki.logger.info(f"test ended in {datetime.now() - time}")
 
     def _test_fairness_vs_unfair_model(self, fair_model, unfair_model, protected: int, fairness_metric: str):

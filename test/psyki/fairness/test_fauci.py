@@ -3,8 +3,8 @@ import warnings
 import psyki
 from psyki.fairness.fauci import create_fauci_network
 from test.psyki.fairness import TestFairnessMethod
-from tensorflow.python.compat.v2_compat import disable_v2_behavior
-from tensorflow.python.framework.ops import disable_eager_execution
+from tensorflow.python.compat.v2_compat import disable_v2_behavior, enable_v2_behavior
+from tensorflow.python.framework.ops import disable_eager_execution, enable_eager_execution
 
 
 class TestFauci(TestFairnessMethod):
@@ -25,13 +25,29 @@ class TestFauci(TestFairnessMethod):
                 0.5,
             )
 
-    def test_fauci_vs_data(self):
+    def test_fauci_vs_data_dp(self):
         psyki.logger.info("Testing FaUCI on adult dataset (must be better than data fairness)")
         self._test_fairness_vs_data(self.fair_model, 8, "demographic_parity")
 
-    def test_fauci_vs_unfair_model(self):
+    def test_fauci_vs_data_di(self):
+        psyki.logger.info("Testing FaUCI on adult dataset (must be better than data fairness)")
+        self._test_fairness_vs_data(self.fair_model, 8, "disparate_impact")
+
+    def test_fauci_vs_data_eo(self):
+        psyki.logger.info("Testing FaUCI on adult dataset (must be better than data fairness)")
+        self._test_fairness_vs_data(self.fair_model, 8, "equalized_odds", True)
+
+    def test_fauci_vs_unfair_model_dp(self):
         psyki.logger.info("Testing FaUCI on adult dataset (must be better than unfair model)")
         self._test_fairness_vs_unfair_model(self.fair_model, self.base_model, 8, "demographic_parity")
+
+    def test_fauci_vs_unfair_model_di(self):
+        psyki.logger.info("Testing FaUCI on adult dataset (must be better than unfair model)")
+        self._test_fairness_vs_unfair_model(self.fair_model, self.base_model,  8, "disparate_impact")
+
+    def test_fauci_vs_unfair_model_eo(self):
+        psyki.logger.info("Testing FaUCI on adult dataset (must be better than unfair model)")
+        self._test_fairness_vs_unfair_model(self.fair_model, self.base_model,  8, "equalized_odds")
 
 
 if __name__ == "__main__":

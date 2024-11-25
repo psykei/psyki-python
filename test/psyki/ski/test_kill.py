@@ -46,7 +46,7 @@ class TestKillOnSpliceJunction(TestInjector):
         educated.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
         self._test_educated_training(educated, self.poker_dataset)
 
-    def test_educated_is_cloneable_kbann(self):
+    def test_educated_is_cloneable_kill(self):
         psyki.logger.info("Testing if KILL is cloneable")
         uneducated = create_uneducated_predictor(
             self.splice_junction_dataset.shape[1] - 1,
@@ -59,7 +59,7 @@ class TestKillOnSpliceJunction(TestInjector):
         educated = injector.inject(self.splice_junction_theory)
         self._test_educated_is_cloneable(educated)
 
-    def test_equivalence_between_educated_and_its_copy_kbann(self):
+    def test_equivalence_between_educated_and_its_copy_kill(self):
         psyki.logger.info("Testing if KILL and its clone are equivalent")
         uneducated = create_uneducated_predictor(
             self.splice_junction_dataset.shape[1] - 1,
@@ -72,12 +72,8 @@ class TestKillOnSpliceJunction(TestInjector):
         educated = injector.inject(self.splice_junction_theory)
         educated_copy = educated.copy()
         educated.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
-        educated_copy.compile(
-            "adam", loss="categorical_crossentropy", metrics=["accuracy"]
-        )
-        self._test_equivalence_between_predictors(
-            educated, educated_copy, self.splice_junction_dataset
-        )
+        educated_copy.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
+        self._test_equivalence_between_predictors(educated, educated_copy, self.splice_junction_dataset)
 
 
 if __name__ == "__main__":
