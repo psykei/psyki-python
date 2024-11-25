@@ -26,6 +26,9 @@ def _train_and_predict_tf(
     :param logger: logger
     :return: DataFrame with the predictions
     """
+    # set seeds for reproducibility
+    np.random.seed(0)
+    tf.random.set_seed(0)
     train_x, train_y = train.iloc[:, :-1], train.iloc[:, -1]
     test_x, _ = test.iloc[:, :-1], test.iloc[:, -1]
     psyki.logger.debug(f"start training model")
