@@ -1,0 +1,3 @@
+[tool.coverage.run]
+source = ["./*"]
+omit = ["wiki/*", "test/*"]

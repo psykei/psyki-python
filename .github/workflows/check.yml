@@ -55,8 +55,8 @@ jobs:
         run: |
           pip install pytest
           pip install pytest-cov
-          pytest --cov=./ --cov-report=xml --ignore=test/psyki/fairness --cov-omit=*/wiki/*
-          pytest --cov-append --cov=./ --cov-report=xml test/psyki/fairness --cov-omit=*/wiki/*
+          pytest --cov=./ --cov-report=xml --ignore=test/psyki/fairness --cov-config=.coveragerc
+          pytest --cov-append --cov=./ --cov-report=xml test/psyki/fairness --cov-config=.coveragerc
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
