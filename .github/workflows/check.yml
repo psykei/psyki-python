@@ -59,7 +59,7 @@ jobs:
           pytest --cov-append --cov=./ --cov-report=xml test/psyki/fairness --cov-config=.coveragerc
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: ./coverage/reports/
