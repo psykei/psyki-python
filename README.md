@@ -25,8 +25,8 @@ Some quick links:
 
 ## Reference papers
 
-If you use this library in your research you must cite the **PSyKI** paper.
-Additionally, if you use one of the original injectors, fairness methods or QoS metrics, you must cite the respective paper.
+Cite the **PSyKI** paper ff you use this library in your research.
+Additionally, cite the respective paper if you use one of the original injectors, fairness methods or QoS metrics.
 
 ### PSyKI (main paper)
 > Matteo Magnini, Giovanni Ciatto, Andrea Omicini. "On the Design of PSyKI: A Platform for Symbolic Knowledge Injection into Sub-Symbolic Predictors", in: Proceedings of the 4th International Workshop on EXplainable and TRAnsparent AI and Multi-Agent Systems, 2022.
