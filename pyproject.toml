@@ -8,7 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "3.9.13"
-tensorflow = "2.13.1"
+tensorflow = "2.18.0"
 scikit-learn = "1.0.2"
 codecarbon = "2.2.4"
 2ppy = "^0.4.1"

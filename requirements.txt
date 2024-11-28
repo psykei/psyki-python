@@ -1,7 +1,7 @@
 build>=0.6.0
 twine>=3.4.2
 2ppy>=0.4.1
-tensorflow==2.13.1
+tensorflow==2.18.0
 keras==2.13.1
 numpy>=1.22.3
 pandas>=1.4.2
