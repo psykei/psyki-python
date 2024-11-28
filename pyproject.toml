@@ -7,7 +7,7 @@ license = "Apache2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.9.13"
+python = "3.13.0"
 tensorflow = "2.13.1"
 scikit-learn = "1.0.2"
 codecarbon = "2.2.4"
