@@ -14,7 +14,7 @@ codecarbon = "2.2.4"
 2ppy = "^0.4.1"
 pandas = "1.4.2"
 keras = "2.13.1"
-tensorflow-macos = "2.13.1"
+tensorflow-macos = "2.16.2"
 prometheus-client = "^0.21.0"
 
 [tool.poetry.group.dev.dependencies]
