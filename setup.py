@@ -113,13 +113,13 @@ setup(
     include_package_data=True,
     python_requires=">=3.12",
     install_requires=[
-        "tensorflow>=2.13.1,<2.15.0",
+        "tensorflow>=2.14.1,<2.15.0",
         "numpy>=1.22.3",
-        "2ppy>=0.4.0",
+        "2ppy>=0.4.1",
         "scikit-learn>=1.0.2",
         "pandas>=1.4.2",
         "codecarbon>=2.2.4,<2.3.0",
-        "prometheus_client>=0.17.0",
+        "prometheus_client>=0.21.0",
     ],  # Optional
     zip_safe=False,
     platforms="Independant",
