@@ -6,6 +6,6 @@ numpy>=1.22.3
 pandas>=1.4.2
 scikit-learn>=1.0.2
 setuptools>=75.1.0
-JPype1==1.5.0
+JPype1==1.5.1
 codecarbon==2.2.4
 prometheus_client>=0.17.0
