@@ -118,7 +118,7 @@ setup(
         "2ppy>=0.4.1",
         "scikit-learn>=1.0.2",
         "pandas>=1.4.2",
-        "codecarbon>=2.2.4,<2.3.0",
+        "codecarbon>=2.8.2,<2.9.0",
         "prometheus_client>=0.21.0",
     ],  # Optional
     zip_safe=False,
