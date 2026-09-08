@@ -12,7 +12,7 @@ tensorflow = "2.14.1"
 scikit-learn = "1.0.2"
 codecarbon = "2.2.4"
 2ppy = "^0.4.1"
-pandas = "1.4.2"
+pandas = "1.5.3"
 tensorflow-macos = { version = "2.14.1", markers = "sys_platform == 'darwin'" }
 prometheus-client = "^0.21.0"
 
