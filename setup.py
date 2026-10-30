@@ -113,7 +113,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.12",
     install_requires=[
-        "tensorflow>=2.14.1,<2.15.0",
+        "tensorflow>=2.21.0,<2.22.0",
         "numpy>=1.22.3",
         "2ppy>=0.4.1",
         "scikit-learn>=1.0.2",
